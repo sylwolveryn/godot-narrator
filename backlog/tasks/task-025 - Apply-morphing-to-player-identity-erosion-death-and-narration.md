@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T20:40:00Z'
+updated_date: '2026-10-30T21:52:00Z'
 labels:
   - rendering
   - narrator
@@ -33,3 +33,9 @@ The overlay effects (erosion scramble, death shatter, narration scramble-in) are
 - [ ] #3 Narration text morphs in from and out to abstract shapes letter by letter, legible at full hold
 - [ ] #4 Captures of each effect are reviewed and listed in the task notes
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Superseded 2026-10-30: visual direction changed to a glyph-material isometric 3D world + glyph-object morphing (see decision-002). Unfinished work parked on branch parked/sdf-overlay (commit cfcc6ff).
+<!-- SECTION:NOTES:END -->
