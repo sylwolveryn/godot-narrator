@@ -33,3 +33,12 @@ Once the input is discovered, the character must move in the world in a way that
 - [ ] #3 Movement stops when input stops.
 - [ ] #4 The character stays within the bounds of the M1 map.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. PlayerConfig movement values (speed/accel/friction/pointer stop distance).
+2. Player._physics_process: top-down XZ, FLOATING move_and_slide, gated on PLAYING + discovered scheme; mouse scheme projects cursor onto ground plane.
+3. MapLoader adds boundary collision (void-adjacent cells + outer slabs) under a Bounds node.
+4. Tests in tools/test_input_movement.gd.
+<!-- SECTION:PLAN:END -->
