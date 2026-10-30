@@ -30,7 +30,7 @@ The core of the launcher: one click to start fresh or continue, without stray pr
 - [x] #4 Continue game while the game is running: first click shows a warning that the game is already running; a second click closes the game and starts it again
 - [x] #5 A running game is detected even if it was not started by god (editor instances are not treated as the game)
 - [x] #6 The Godot executable is found on PATH or via a GODOT_BIN override; the project path is resolved relative to the repo
-- [ ] #7 Logic (state, file checks, process matching) is covered by unit tests that run without opening a window
+- [x] #7 Logic (state, file checks, process matching) is covered by unit tests that run without opening a window
 <!-- AC:END -->
 
 ## Implementation Plan
