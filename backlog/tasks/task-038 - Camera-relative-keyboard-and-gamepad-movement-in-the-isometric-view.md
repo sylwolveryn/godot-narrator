@@ -1,9 +1,11 @@
 ---
 id: TASK-038
 title: Camera-relative keyboard and gamepad movement in the isometric view
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T23:08:00Z'
+updated_date: '2026-10-30T23:52:00Z'
 labels:
   - input
   - player
@@ -27,3 +29,11 @@ Since task-031 the camera is isometric (yaw 45), but keyboard/gamepad movement s
 - [ ] #2 The mapping derives from the active camera view config, not hardcoded angles
 - [ ] #3 tools/test_input_movement.gd asserts screen-relative directions (alongside the task-029 overshoot fix)
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Player gets exported camera_rig; rotate keyboard/d-pad/stick input by camera_rig.view_config.yaw_degrees (no hardcoded angle).
+2. Wire camera_rig in tools/build_main_scene.gd and regenerate main.tscn with the tool.
+3. Rewrite tools/test_input_movement.gd direction checks as screen-space assertions via the camera basis.
+<!-- SECTION:PLAN:END -->
