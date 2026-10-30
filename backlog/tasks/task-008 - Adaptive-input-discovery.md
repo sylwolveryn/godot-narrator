@@ -33,3 +33,11 @@ Movement is discovered, not explained. The game must register whichever input de
 - [ ] #3 All movement input goes through `InputMap` actions in `project.godot`; no raw keycode checks.
 - [ ] #4 Inputs that are not supported do not change the mapping.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. InputScheme constants + InputMap actions (tools/build_input_map.gd writes project.godot [input]; drop legacy transform).
+2. InputDiscovery node: classifies event device type + matches move actions; emits SignalBus.input_scheme_discovered on first/changed supported scheme; RunManager stores it in RunState.
+3. Headless test tools/test_input_movement.gd.
+<!-- SECTION:PLAN:END -->
