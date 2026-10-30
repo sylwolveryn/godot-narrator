@@ -1,9 +1,11 @@
 ---
 id: TASK-026
 title: 'Look tuning: dense glowing structures like the moodboard'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T20:36:00Z'
+updated_date: '2026-10-30T20:40:00Z'
 labels:
   - rendering
 milestone: m-2
