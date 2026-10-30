@@ -28,11 +28,11 @@ Progress must survive a death and a restart, so the player is not starting from 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Progress is written to disk when a run ends.
-- [ ] #2 Progress is loaded when the game starts, and the next run uses it.
-- [ ] #3 The saved data contains only persistent values, not per-run state.
-- [ ] #4 A missing or corrupt save file falls back to a clean start with a logged message and no crash.
-- [ ] #5 Persistent data includes: death count, character identity, revealed map memory, and narration progress
+- [x] #1 Progress is written to disk when a run ends.
+- [x] #2 Progress is loaded when the game starts, and the next run uses it.
+- [x] #3 The saved data contains only persistent values, not per-run state.
+- [x] #4 A missing or corrupt save file falls back to a clean start with a logged message and no crash.
+- [x] #5 Persistent data includes: death count, character identity, revealed map memory, and narration progress
 <!-- AC:END -->
 
 ## Implementation Plan
