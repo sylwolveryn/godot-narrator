@@ -31,3 +31,13 @@ Glyph changes are instant swaps between characters, which read as noise. Glyphs 
 - [ ] #3 A frame sequence in the task notes shows a single glyph morphing smoothly between two characters
 - [ ] #4 Frame rate stays at 60 FPS at 1920x1080 on the dev machine
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Ramp morph in post shader: mix(sdf[i], sdf[i+1], smoothstep(band)) driven by continuous L (no popping).
+2. Reveal / memory->seen morph via mask fade (easeOutQuart), spike pulse and corruption breathing (slow flow warp, two-glyph SDF blend, <=0.5 Hz).
+3. glyph_morph canvas shader + GlyphAtlas available for task-025.
+4. Measure flicker: capture N static frames, per-cell glyph/colour change counts (python); morph strip for one cell.
+5. Measure 1080p frame time.
+<!-- SECTION:PLAN:END -->
