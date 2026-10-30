@@ -1,10 +1,11 @@
 ---
 id: TASK-012
 title: Hazard death
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T15:42:00Z'
+updated_date: '2026-10-30T16:42:00Z'
 labels:
   - world
   - core
@@ -34,3 +35,12 @@ The M1 run must end through a hazard, which is the first real loss condition. De
 - [ ] #5 Corrupting glyph areas erode the character over time while inside them and end the run when erosion completes; erosion rate and threshold come from a resource
 - [ ] #6 Hazard types for M1 are exactly spikes and corrupting glyphs
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. HazardDefinition resource (kind, end cause, lethal_on_touch, erosion rate/threshold/recovery, tint) + hazard_spikes/hazard_corrupting .tres; MapLegend maps cell type -> definition.
+2. HazardMonitor node: reads player cell each physics frame, only during PLAYING, requests end via SignalBus.run_end_requested once; erosion kept in RunState and announced via SignalBus.erosion_changed.
+3. GlyphOverlay: erosion scramble/jitter/fade on player glyph; death shatter during restart delay (GlyphFxConfig).
+4. Builders, tools/test_hazards.gd, visual capture autopilot.
+<!-- SECTION:PLAN:END -->
