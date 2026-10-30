@@ -1,3 +1,59 @@
 [gd_scene format=3 uid="uid://cd1bjpboqyi2w"]
 
-[node name="Main" type="Node3D" unique_id=1314525458]
+[ext_resource type="Script" path="res://scripts/rendering/camera_rig.gd" id="1_1bvp3"]
+[ext_resource type="Resource" path="res://resources/config/camera_top_down.tres" id="2_lquwl"]
+[ext_resource type="Script" path="res://scripts/core/run_manager.gd" id="3_7mycd"]
+[ext_resource type="Resource" path="res://resources/config/run_config.tres" id="4_272bh"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_5vw27"]
+size = Vector2(20, 20)
+
+[sub_resource type="BoxMesh" id="BoxMesh_kek77"]
+size = Vector3(20, 1, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4c57u"]
+size = Vector3(20, 1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_efxa6"]
+size = Vector3(20, 1, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_dg77c"]
+size = Vector3(20, 1, 1)
+
+[node name="Main" type="Node3D" unique_id=937857213]
+
+[node name="World" type="Node3D" parent="." unique_id=1302900447]
+
+[node name="Floor" type="MeshInstance3D" parent="World" unique_id=1738030783]
+mesh = SubResource("PlaneMesh_5vw27")
+
+[node name="WallNorth" type="StaticBody3D" parent="World" unique_id=982489944]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -10)
+
+[node name="Mesh" type="MeshInstance3D" parent="World/WallNorth" unique_id=100573535]
+mesh = SubResource("BoxMesh_kek77")
+
+[node name="Collision" type="CollisionShape3D" parent="World/WallNorth" unique_id=2007479619]
+shape = SubResource("BoxShape3D_4c57u")
+
+[node name="WallSouth" type="StaticBody3D" parent="World" unique_id=41792913]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 10)
+
+[node name="Mesh" type="MeshInstance3D" parent="World/WallSouth" unique_id=474874762]
+mesh = SubResource("BoxMesh_efxa6")
+
+[node name="Collision" type="CollisionShape3D" parent="World/WallSouth" unique_id=2014974409]
+shape = SubResource("BoxShape3D_dg77c")
+
+[node name="Sun" type="DirectionalLight3D" parent="World" unique_id=1968205849]
+transform = Transform3D(0.8660254, -0.43301272, 0.24999999, 0, 0.49999997, 0.86602545, -0.5, -0.75, 0.43301266, 0, 0, 0)
+
+[node name="CameraRig" type="Node3D" parent="." unique_id=641439438]
+script = ExtResource("1_1bvp3")
+view_config = ExtResource("2_lquwl")
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=180941307]
+
+[node name="RunManager" type="Node" parent="." unique_id=1514811637]
+script = ExtResource("3_7mycd")
+config = ExtResource("4_272bh")

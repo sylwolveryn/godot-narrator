@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="CameraViewConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/camera_view_config.gd" id="1_be2q5"]
+
+[resource]
+script = ExtResource("1_be2q5")
+orthographic = false
+pitch_degrees = -55.0
+distance = 14.0

@@ -16,6 +16,10 @@ run/main_scene="uid://cd1bjpboqyi2w"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+SignalBus="*res://scripts/core/signal_bus.gd"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
