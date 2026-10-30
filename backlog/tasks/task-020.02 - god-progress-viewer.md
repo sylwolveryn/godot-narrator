@@ -24,7 +24,7 @@ Playtesting needs a quick look at what the save contains without opening files b
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A section lists the progress fields when progress.tres exists (run count, death count, identity glyph, heard beats, and any future scalar fields), excluding revealed_cells
+- [x] #1 A section lists the progress fields when progress.tres exists (run count, death count, identity glyph, heard beats, and any future scalar fields), excluding revealed_cells
 - [ ] #2 The section shows a clear empty state when there is no save
 - [ ] #3 The list refreshes when the file appears, disappears or changes (checked by the same 3-second poll)
 - [ ] #4 Reading the save never modifies it; malformed files show an error message instead of crashing
