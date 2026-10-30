@@ -17,7 +17,7 @@ extends Resource
 @export_range(0.0, 1.0, 0.05) var restart_time_scale: float = 0.35
 
 @export_group("Wave")
-@export var wave_color: Color = Color(0.55, 0.9, 0.7)
+@export var wave_color: Color = Color("#5FF2E8")
 ## Number of horizontal wave lines.
 @export_range(1, 12) var line_count: int = 5
 ## Crests across the screen width.

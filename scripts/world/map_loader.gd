@@ -9,6 +9,8 @@ signal map_built(data: MapData)
 
 @export var legend: MapLegend
 @export var world_config: WorldConfig
+## Spike pulse and corruption breathing values baked into the world materials.
+@export var hazard_fx: HazardFxConfig
 ## Map text file, e.g. res://data/maps/m1_awakening.txt.
 @export_file("*.txt") var map_path: String = ""
 ## Load and build in _ready.
@@ -23,10 +25,10 @@ var visuals: Dictionary[Vector2i, Array] = {}
 ## World position of the spawn cell (centre of the cell, on the floor).
 var spawn_position: Vector3 = Vector3.ZERO
 
+const WORLD_SHADER := "res://shaders/world_encode.gdshader"
+
 var _cells: Node3D
 var _bounds: Node3D
-var _corrupt_material: StandardMaterial3D
-var _time: float = 0.0
 
 
 func _ready() -> void:
@@ -34,18 +36,12 @@ func _ready() -> void:
 		legend = MapLegend.new()
 	if world_config == null:
 		world_config = WorldConfig.new()
+	if hazard_fx == null:
+		hazard_fx = HazardFxConfig.new()
 	set_process(false)
 	map_id = _id_from_path(map_path)
 	if auto_load and map_path != "":
 		build(load_file(map_path))
-
-
-func _process(delta: float) -> void:
-	# Corrupting patches pulse so they read as unstable in the ASCII output.
-	_time += delta
-	var wave: float = 0.5 + 0.5 * sin(_time * world_config.corrupt_pulse_speed)
-	var k: float = 1.0 - world_config.corrupt_pulse_depth * wave
-	_corrupt_material.albedo_color = world_config.corrupt_color * k
 
 
 ## Reads and parses a map file. A missing or unreadable file yields an empty map with an error.
@@ -129,6 +125,8 @@ func build(map: MapData) -> void:
 		legend = MapLegend.new()
 	if world_config == null:
 		world_config = WorldConfig.new()
+	if hazard_fx == null:
+		hazard_fx = HazardFxConfig.new()
 	data = map
 	_clear()
 	spawn_position = cell_to_world(map.spawn_cell)
@@ -174,7 +172,6 @@ func _failed(message: String) -> MapData:
 
 
 func _clear() -> void:
-	set_process(false)
 	visuals.clear()
 	if _cells != null:
 		_cells.free()
@@ -189,11 +186,13 @@ func _clear() -> void:
 
 
 func _build_geometry(map: MapData) -> void:
-	var wall_mat: StandardMaterial3D = _unshaded(world_config.wall_color)
-	var floor_mat: StandardMaterial3D = _unshaded(world_config.floor_color)
-	var item_mat: StandardMaterial3D = _unshaded(world_config.item_color)
-	var spike_mat: StandardMaterial3D = _unshaded(world_config.spike_color)
-	_corrupt_material = _unshaded(world_config.corrupt_color)
+	var wall_mat: ShaderMaterial = _world_material(MaterialIds.WALL, world_config.wall_luminance)
+	var floor_mat: ShaderMaterial = _world_material(MaterialIds.FLOOR, world_config.floor_luminance)
+	var item_mat: ShaderMaterial = _world_material(MaterialIds.ITEM, -1.0, world_config.item_luminance)
+	var spike_mat: ShaderMaterial = _world_material(MaterialIds.SPIKES, -1.0, hazard_fx.spike_base_l,
+			hazard_fx.spike_pulse_amp, hazard_fx.spike_pulse_hz)
+	var corrupt_mat: ShaderMaterial = _world_material(MaterialIds.CORRUPT, -1.0, hazard_fx.corrupt_base_l,
+			hazard_fx.corrupt_l_amp, hazard_fx.corrupt_l_hz)
 
 	for y in map.height:
 		var x: int = 0
@@ -219,9 +218,8 @@ func _build_geometry(map: MapData) -> void:
 				elif t == MapLegend.SPIKES:
 					_cells.add_child(_make_spikes(cell, spike_mat))
 				elif t == MapLegend.CORRUPT:
-					_cells.add_child(_make_corrupt(cell, _corrupt_material))
+					_cells.add_child(_make_corrupt(cell, corrupt_mat))
 			x += floor_run
-	set_process(world_config.corrupt_pulse_depth > 0.0)
 
 
 func _run_length(map: MapData, x: int, y: int, type: StringName) -> int:
@@ -241,10 +239,17 @@ func _run_floor(map: MapData, x: int, y: int) -> int:
 	return n
 
 
-func _unshaded(color: Color) -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = color
+## A world material: it writes data for the ASCII post-process instead of a colour (see
+## shaders/world_encode.gdshader). `emissive_l` of 0 or more makes it emissive and pulsing.
+func _world_material(id: int, lit_l: float, emissive_l: float = -1.0, pulse_amp: float = 0.0, pulse_hz: float = 0.0) -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = load(WORLD_SHADER) as Shader
+	mat.set_shader_parameter("material_id", id)
+	mat.set_shader_parameter("lit_l", lit_l)
+	mat.set_shader_parameter("emissive_l", emissive_l)
+	mat.set_shader_parameter("pulse_amp", pulse_amp)
+	mat.set_shader_parameter("pulse_hz", pulse_hz)
+	mat.set_shader_parameter("height_ref", world_config.wall_height)
 	return mat
 
 

@@ -52,11 +52,13 @@ All folders and files use snake_case.
 
 ## Rendering
 
-### ASCII Post-Process
-- A `CanvasLayer` (layer 0) holds a full-rect `ColorRect` using `shaders/ascii_post.gdshader`.
-- The shader reads `hint_screen_texture`, samples luminance per cell, and draws a glyph from a glyph-atlas texture.
-- Cell size, glyph ramp, and colors are uniforms set from the `AsciiConfig` resource.
-- Can be toggled off via config for debugging.
+### ASCII Post-Process (task-023/024, spec: `docs/visual_direction.md`)
+- The 3D world renders **data, not colour**. `MapLoader` gives every cell type a `ShaderMaterial` on `shaders/world_encode.gdshader` (unshaded). Each pixel: R = material id (`MaterialIds`), G = luminance (player light, reveal fade and hazard pulse already applied), B = state (visible: palette offset from world noise/height/glint; remembered: memory amount). The encoding lives in `shaders/world_encoding.gdshaderinc` and keeps every channel at 0.2 or above, because the compat renderer returns values below about 0.2 too low (see test pattern `tools/test_encoding.gd`).
+- Global shader params (registered in `project.godot` by `tools/build_project_settings.gd`): `player_pos`, `light_params`, `look_params`, `map_params` (set by `AsciiPostProcess`) and the `reveal_mask` texture (one texel per map cell, owned by `MapReveal`: brightness with reveal overshoot and stagger, seen fraction for memory to seen, glint).
+- A `CanvasLayer` (layer 0) holds a full-rect `ColorRect` with `shaders/ascii_post.gdshader`. Per glyph cell it reads the cell centre (`texelFetch`), picks ramp and palette row by id, blends two ramp glyphs as an SDF (`d = mix(sdfA, sdfB, smoothstep(band))`, so any brightness change is a morph, never a swap), colours from the palette LUT and adds own-cell halo, 4-neighbour bloom, wall rim glow, depth of field, vignette and a static dither. Corruption breathes: slow flow-noise warp, noise-picked glyph blend, violet/magenta hue slide.
+- `GlyphAtlas` (`scripts/rendering/glyph_atlas.gd`) bakes the shared SDF atlas on the GPU at boot (SubViewport raster at 2x, then `glyph_sdf_bake.gdshader`). It is resolution independent (no rebuild on resize). `shaders/glyph_morph.gdshader` is the reusable canvas shader for overlay glyph quads (task-025).
+- Tunables are Resources: `AsciiConfig`, `PaletteConfig` (gradients, baked to a 256x16 LUT), `LightConfig`, `HazardFxConfig`, `RevealConfig`, `GlyphFxConfig`. Pixel sizes scale with `DisplayConfig` (cell 10x14 at 1080p).
+- Render settings: no MSAA/FXAA/debanding, no 3D glow, default linear tonemap. `AsciiConfig.enabled = false` shows the raw encoded buffer (debug only).
 
 ### Glyph Overlay
 - A higher `CanvasLayer` (layer 10+) is NOT processed by the post shader.

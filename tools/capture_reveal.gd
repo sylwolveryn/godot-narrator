@@ -1,9 +1,12 @@
 extends SceneTree
-## Debug autopilot for visual checks (NOT part of the normal boot path). Runs the main scene,
+## Debug autopilot for visual checks (NOT part of the normal boot path). Runs the main scene on a
+## temporary save file (never the real progress),
 ## feeds key events on a fixed frame schedule and quits. Meant for Movie Maker captures:
 ##   godot --path . --resolution 960x540 --fixed-fps 30 --write-movie <dir>/f.png -s tools/capture_reveal.gd
 ## Prints "CAPTURE <label> frame <n>" lines so the matching PNGs can be picked.
 
+const Support := preload("res://tools/test_support.gd")
+const SAVE_TAG := "capture_reveal"
 const FPS := 30
 var _frame: int = 0
 var _main: Node
@@ -33,6 +36,7 @@ func _init() -> void:
 
 func _start() -> void:
 	_main = (load("res://main.tscn") as PackedScene).instantiate()
+	Support.isolate_save(_main, SAVE_TAG)
 	var intro := IntroConfig.new()
 	intro.black_hold = 0.3
 	intro.wave_fade_in = 0.3
@@ -62,6 +66,7 @@ func _tick() -> void:
 	elif action.begins_with("mark:"):
 		print("CAPTURE %s frame %d" % [action.get_slice(":", 1), _frame])
 	elif action == "quit":
+		Support.remove_file("user://test_progress_%s.tres" % SAVE_TAG)
 		quit()
 
 

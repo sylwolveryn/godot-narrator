@@ -1,7 +1,7 @@
 class_name WorldConfig
 extends Resource
 ## Dimensions and look of the 3D world. Gameplay plane is XZ, y is up.
-## Colours are unshaded albedo: their luminance decides which ASCII glyph the post-process picks.
+## The world materials encode data for the ASCII post-process (see shaders/world_encode.gdshader).
 
 ## World units per map cell.
 @export var cell_size: float = 1.0
@@ -10,12 +10,13 @@ extends Resource
 ## Thickness of the floor slab (its top surface sits at y = 0).
 @export var floor_thickness: float = 0.2
 
-@export_group("Colours")
-@export var wall_color: Color = Color(0.42, 0.5, 0.62)
-@export var floor_color: Color = Color(0.05, 0.06, 0.05)
-@export var item_color: Color = Color(1.0, 0.85, 0.3)
-@export var spike_color: Color = Color(1.0, 0.3, 0.25)
-@export var corrupt_color: Color = Color(0.85, 0.25, 0.95)
+@export_group("Luminance")
+## Lit materials (walls, floor) use this luminance in full light; the palette gradient turns it into a colour.
+@export_range(0.0, 1.0) var wall_luminance: float = 0.75
+@export_range(0.0, 1.0) var floor_luminance: float = 0.55
+## Emissive items keep a fixed luminance whatever the light. Spikes and corruption pulse around
+## the values in HazardFxConfig.
+@export_range(0.0, 1.0) var item_luminance: float = 0.85
 
 @export_group("Items and hazards")
 ## Edge length of an item cube as a fraction of cell_size.
@@ -30,6 +31,3 @@ extends Resource
 @export_range(0.1, 1.0) var spike_radius_ratio: float = 0.4
 ## Height of the corrupting-glyph plane above the floor.
 @export var corrupt_height: float = 0.02
-## Pulse speed (radians per second) and depth (0..1) of the corrupting patches' brightness.
-@export var corrupt_pulse_speed: float = 3.0
-@export_range(0.0, 1.0) var corrupt_pulse_depth: float = 0.5

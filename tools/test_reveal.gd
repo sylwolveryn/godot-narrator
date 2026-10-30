@@ -5,10 +5,14 @@ extends SceneTree
 ## Usage: godot --headless --path . -s tools/test_reveal.gd
 
 const PHASE_PLAYING := 1
+## MapReveal.CellState values (not referenced by name: the script needs the SignalBus autoload at compile time).
+const CELL_MEMORY := 1
+const CELL_SEEN := 2
 const Support := preload("res://tools/test_support.gd")
 const MAP_ID := &"m1_awakening"
 var _failures: PackedStringArray = []
 var _signal_cells: Array[Vector2i] = []
+var _reveal: Node
 
 
 func _init() -> void:
@@ -65,18 +69,26 @@ func _all_hidden(loader: MapLoader, cell: Vector2i) -> bool:
 	return true
 
 
+## A seen cell: meshes visible, and either still animating its reveal or settled at the full
+## look (brightness 1, seen fraction 1, no glint) in the reveal mask.
 func _normal(loader: MapLoader, cell: Vector2i) -> bool:
 	for m: MeshInstance3D in loader.visuals_at(cell):
-		if not m.visible or m.material_override != null:
+		if not m.visible:
 			return false
-	return true
+	if _reveal.call("state_of", cell) != CELL_SEEN:
+		return false
+	var look: Vector3 = _reveal.call("cell_look", cell)
+	return _reveal.call("is_animating", cell) or look.is_equal_approx(Vector3(1.0, 1.0, 0.0))
 
 
+## A remembered cell: meshes visible, and in the mask fully remembered (brightness 1, seen fraction 0).
 func _memory(loader: MapLoader, cell: Vector2i) -> bool:
 	for m: MeshInstance3D in loader.visuals_at(cell):
-		if not m.visible or m.material_override == null:
+		if not m.visible:
 			return false
-	return true
+	if _reveal.call("state_of", cell) != CELL_MEMORY:
+		return false
+	return (_reveal.call("cell_look", cell) as Vector3).is_equal_approx(Vector3(1.0, 0.0, 0.0))
 
 
 func _dist(loader: MapLoader, cell: Vector2i, pos: Vector3) -> float:
@@ -101,6 +113,7 @@ func _run() -> void:
 	var player: CharacterBody3D = main.get_node("Player")
 	var loader: MapLoader = main.get_node("World/MapLoader")
 	var reveal: Node = main.get_node("MapReveal")
+	_reveal = reveal
 	var progress: PersistentProgress = main.get_node("SaveService").get("progress")
 	# Floor on, so every kind of cell takes part in the checks below (the shipped default is off).
 	var cfg: RevealConfig = (reveal.get("config") as RevealConfig).duplicate()
@@ -170,17 +183,16 @@ func _run() -> void:
 		else:
 			_check(_all_hidden(loader, cell), "run 2: unseen cell %s should be hidden" % cell)
 	_check(not memory_cells.is_empty(), "run 2 has no memory cells")
-	# Memory is dimmer than the normal look.
+	# Remembered cells carry the memory look in the reveal mask: full brightness (the shader caps
+	# its density), seen fraction 0 (memory palette); seen cells are the opposite.
 	var walls_checked: int = 0
 	for cell: Vector2i in memory_cells:
-		for m: MeshInstance3D in loader.visuals_at(cell):
-			if m.get_meta(&"kind") == MapLegend.WALL:
-				var base: Color = loader.world_config.wall_color
-				var mat := m.material_override as StandardMaterial3D
-				_check(mat.albedo_color.get_luminance() < base.get_luminance(), "memory wall at %s not dimmer" % cell)
-				_check(mat.albedo_color.s < base.s, "memory wall at %s not desaturated" % cell)
-				walls_checked += 1
+		if loader.data.type_at(cell) == MapLegend.WALL:
+			var look: Vector3 = reveal.call("cell_look", cell)
+			_check(look.is_equal_approx(Vector3(1.0, 0.0, 0.0)), "memory wall at %s has look %s" % [cell, look])
+			walls_checked += 1
 	_check(walls_checked > 0, "no remembered wall to check the memory style on")
+	_check(not reveal.call("is_animating", memory_cells[0]), "a plain memory cell must not animate")
 	# Walking over remembered cells makes them normal again; stored count is unchanged for them.
 	var stored_before_walk: int = _stored(progress).size()
 	_key(KEY_A, true)
@@ -208,8 +220,19 @@ func _run() -> void:
 	loader.map_id = &"test_strip"
 	loader.build(loader.parse_text("##########\n#...@....#\n##########\n"))
 	player.call("spawn")
-	await _wait(0.1)
 	var s := Vector2i(4, 1)
+	# A freshly seen cell starts dark, grows past full brightness (overshoot) and settles at 1.
+	var edge: Vector2i = s + Vector2i(1, -1)
+	_check(reveal.call("is_animating", edge), "a cell seen for the first time should animate")
+	_check((reveal.call("cell_look", edge) as Vector3).x == 0.0, "a freshly seen cell should start dark")
+	var peak: float = 0.0
+	var started: int = Time.get_ticks_msec()
+	while (Time.get_ticks_msec() - started) / 1000.0 < small.reveal_duration + 0.4:
+		await process_frame
+		peak = maxf(peak, (reveal.call("cell_look", edge) as Vector3).x)
+	_check(peak > 1.0 and peak <= small.reveal_overshoot + 0.01, "reveal brightness peaked at %f, expected within (1, %f]" % [peak, small.reveal_overshoot])
+	_check(not reveal.call("is_animating", edge), "reveal animation should have finished")
+	_check((reveal.call("cell_look", edge) as Vector3).is_equal_approx(Vector3(1.0, 1.0, 0.0)), "reveal should settle at full look")
 	_check(_normal(loader, s + Vector2i(2, 0)), "floor at distance 2.0 should be revealed")
 	_check(_all_hidden(loader, s + Vector2i(3, 0)), "floor at distance 3.0 should be hidden")
 	_check(_normal(loader, s + Vector2i(1, -1)), "wall at distance 1.41 should be revealed")

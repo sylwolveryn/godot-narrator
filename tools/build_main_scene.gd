@@ -30,6 +30,7 @@ func _build() -> void:
 	loader.name = "MapLoader"
 	loader.legend = load(CFG + "map_legend.tres") as MapLegend
 	loader.world_config = load(CFG + "world_config.tres") as WorldConfig
+	loader.hazard_fx = load(CFG + "hazard_fx_config.tres") as HazardFxConfig
 	loader.map_path = MAP_PATH
 	_add(world, loader)
 
@@ -91,12 +92,18 @@ func _build() -> void:
 	discovery.set("config", player_cfg)
 	_add(root, discovery)
 
-	# Layer 0 post-process: reads the 3D render and replaces it with glyphs.
+	# Layer 0 post-process: reads the data-encoded 3D render and replaces it with glyphs.
 	var ascii: CanvasLayer = load("res://scripts/rendering/ascii_post_process.gd").new()
 	ascii.name = "AsciiPostProcess"
 	ascii.layer = 0
 	ascii.set("config", load(CFG + "ascii_config.tres"))
 	ascii.set("display_config", load(DISPLAY_CONFIG))
+	ascii.set("palette", load(CFG + "palette_config.tres"))
+	ascii.set("light_config", load(CFG + "light_config.tres"))
+	ascii.set("hazard_fx", load(CFG + "hazard_fx_config.tres"))
+	ascii.set("glyph_fx", load(CFG + "glyph_fx_config.tres"))
+	ascii.set("camera_rig", rig)
+	ascii.set("player", player)
 	_add(root, ascii)
 	var screen := ColorRect.new()
 	screen.name = "Screen"

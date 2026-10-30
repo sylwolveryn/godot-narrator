@@ -32,3 +32,35 @@ extends Resource
 @export var shard_size_ratio: float = 0.55
 ## Seconds the glyph flickers violently before it bursts.
 @export var shatter_flash: float = 0.18
+
+@export_group("Morph (visual direction)")
+## Mid-morph scale dip and glow boost: the glyph shrinks to this scale and glows this much more.
+@export_range(0.5, 1.0) var morph_scale_dip: float = 0.92
+@export_range(0.0, 1.0) var morph_glow_boost: float = 0.15
+@export var default_ease: Tween.EaseType = Tween.EASE_IN_OUT
+@export var default_trans: Tween.TransitionType = Tween.TRANS_CUBIC
+
+@export_group("Flicker limits (visual direction)")
+## Ambient cells never change target glyph more often than this (per second).
+@export var max_glyph_changes_per_sec: float = 2.0
+## Share of screen cells that may morph (non-ramp) or animate ambiently at once.
+@export_range(0.0, 1.0) var max_morph_area: float = 0.25
+@export_range(0.0, 1.0) var max_ambient_area: float = 0.15
+## Largest full-screen brightness change per event and highest flash repeat rate.
+@export var max_flash_delta: float = 0.4
+@export var max_flash_hz: float = 1.0
+## Optional per-cell luminance smoothing time constant (seconds), for a later stateful buffer.
+@export var l_smoothing_tau: float = 0.12
+
+@export_group("Erosion and death (task-025)")
+@export var erosion_tint: Color = Color("#B44DFF")
+@export var erosion_retarget_min: float = 1.5
+@export_range(0.0, 1.0) var erosion_shed_threshold: float = 0.5
+@export var erosion_shed_interval: float = 0.8
+@export var death_fragments: int = 10
+@export var death_spread_cells: float = 1.5
+@export_range(0.0, 1.0) var death_world_dim: float = 0.4
+@export var death_dim_time: float = 0.8
+@export var spike_death_flash: float = 0.3
+@export var flash_rise: float = 0.15
+@export var flash_decay: float = 0.4

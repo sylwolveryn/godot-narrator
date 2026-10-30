@@ -52,9 +52,9 @@ extends Resource
 @export var overlay_layer: int = 25
 @export var font_names: PackedStringArray = PackedStringArray(["Consolas", "Cascadia Mono", "Courier New", "monospace"])
 @export var font_size: int = 60
-@export var text_color: Color = Color(0.86, 0.95, 0.9)
-@export var scramble_color: Color = Color(0.45, 0.75, 0.6)
-@export var outline_color: Color = Color(0.0, 0.0, 0.0, 0.95)
+@export var text_color: Color = Color("#EAF2FF")
+@export var scramble_color: Color = Color("#8FA3D9")
+@export var outline_color: Color = Color(0.012, 0.016, 0.035, 0.95)
 @export var outline_size: int = 16
 ## Vertical position of the text line as a fraction of the screen height (lower third).
 @export_range(0.0, 1.0) var vertical_anchor: float = 0.82

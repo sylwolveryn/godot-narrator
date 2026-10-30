@@ -6,8 +6,21 @@ extends Node
 ##  - Cells within RevealConfig.reveal_radius of the player show normally and stay so for the run.
 ## Cells seen for the first time ever are announced upward via SignalBus.cells_revealed;
 ## SaveService records them. This node only reads persistent data.
+##
+## Presentation: the look of every cell lives in a small mask texture (one texel per map cell,
+## the global shader parameter `reveal_mask`) read by the world shader:
+##   r = reveal brightness / 1.25 (grows from 0 with an overshoot, staggered by distance),
+##   g = seen fraction (0 = remembered, 1 = seen; a remembered cell turns into a seen one over
+##       RevealConfig.memory_to_seen_duration), b = cyan glint at RevealConfig.reveal_glint_at.
 
 enum CellState { HIDDEN, MEMORY, SEEN }
+
+## Largest brightness the mask can hold (r is stored divided by this).
+const MASK_BRIGHTNESS_MAX := 1.25
+## Width of the glint bump, as a fraction of the reveal.
+const GLINT_WIDTH := 0.12
+const MASK_PARAM := &"reveal_mask"
+const MAP_PARAMS := &"map_params"
 
 @export var config: RevealConfig
 @export var map_loader: MapLoader
@@ -18,12 +31,22 @@ enum CellState { HIDDEN, MEMORY, SEEN }
 var seen_this_run: Dictionary[Vector2i, bool] = {}
 
 var _remembered: Dictionary[Vector2i, bool] = {}
-var _memory_materials: Dictionary[StringName, StandardMaterial3D] = {}
 ## Becomes true when the player is placed for a run; false again when the run ends.
 var _tracking: bool = false
 var _last_position: Vector3 = Vector3.INF
 ## Reveal events already announced this run.
 var _announced: Dictionary[StringName, bool] = {}
+
+var _size: Vector2i = Vector2i.ZERO
+var _brightness: PackedFloat32Array = PackedFloat32Array()
+var _seen: PackedFloat32Array = PackedFloat32Array()
+var _glint: PackedFloat32Array = PackedFloat32Array()
+var _mask: Image
+var _mask_texture: ImageTexture
+var _dirty: bool = false
+var _clock: float = 0.0
+## Running cell animations: cell -> [start time, from_memory (bool)].
+var _animations: Dictionary[Vector2i, Array] = {}
 
 
 func _ready() -> void:
@@ -36,6 +59,14 @@ func _ready() -> void:
 		map_loader.map_built.connect(_on_map_built)
 		if not map_loader.data.is_empty():
 			begin_run()
+
+
+func _process(delta: float) -> void:
+	_clock += delta
+	if not _animations.is_empty():
+		_step_animations()
+	if _dirty:
+		_flush()
 
 
 func _physics_process(_delta: float) -> void:
@@ -56,21 +87,39 @@ func state_of(cell: Vector2i) -> CellState:
 	return CellState.HIDDEN
 
 
+## Presentation values of a cell: x = brightness (0 hidden, 1 shown, overshoots while revealing),
+## y = seen fraction (0 remembered, 1 seen), z = glint.
+func cell_look(cell: Vector2i) -> Vector3:
+	var i: int = _index(cell)
+	if i < 0:
+		return Vector3.ZERO
+	return Vector3(_brightness[i], _seen[i], _glint[i])
+
+
+## True while a cell is still animating its reveal or its memory-to-seen change.
+func is_animating(cell: Vector2i) -> bool:
+	return _animations.has(cell)
+
+
 ## Resets to the run-start picture: only remembered cells show, in the memory style.
 func begin_run() -> void:
 	seen_this_run.clear()
 	_announced.clear()
 	_remembered.clear()
+	_animations.clear()
 	_last_position = Vector3.INF
 	if map_loader == null:
 		return
-	_build_memory_materials()
+	_resize_mask(Vector2i(map_loader.data.width, map_loader.data.height))
 	if save_service != null:
 		var stored: PackedVector2Array = save_service.get_revealed_cells(map_loader.map_id)
 		for v in stored:
 			_remembered[Vector2i(int(v.x), int(v.y))] = true
 	for cell: Vector2i in map_loader.visuals:
-		_apply(cell, state_of(cell))
+		var state: CellState = state_of(cell)
+		_apply(cell, state)
+		_set_look(cell, 1.0 if state == CellState.MEMORY else 0.0, 0.0, 0.0)
+	_flush()
 
 
 ## Reveals every cell whose centre is within the reveal radius of a world position.
@@ -86,12 +135,15 @@ func reveal_around(world_position: Vector3) -> void:
 			if seen_this_run.has(cell) or not map_loader.visuals.has(cell):
 				continue
 			var cell_centre: Vector3 = map_loader.cell_to_world(cell)
-			if Vector2(cell_centre.x - world_position.x, cell_centre.z - world_position.z).length() > reach:
+			var distance: float = Vector2(cell_centre.x - world_position.x, cell_centre.z - world_position.z).length()
+			if distance > reach:
 				continue
+			var from_memory: bool = _remembered.has(cell)
 			seen_this_run[cell] = true
 			_apply(cell, CellState.SEEN)
+			_start_animation(cell, from_memory, distance / size)
 			_announce_kind(cell)
-			if not _remembered.has(cell):
+			if not from_memory:
 				_remembered[cell] = true
 				fresh.append(Vector2(cell))
 	if not fresh.is_empty():
@@ -119,42 +171,14 @@ func _on_map_built(_data: MapData) -> void:
 	begin_run()
 
 
+## Shows or hides the meshes of a cell. How it looks is decided by the mask, not the mesh.
 func _apply(cell: Vector2i, state: CellState) -> void:
 	for mesh: MeshInstance3D in map_loader.visuals_at(cell):
 		var kind: StringName = mesh.get_meta(&"kind", &"")
 		if kind == MapLegend.FLOOR and not config.reveal_floor:
 			mesh.visible = false
 			continue
-		match state:
-			CellState.HIDDEN:
-				mesh.visible = false
-			CellState.MEMORY:
-				mesh.visible = true
-				mesh.material_override = _memory_materials.get(kind)
-			CellState.SEEN:
-				mesh.visible = true
-				mesh.material_override = null
-
-
-func _build_memory_materials() -> void:
-	var world: WorldConfig = map_loader.world_config
-	var colors: Dictionary[StringName, Color] = {
-		MapLegend.FLOOR: world.floor_color,
-		MapLegend.WALL: world.wall_color,
-		MapLegend.ITEM: world.item_color,
-		MapLegend.SPIKES: world.spike_color,
-		MapLegend.CORRUPT: world.corrupt_color,
-	}
-	_memory_materials.clear()
-	for kind: StringName in colors:
-		var base: Color = colors[kind]
-		var grey: float = base.get_luminance()
-		var dull: Color = base.lerp(Color(grey, grey, grey), config.memory_desaturation) * config.memory_brightness
-		dull.a = 1.0
-		var mat := StandardMaterial3D.new()
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.albedo_color = dull
-		_memory_materials[kind] = mat
+		mesh.visible = state != CellState.HIDDEN
 
 
 ## Announces, once per run, the first revealed cell of each type that has a narration event.
@@ -164,3 +188,81 @@ func _announce_kind(cell: Vector2i) -> void:
 		return
 	_announced[event] = true
 	SignalBus.narration_event.emit(event)
+
+
+func _index(cell: Vector2i) -> int:
+	if cell.x < 0 or cell.y < 0 or cell.x >= _size.x or cell.y >= _size.y:
+		return -1
+	return cell.y * _size.x + cell.x
+
+
+func _resize_mask(size: Vector2i) -> void:
+	size = Vector2i(maxi(size.x, 1), maxi(size.y, 1))
+	if size != _size or _mask == null:
+		_size = size
+		_mask = Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
+		_mask_texture = ImageTexture.create_from_image(_mask)
+		RenderingServer.global_shader_parameter_set(MASK_PARAM, _mask_texture)
+		RenderingServer.global_shader_parameter_set(MAP_PARAMS, Vector4(map_loader.world_config.cell_size, 0.0, 0.0, 0.0))
+	var count: int = size.x * size.y
+	_brightness.resize(count)
+	_seen.resize(count)
+	_glint.resize(count)
+	_brightness.fill(0.0)
+	_seen.fill(0.0)
+	_glint.fill(0.0)
+	_mask.fill(Color(0.0, 0.0, 0.0, 1.0))
+	_dirty = true
+
+
+func _set_look(cell: Vector2i, brightness: float, seen: float, glint: float) -> void:
+	var i: int = _index(cell)
+	if i < 0:
+		return
+	_brightness[i] = brightness
+	_seen[i] = seen
+	_glint[i] = glint
+	var encoded := Color(clampf(brightness / MASK_BRIGHTNESS_MAX, 0.0, 1.0), clampf(seen, 0.0, 1.0), clampf(glint, 0.0, 1.0), 1.0)
+	_mask.set_pixel(cell.x, cell.y, encoded)
+	_dirty = true
+
+
+func _flush() -> void:
+	_dirty = false
+	_mask_texture.update(_mask)
+
+
+## A cell that has just been seen: it waits for its stagger delay (distance in cells from the
+## player), then animates. Until then it holds its starting look (dark, or still remembered).
+func _start_animation(cell: Vector2i, from_memory: bool, distance_cells: float) -> void:
+	var start: float = _clock + distance_cells * config.reveal_stagger_per_cell
+	_animations[cell] = [start, from_memory]
+	if from_memory:
+		_set_look(cell, 1.0, 0.0, 0.0)
+	else:
+		_set_look(cell, 0.0, 1.0, 0.0)
+
+
+func _step_animations() -> void:
+	var finished: Array[Vector2i] = []
+	for cell: Vector2i in _animations:
+		var entry: Array = _animations[cell]
+		var start: float = entry[0]
+		var from_memory: bool = entry[1]
+		var duration: float = config.memory_to_seen_duration if from_memory else config.reveal_duration
+		var p: float = (_clock - start) / maxf(duration, 0.001)
+		if p < 0.0:
+			continue
+		if p >= 1.0:
+			_set_look(cell, 1.0, 1.0, 0.0)
+			finished.append(cell)
+			continue
+		if from_memory:
+			_set_look(cell, 1.0, smoothstep(0.0, 1.0, p), 0.0)
+		else:
+			var grow: float = 1.0 - pow(1.0 - p, 4.0)
+			var overshoot: float = 1.0 + (config.reveal_overshoot - 1.0) * sin(PI * p)
+			var glint: float = exp(-pow((p - config.reveal_glint_at) / GLINT_WIDTH, 2.0))
+			_set_look(cell, grow * overshoot, 1.0, glint)
+	for cell in finished:
+		_animations.erase(cell)
