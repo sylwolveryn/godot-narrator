@@ -1,9 +1,11 @@
 ---
 id: TASK-023
 title: Neon palette, glow and depth in the ASCII renderer
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T17:45:00Z'
+updated_date: '2026-10-30T18:08:00Z'
 labels:
   - rendering
 milestone: m-2
