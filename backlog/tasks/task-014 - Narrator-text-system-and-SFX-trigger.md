@@ -34,7 +34,7 @@ The narrator is the story's voice in M1 and must show morphing ASCII text with a
 - [x] #2 Ambient SFX plays alongside narration when a beat is triggered.
 - [x] #3 Narration beats are data-driven (resource or exported list) and each beat specifies its trigger (event or time).
 - [x] #4 Narration progress persists: a beat already heard does not repeat in later runs, and new beats unlock by run or death count
-- [ ] #5 Beats can be gated by run count so tone can shift from cryptic to clearer over runs
+- [x] #5 Beats can be gated by run count so tone can shift from cryptic to clearer over runs
 - [ ] #6 M1 beats hint at contradicting origins (e.g. hero vs villain, alien, AI, demonic, angelic) and never state one answer
 <!-- AC:END -->
 
