@@ -1,9 +1,11 @@
 ---
 id: TASK-020
 title: 'god: developer launcher for Narrator'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T17:45:00Z'
+updated_date: '2026-10-30T17:46:00Z'
 labels:
   - tools
 milestone: m-2
