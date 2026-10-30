@@ -26,10 +26,10 @@ Glyph changes are instant swaps between characters, which read as noise. Glyphs 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A glyph change in the world renders as a continuous shape interpolation over a configurable duration (e.g. signed-distance-field blend), not a swap
-- [ ] #2 A static scene shows no glyph flicker; small brightness changes do not toggle glyphs back and forth (hysteresis or temporal smoothing)
-- [ ] #3 A frame sequence in the task notes shows a single glyph morphing smoothly between two characters
-- [ ] #4 Frame rate stays at 60 FPS at 1920x1080 on the dev machine
+- [x] #1 A glyph change in the world renders as a continuous shape interpolation over a configurable duration (e.g. signed-distance-field blend), not a swap
+- [x] #2 A static scene shows no glyph flicker; small brightness changes do not toggle glyphs back and forth (hysteresis or temporal smoothing)
+- [x] #3 A frame sequence in the task notes shows a single glyph morphing smoothly between two characters
+- [x] #4 Frame rate stays at 60 FPS at 1920x1080 on the dev machine
 <!-- AC:END -->
 
 ## Implementation Plan
