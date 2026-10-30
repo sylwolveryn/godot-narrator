@@ -34,3 +34,12 @@ The world must be discovered through play, so walls, items and hazards are hidde
 - [ ] #4 Revealed map memory persists across runs: areas seen in earlier runs are remembered at the start of a new run, with their display style coming from a resource
 - [ ] #5 Revealed state is exposed so the save task can persist it
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. RevealConfig resource (radius, memory style, floor visibility).
+2. MapLoader builds per-cell revealable visuals (visuals_at).
+3. MapReveal node: hides all at run start, shows remembered cells in memory style, reveals radius around player, emits SignalBus.cells_revealed; SaveService merges into PersistentProgress.revealed_cells[map_id].
+4. tools/test_reveal.gd + capture script for visual check.
+<!-- SECTION:PLAN:END -->
