@@ -43,3 +43,9 @@ The narrator is the story's voice in M1 and must show morphing ASCII text with a
 <!-- SECTION:PLAN:BEGIN -->
 1. NarrationBeat/NarratorConfig/NarrationMood resources; beats built from data/narration/m1_beats.json by tools/build_narration.gd. 2. Narrator (logic, signals up), NarrationOverlay (layer 25 morph text), NarrationSfx (procedural moods). 3. Events via SignalBus.narration_event from Player/MapReveal/HazardMonitor; run/death derived by narrator. 4. SaveService: beat_heard persistence + save on quit. 5. tools/test_narrator.gd + capture_narrator.gd visual/audio check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented. Validation: boot zero ERROR lines; all tools/test_*.gd PASS incl. new test_narrator (eligibility, ladder, class priority, queue/TTL/replace, death preempt, TIME skipped after run end, persistence, save on quit). Visual: Movie Maker capture tools/capture_narrator.gd (wake_first morph, spikes_teeth reveal beat, death_spikes_down over shatter, run-2 start_came_back) legible; audio wav non-silent only at beat starts (peak ~0.25). FINDING: with spec TTL 5s a run-start beat after a death beat is dropped (death beat 5.5s + gap 4s > TTL); start beats are pinned max_run=min_run so are lost. Capture used queue_ttl 12 to show it. Needs design decision.
+<!-- SECTION:NOTES:END -->
