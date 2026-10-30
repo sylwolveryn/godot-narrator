@@ -33,3 +33,9 @@ Resetting or continuing playtests currently needs shell commands that fail when 
 <!-- SECTION:PLAN:BEGIN -->
 1. core.py pure logic (paths, process matching, controller, ui_state, .tres parser) + god.py tkinter GUI with 3s after() poll; 2. tools/dev_reveal_map.gd + test; 3. unittest suite; 4. README, manual real run.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+god/ with README.md and .gdignore; test_save PASS and boot smoke clean after changes.
+<!-- SECTION:NOTES:END -->
