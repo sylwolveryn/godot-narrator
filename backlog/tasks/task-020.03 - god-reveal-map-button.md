@@ -1,9 +1,11 @@
 ---
 id: TASK-020.03
 title: 'god: reveal map button'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T17:45:00Z'
+updated_date: '2026-10-30T17:47:00Z'
 labels:
   - tools
   - world
