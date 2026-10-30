@@ -32,7 +32,7 @@ The player character is the core of the M1 experience and must appear as a rando
 - [x] #1 A player character spawns at the center of the screen after the intro.
 - [x] #2 The character's ASCII identity is chosen randomly from a data-driven set (resource or exported list).
 - [x] #3 The identity is readable on screen under the ASCII shader at the chosen cell size.
-- [ ] #4 The identity is chosen randomly only on the very first run; later runs reuse the saved identity
+- [x] #4 The identity is chosen randomly only on the very first run; later runs reuse the saved identity
 - [ ] #5 Identity is stored as persistent data (read by the save task), not per-run state
 <!-- AC:END -->
 
