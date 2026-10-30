@@ -1,11 +1,11 @@
 ---
 id: TASK-002
 title: 3D world scene and locked top-down camera rig
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:29:00Z'
-updated_date: '2026-10-30T15:59:00Z'
+updated_date: '2026-10-30T16:00:00Z'
 labels:
   - rendering
   - world
@@ -46,3 +46,9 @@ Added scripts/rendering/{camera_view_config,camera_rig}.gd, scripts/world/world_
 
 Visual check (main session): Movie Maker capture `godot --path . --quit-after 20 --write-movie <scratch>/frame.png` shows the floor plane rendered by the locked orthographic top-down camera. Placeholder walls at z=±10 fall outside the vertical view; acceptable as placeholders (map loading replaces them).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Main now contains World (floor plane, placeholder walls, sun), a locked CameraRig driven only by CameraViewConfig (camera_top_down.tres orthographic; camera_tilted.tres perspective, not player-selectable), built by tools/build_main_scene.gd from configs made by tools/build_resources.gd. Validated by tools/test_camera_rig.gd, a clean headless boot, and a Movie Maker frame showing the rendered floor.
+<!-- SECTION:FINAL_SUMMARY:END -->
