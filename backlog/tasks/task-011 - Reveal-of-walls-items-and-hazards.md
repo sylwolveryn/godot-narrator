@@ -4,6 +4,7 @@ title: Reveal of walls, items and hazards
 status: To Do
 assignee: []
 created_date: '2026-10-30T15:30:00Z'
+updated_date: '2026-10-30T15:42:00Z'
 labels:
   - world
   - ux
@@ -29,5 +30,6 @@ The world must be discovered through play, so walls, items and hazards are hidde
 - [ ] #1 At run start, walls, items and hazards are hidden.
 - [ ] #2 An element becomes visible when the character reaches or is near it, using the reveal distance from an exported var or `.tres` value.
 - [ ] #3 Revealed elements stay revealed for the rest of the run.
-- [ ] #4 Revealed state is reset when a new run starts.
+- [ ] #4 Revealed map memory persists across runs: areas seen in earlier runs are remembered at the start of a new run, with their display style coming from a resource
+- [ ] #5 Revealed state is exposed so the save task can persist it
 <!-- AC:END -->
