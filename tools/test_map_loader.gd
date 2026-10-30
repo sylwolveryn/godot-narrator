@@ -44,6 +44,24 @@ func _run() -> void:
 		for dx in range(-1, 2):
 			var t := map.type_at(map.spawn_cell + Vector2i(dx, dy))
 			_check(t != MapLegend.SPIKES and t != MapLegend.CORRUPT, "hazard next to spawn")
+	# The whole map is ONE merged mesh (one surface, one draw call) with the glyph-surface material.
+	_check(loader.world_mesh != null and loader.world_mesh.mesh.get_surface_count() == 1, "world mesh must be a single surface")
+	_check(loader.world_mesh.material_override is ShaderMaterial, "world mesh needs the glyph-surface ShaderMaterial")
+	var verts: PackedVector3Array = loader.world_mesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	_check(verts.size() > 0 and verts.size() % 3 == 0, "world mesh has no triangles")
+	var colors: PackedColorArray = loader.world_mesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_COLOR]
+	var types_seen: Dictionary = {}
+	for c in colors:
+		types_seen[roundi(c.r * GlyphSurfaceType.TYPE_DIV)] = true
+	for t: int in [GlyphSurfaceType.WALL, GlyphSurfaceType.FLOOR, GlyphSurfaceType.SPIKES, GlyphSurfaceType.CORRUPT, GlyphSurfaceType.ITEM]:
+		_check(types_seen.has(t), "world mesh has no surface of type %d" % t)
+	var non_void := 0
+	for y in map.height:
+		for x in map.width:
+			if map.type_at(Vector2i(x, y)) != MapLegend.VOID:
+				non_void += 1
+				_check(loader.is_drawn(Vector2i(x, y)), "cell %d,%d should be drawn" % [x, y])
+	_check(loader.drawn_cells.size() == non_void, "drawn cells %d, non-void %d" % [loader.drawn_cells.size(), non_void])
 	var wall_bodies := 0
 	for c in loader.get_node("Cells").get_children():
 		if c is StaticBody3D:

@@ -36,3 +36,5 @@ extends Resource
 @export var glyph_color: Color = Color("#FFF6E6")
 @export var outline_color: Color = Color(1.0, 0.7, 0.28, 0.4)
 @export var outline_size: int = 12
+## Height above the player's feet where the overlay glyph is centred (world units).
+@export var glyph_height: float = 0.55

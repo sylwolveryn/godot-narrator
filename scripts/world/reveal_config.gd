@@ -4,9 +4,8 @@ extends Resource
 
 ## Cells within this distance (in cells) of the player are revealed.
 @export var reveal_radius: float = 2.0
-## When false the floor is never drawn: only walls, items and hazards appear, so the opening
-## view is plain nothing around the character.
-@export var reveal_floor: bool = false
+## When false the floor surfaces are never drawn: only walls, items and hazards appear.
+@export var reveal_floor: bool = true
 ## Cell type -> narration event announced the first time a cell of that type is revealed in a run.
 @export var reveal_events: Dictionary[StringName, StringName] = {
 	MapLegend.WALL: NarrationEvents.WALL_REVEALED,

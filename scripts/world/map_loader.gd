@@ -1,16 +1,18 @@
 class_name MapLoader
 extends Node3D
-## Loads a handcrafted ASCII map file and builds its 3D representation as children
-## of a "Cells" container. Never crashes on bad input: problems are logged and
-## recorded in MapData.errors / MapData.warnings.
+## Loads a handcrafted ASCII map file and builds its 3D representation: ONE merged glyph-surface
+## mesh for everything drawn ("WorldMesh") plus collision bodies and trigger areas under a "Cells"
+## container. Never crashes on bad input: problems are logged and recorded in MapData.errors /
+## MapData.warnings.
 
 ## Emitted after a build, with the data that was built.
 signal map_built(data: MapData)
 
 @export var legend: MapLegend
 @export var world_config: WorldConfig
-## Spike pulse and corruption breathing values baked into the world materials.
-@export var hazard_fx: HazardFxConfig
+## The glyph-surface material of the world mesh (resources/glyphs/glyph_surface_material.tres).
+## GlyphWorldView feeds it its uniforms. Null loads the default.
+@export var surface_material: Material
 ## Map text file, e.g. res://data/maps/m1_awakening.txt.
 @export_file("*.txt") var map_path: String = ""
 ## Load and build in _ready.
@@ -19,13 +21,15 @@ signal map_built(data: MapData)
 var data: MapData = MapData.new()
 ## Identifier of the loaded map (file name without extension); key for per-map persistent data.
 var map_id: StringName = &""
-## Cell -> Array of the MeshInstance3D nodes that draw it. Each mesh carries a `kind` meta
-## (a MapLegend cell type). Used by MapReveal to hide, show and restyle cells.
-var visuals: Dictionary[Vector2i, Array] = {}
+## Cells that are drawn (every non-void cell). MapReveal reveals these; what is shown of a cell is
+## decided by the reveal mask in the glyph-surface shader.
+var drawn_cells: Dictionary[Vector2i, bool] = {}
+## The merged world mesh instance (null for an empty map).
+var world_mesh: MeshInstance3D
 ## World position of the spawn cell (centre of the cell, on the floor).
 var spawn_position: Vector3 = Vector3.ZERO
 
-const WORLD_SHADER := "res://shaders/world_encode.gdshader"
+const DEFAULT_MATERIAL := "res://resources/glyphs/glyph_surface_material.tres"
 
 var _cells: Node3D
 var _bounds: Node3D
@@ -36,8 +40,6 @@ func _ready() -> void:
 		legend = MapLegend.new()
 	if world_config == null:
 		world_config = WorldConfig.new()
-	if hazard_fx == null:
-		hazard_fx = HazardFxConfig.new()
 	set_process(false)
 	map_id = _id_from_path(map_path)
 	if auto_load and map_path != "":
@@ -125,8 +127,8 @@ func build(map: MapData) -> void:
 		legend = MapLegend.new()
 	if world_config == null:
 		world_config = WorldConfig.new()
-	if hazard_fx == null:
-		hazard_fx = HazardFxConfig.new()
+	if surface_material == null:
+		surface_material = load(DEFAULT_MATERIAL) as Material
 	data = map
 	_clear()
 	spawn_position = cell_to_world(map.spawn_cell)
@@ -142,9 +144,9 @@ func cell_to_world(cell: Vector2i) -> Vector3:
 	return Vector3((cell.x + 0.5) * size, 0.0, (cell.y + 0.5) * size)
 
 
-## Meshes that draw a cell (empty array for none).
-func visuals_at(cell: Vector2i) -> Array:
-	return visuals.get(cell, [])
+## True when the cell is drawn (not void, inside the map).
+func is_drawn(cell: Vector2i) -> bool:
+	return drawn_cells.has(cell)
 
 
 ## Cell containing a world position.
@@ -157,13 +159,6 @@ func _id_from_path(path: String) -> StringName:
 	return StringName(path.get_file().get_basename())
 
 
-func _register(cell: Vector2i, mesh: MeshInstance3D, kind: StringName) -> void:
-	mesh.set_meta(&"kind", kind)
-	if not visuals.has(cell):
-		visuals[cell] = []
-	visuals[cell].append(mesh)
-
-
 func _failed(message: String) -> MapData:
 	push_error("[MapLoader] " + message)
 	var map := MapData.new()
@@ -172,7 +167,10 @@ func _failed(message: String) -> MapData:
 
 
 func _clear() -> void:
-	visuals.clear()
+	drawn_cells.clear()
+	if world_mesh != null:
+		world_mesh.free()
+		world_mesh = null
 	if _cells != null:
 		_cells.free()
 	if _bounds != null:
@@ -186,14 +184,15 @@ func _clear() -> void:
 
 
 func _build_geometry(map: MapData) -> void:
-	var wall_mat: ShaderMaterial = _world_material(MaterialIds.WALL, world_config.wall_luminance)
-	var floor_mat: ShaderMaterial = _world_material(MaterialIds.FLOOR, world_config.floor_luminance)
-	var item_mat: ShaderMaterial = _world_material(MaterialIds.ITEM, -1.0, world_config.item_luminance)
-	var spike_mat: ShaderMaterial = _world_material(MaterialIds.SPIKES, -1.0, hazard_fx.spike_base_l,
-			hazard_fx.spike_pulse_amp, hazard_fx.spike_pulse_hz)
-	var corrupt_mat: ShaderMaterial = _world_material(MaterialIds.CORRUPT, -1.0, hazard_fx.corrupt_base_l,
-			hazard_fx.corrupt_l_amp, hazard_fx.corrupt_l_hz)
-
+	var builder := WorldMeshBuilder.new()
+	var mesh: ArrayMesh = builder.build(map, world_config)
+	if mesh != null:
+		world_mesh = MeshInstance3D.new()
+		world_mesh.name = "WorldMesh"
+		world_mesh.mesh = mesh
+		world_mesh.material_override = surface_material
+		world_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(world_mesh)
 	for y in map.height:
 		var x: int = 0
 		while x < map.width:
@@ -201,25 +200,23 @@ func _build_geometry(map: MapData) -> void:
 			if type == MapLegend.VOID:
 				x += 1
 				continue
-			# Walls: merge horizontal runs into one body each.
+			# Walls: merge horizontal runs into one collision body each.
 			if type == MapLegend.WALL:
 				var run: int = _run_length(map, x, y, MapLegend.WALL)
-				_cells.add_child(_make_wall(x, y, run, wall_mat))
+				for i in run:
+					drawn_cells[Vector2i(x + i, y)] = true
+				_cells.add_child(_make_wall(x, y, run))
 				x += run
 				continue
-			# Every non-wall, non-void cell has floor under it.
-			var floor_run: int = _run_floor(map, x, y)
-			for i in floor_run:
-				var cell := Vector2i(x + i, y)
-				_cells.add_child(_make_floor(cell, floor_mat))
-				var t: StringName = map.type_at(cell)
-				if t == MapLegend.ITEM:
-					_cells.add_child(_make_item(cell, item_mat))
-				elif t == MapLegend.SPIKES:
-					_cells.add_child(_make_spikes(cell, spike_mat))
-				elif t == MapLegend.CORRUPT:
-					_cells.add_child(_make_corrupt(cell, corrupt_mat))
-			x += floor_run
+			var cell := Vector2i(x, y)
+			drawn_cells[cell] = true
+			if type == MapLegend.ITEM:
+				_cells.add_child(_make_item(cell))
+			elif type == MapLegend.SPIKES:
+				_cells.add_child(_make_spikes(cell))
+			elif type == MapLegend.CORRUPT:
+				_cells.add_child(_make_corrupt(cell))
+			x += 1
 
 
 func _run_length(map: MapData, x: int, y: int, type: StringName) -> int:
@@ -227,39 +224,6 @@ func _run_length(map: MapData, x: int, y: int, type: StringName) -> int:
 	while x + n < map.width and map.type_at(Vector2i(x + n, y)) == type:
 		n += 1
 	return n
-
-
-func _run_floor(map: MapData, x: int, y: int) -> int:
-	var n: int = 0
-	while x + n < map.width:
-		var t: StringName = map.type_at(Vector2i(x + n, y))
-		if t == MapLegend.VOID or t == MapLegend.WALL:
-			break
-		n += 1
-	return n
-
-
-## A world material: it writes data for the ASCII post-process instead of a colour (see
-## shaders/world_encode.gdshader). `emissive_l` of 0 or more makes it emissive and pulsing.
-func _world_material(id: int, lit_l: float, emissive_l: float = -1.0, pulse_amp: float = 0.0, pulse_hz: float = 0.0) -> ShaderMaterial:
-	var mat := ShaderMaterial.new()
-	mat.shader = load(WORLD_SHADER) as Shader
-	mat.set_shader_parameter("material_id", id)
-	mat.set_shader_parameter("lit_l", lit_l)
-	mat.set_shader_parameter("emissive_l", emissive_l)
-	mat.set_shader_parameter("pulse_amp", pulse_amp)
-	mat.set_shader_parameter("pulse_hz", pulse_hz)
-	mat.set_shader_parameter("height_ref", world_config.wall_height)
-	return mat
-
-
-func _box_mesh(box_size: Vector3, mat: Material) -> MeshInstance3D:
-	var mesh := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = box_size
-	box.material = mat
-	mesh.mesh = box
-	return mesh
 
 
 func _collision_box(box_size: Vector3) -> CollisionShape3D:
@@ -270,7 +234,7 @@ func _collision_box(box_size: Vector3) -> CollisionShape3D:
 	return shape
 
 
-func _make_wall(x: int, y: int, run: int, mat: Material) -> StaticBody3D:
+func _make_wall(x: int, y: int, run: int) -> StaticBody3D:
 	var s: float = world_config.cell_size
 	var box_size := Vector3(run * s, world_config.wall_height, s)
 	var body := StaticBody3D.new()
@@ -278,24 +242,7 @@ func _make_wall(x: int, y: int, run: int, mat: Material) -> StaticBody3D:
 	body.position = Vector3((x + run * 0.5) * s, world_config.wall_height * 0.5, (y + 0.5) * s)
 	body.set_meta(&"cell_type", MapLegend.WALL)
 	body.add_child(_collision_box(box_size))
-	# One visual box per cell so single cells can be revealed; the collision stays merged.
-	for i in run:
-		var mesh := _box_mesh(Vector3(s, world_config.wall_height, s), mat)
-		mesh.name = "Visual_%d" % i
-		mesh.position.x = (i + 0.5 - run * 0.5) * s
-		_register(Vector2i(x + i, y), mesh, MapLegend.WALL)
-		body.add_child(mesh)
 	return body
-
-
-func _make_floor(cell: Vector2i, mat: Material) -> MeshInstance3D:
-	var s: float = world_config.cell_size
-	var t: float = world_config.floor_thickness
-	var mesh := _box_mesh(Vector3(s, t, s), mat)
-	mesh.name = "Floor_%d_%d" % [cell.x, cell.y]
-	mesh.position = Vector3((cell.x + 0.5) * s, -t * 0.5, (cell.y + 0.5) * s)
-	_register(cell, mesh, MapLegend.FLOOR)
-	return mesh
 
 
 func _make_cell_area(cell: Vector2i, type: StringName, group: StringName, height: float) -> MapCell:
@@ -312,51 +259,19 @@ func _make_cell_area(cell: Vector2i, type: StringName, group: StringName, height
 	return area
 
 
-func _make_item(cell: Vector2i, mat: Material) -> MapCell:
-	var area := _make_cell_area(cell, MapLegend.ITEM, &"map_items", world_config.item_height)
-	var edge: float = world_config.cell_size * world_config.item_size_ratio
-	var mesh := _box_mesh(Vector3(edge, edge, edge), mat)
-	mesh.position.y = world_config.item_height
-	mesh.rotation.y = PI * 0.25
-	_register(cell, mesh, MapLegend.ITEM)
-	area.add_child(mesh)
-	return area
+func _make_item(cell: Vector2i) -> MapCell:
+	return _make_cell_area(cell, MapLegend.ITEM, &"map_items", world_config.item_height)
 
 
-func _make_spikes(cell: Vector2i, mat: Material) -> MapCell:
+func _make_spikes(cell: Vector2i) -> MapCell:
 	var area := _make_cell_area(cell, MapLegend.SPIKES, &"map_hazards", world_config.spike_height)
 	area.add_to_group(&"map_spikes")
-	var n: int = world_config.spike_grid
-	var sub: float = world_config.cell_size / float(n)
-	for ix in n:
-		for iz in n:
-			var cone := MeshInstance3D.new()
-			var cyl := CylinderMesh.new()
-			cyl.top_radius = 0.0
-			cyl.bottom_radius = sub * world_config.spike_radius_ratio
-			cyl.height = world_config.spike_height
-			cyl.radial_segments = 8
-			cyl.rings = 1
-			cyl.material = mat
-			cone.mesh = cyl
-			_register(cell, cone, MapLegend.SPIKES)
-			cone.position = Vector3((ix + 0.5) * sub - world_config.cell_size * 0.5,
-					world_config.spike_height * 0.5, (iz + 0.5) * sub - world_config.cell_size * 0.5)
-			area.add_child(cone)
 	return area
 
 
-func _make_corrupt(cell: Vector2i, mat: Material) -> MapCell:
+func _make_corrupt(cell: Vector2i) -> MapCell:
 	var area := _make_cell_area(cell, MapLegend.CORRUPT, &"map_hazards", world_config.corrupt_height)
 	area.add_to_group(&"map_corrupt")
-	var quad := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(world_config.cell_size, world_config.cell_size)
-	plane.material = mat
-	quad.mesh = plane
-	quad.position.y = world_config.corrupt_height
-	_register(cell, quad, MapLegend.CORRUPT)
-	area.add_child(quad)
 	return area
 
 

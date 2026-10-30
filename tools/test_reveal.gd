@@ -6,6 +6,7 @@ extends SceneTree
 
 const PHASE_PLAYING := 1
 ## MapReveal.CellState values (not referenced by name: the script needs the SignalBus autoload at compile time).
+const CELL_HIDDEN := 0
 const CELL_MEMORY := 1
 const CELL_SEEN := 2
 const Support := preload("res://tools/test_support.gd")
@@ -54,41 +55,25 @@ func _wait(seconds: float) -> void:
 	await create_timer(seconds).timeout
 
 
-## True when every mesh of the cell is visible / hidden.
-func _all_visible(loader: MapLoader, cell: Vector2i) -> bool:
-	for m: MeshInstance3D in loader.visuals_at(cell):
-		if not m.visible:
-			return false
-	return true
+## The world is one merged mesh: a cell is hidden when its mask texel draws nothing (brightness 0).
+func _all_hidden(_loader: MapLoader, cell: Vector2i) -> bool:
+	return _reveal.call("state_of", cell) == CELL_HIDDEN and (_reveal.call("cell_look", cell) as Vector3).x == 0.0 			and (_reveal.call("mask_at", cell) as Color).r == 0.0
 
 
-func _all_hidden(loader: MapLoader, cell: Vector2i) -> bool:
-	for m: MeshInstance3D in loader.visuals_at(cell):
-		if m.visible:
-			return false
-	return true
-
-
-## A seen cell: meshes visible, and either still animating its reveal or settled at the full
-## look (brightness 1, seen fraction 1, no glint) in the reveal mask.
-func _normal(loader: MapLoader, cell: Vector2i) -> bool:
-	for m: MeshInstance3D in loader.visuals_at(cell):
-		if not m.visible:
-			return false
+## A seen cell: drawn by the mask (brightness above 0 or still animating), and either still animating
+## its reveal or settled at the full look (brightness 1, seen fraction 1, no glint) in the reveal mask.
+func _normal(_loader: MapLoader, cell: Vector2i) -> bool:
 	if _reveal.call("state_of", cell) != CELL_SEEN:
 		return false
 	var look: Vector3 = _reveal.call("cell_look", cell)
-	return _reveal.call("is_animating", cell) or look.is_equal_approx(Vector3(1.0, 1.0, 0.0))
+	return _reveal.call("is_animating", cell) or (look.is_equal_approx(Vector3(1.0, 1.0, 0.0)) and (_reveal.call("mask_at", cell) as Color).r > 0.0)
 
 
-## A remembered cell: meshes visible, and in the mask fully remembered (brightness 1, seen fraction 0).
-func _memory(loader: MapLoader, cell: Vector2i) -> bool:
-	for m: MeshInstance3D in loader.visuals_at(cell):
-		if not m.visible:
-			return false
+## A remembered cell: in the mask fully remembered (brightness 1, seen fraction 0), so it is drawn dim.
+func _memory(_loader: MapLoader, cell: Vector2i) -> bool:
 	if _reveal.call("state_of", cell) != CELL_MEMORY:
 		return false
-	return (_reveal.call("cell_look", cell) as Vector3).is_equal_approx(Vector3(1.0, 0.0, 0.0))
+	return (_reveal.call("cell_look", cell) as Vector3).is_equal_approx(Vector3(1.0, 0.0, 0.0)) and (_reveal.call("mask_at", cell) as Color).r > 0.0
 
 
 func _dist(loader: MapLoader, cell: Vector2i, pos: Vector3) -> float:
@@ -115,7 +100,7 @@ func _run() -> void:
 	var reveal: Node = main.get_node("MapReveal")
 	_reveal = reveal
 	var progress: PersistentProgress = main.get_node("SaveService").get("progress")
-	# Floor on, so every kind of cell takes part in the checks below (the shipped default is off).
+	# Floor on (the shipped default), so every kind of cell takes part in the checks below.
 	var cfg: RevealConfig = (reveal.get("config") as RevealConfig).duplicate()
 	cfg.reveal_floor = true
 	reveal.set("config", cfg)
@@ -130,7 +115,7 @@ func _run() -> void:
 	# --- Run start: only the radius around the spawn is visible. ---
 	var hidden_kinds: Dictionary = {}
 	var near_count: int = 0
-	for cell: Vector2i in loader.visuals:
+	for cell: Vector2i in loader.drawn_cells:
 		if _dist(loader, cell, spawn) <= radius:
 			near_count += 1
 			_check(_normal(loader, cell), "cell %s near the spawn should be visible and normal" % cell)
@@ -153,7 +138,7 @@ func _run() -> void:
 	var travelled: float = spawn.distance_to(here)
 	_check(travelled > 3.0, "player barely moved (%f)" % travelled)
 	var run1: Dictionary = {}
-	for cell: Vector2i in loader.visuals:
+	for cell: Vector2i in loader.drawn_cells:
 		if _dist(loader, cell, here) <= radius or _dist(loader, cell, spawn) <= radius:
 			_check(_normal(loader, cell), "cell %s near the path should be visible" % cell)
 			run1[cell] = true
@@ -172,7 +157,7 @@ func _run() -> void:
 	_check(runs.get("phase") == PHASE_PLAYING and runs.get("run_count") == 2, "second run should be playing")
 	var seen_again: int = 0
 	var memory_cells: Array[Vector2i] = []
-	for cell: Vector2i in loader.visuals:
+	for cell: Vector2i in loader.drawn_cells:
 		var near: bool = _dist(loader, cell, spawn) <= radius
 		if near:
 			_check(_normal(loader, cell), "run 2: cell %s near spawn should be normal" % cell)
@@ -241,8 +226,13 @@ func _run() -> void:
 	small.reveal_floor = false
 	reveal.call("begin_run")
 	reveal.call("reveal_around", loader.spawn_position)
-	_check(_all_hidden(loader, s), "floor must stay hidden when reveal_floor is off")
+	_check(_reveal.call("state_of", s) == CELL_SEEN and (_reveal.call("mask_at", s) as Color).a == 0.0, "floor must stay hidden (mask floor flag 0) when reveal_floor is off")
 	_check(_normal(loader, s + Vector2i(1, -1)), "walls still reveal when the floor is off")
+	_check((_reveal.call("mask_at", s + Vector2i(1, -1)) as Color).r > 0.0, "a revealed wall must be drawn when the floor is off")
+	small.reveal_floor = true
+	reveal.call("begin_run")
+	reveal.call("reveal_around", loader.spawn_position)
+	_check((_reveal.call("mask_at", s) as Color).a == 1.0, "floor flag must be 1 when reveal_floor is on")
 
 	main.queue_free()
 	await process_frame

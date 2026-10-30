@@ -48,6 +48,19 @@ func _init() -> void:
 	var top_down := CameraViewConfig.new()
 	ok = _save(top_down, "camera_top_down.tres") and ok
 
+	var iso := CameraViewConfig.new()
+	iso.orthographic = true
+	iso.size = 12.6
+	iso.pitch_degrees = -35.264
+	iso.yaw_degrees = 45.0
+	iso.look_height = 0.6
+	iso.distance = 30.0
+	iso.near = 1.0
+	iso.far = 80.0
+	ok = _save(iso, "camera_isometric.tres") and ok
+
+	ok = _save(GlyphWorldConfig.new(), "glyph_world_config.tres") and ok
+
 	var tilted := CameraViewConfig.new()
 	tilted.orthographic = false
 	tilted.pitch_degrees = -55.0

@@ -1,0 +1,28 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://shaders/glyph_surface.gdshader" id="1_wjmmm"]
+[ext_resource type="Texture2D" path="res://resources/glyphs/glyph_atlas.png" id="2_am68w"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_wjmmm")
+shader_parameter/glyph_atlas = ExtResource("2_am68w")
+shader_parameter/pal_dark = null
+shader_parameter/pal_bright = null
+shader_parameter/emit = null
+shader_parameter/corrupt_hue_a = null
+shader_parameter/corrupt_hue_b = null
+shader_parameter/cell_screen = null
+shader_parameter/cell_aspect = null
+shader_parameter/glyph_crop = null
+shader_parameter/wall_height = null
+shader_parameter/light_pos = null
+shader_parameter/light_col = null
+shader_parameter/light_count = null
+shader_parameter/ambient_level = null
+shader_parameter/tint_mix = null
+shader_parameter/memory_dim = null
+shader_parameter/memory_saturation = null
+shader_parameter/glint_color = null
+shader_parameter/cut_center = null
+shader_parameter/cut_params = null

@@ -1,7 +1,8 @@
 class_name CameraRig
 extends Node3D
 ## Locked camera rig. Takes no player input; the view is driven only by its
-## CameraViewConfig. Follows an optional target on the XZ plane.
+## CameraViewConfig (isometric orthographic in the game). Follows an optional target on the XZ plane,
+## looking at a point `look_height` above the floor.
 
 @export var view_config: CameraViewConfig
 @export var follow_target: Node3D
@@ -19,7 +20,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if follow_target == null:
 		return
-	var goal := Vector3(follow_target.global_position.x, 0.0, follow_target.global_position.z)
+	var goal: Vector3 = _goal()
 	if view_config.follow_smoothing <= 0.0:
 		global_position = goal
 	else:
@@ -29,8 +30,11 @@ func _process(delta: float) -> void:
 ## Applies a view profile. This is the only way the view changes.
 func apply_view(config: CameraViewConfig) -> void:
 	view_config = config
-	rotation = Vector3(deg_to_rad(config.pitch_degrees), 0.0, 0.0)
+	rotation = Vector3(deg_to_rad(config.pitch_degrees), deg_to_rad(config.yaw_degrees), 0.0)
 	camera.position = Vector3(0.0, 0.0, config.distance)
+	camera.near = config.near
+	camera.far = config.far
+	position.y = config.look_height
 	if config.orthographic:
 		camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 		camera.size = config.size
@@ -42,7 +46,11 @@ func apply_view(config: CameraViewConfig) -> void:
 ## Jumps straight to the follow target (no smoothing), e.g. after a respawn.
 func snap_to_target() -> void:
 	if follow_target != null:
-		global_position = Vector3(follow_target.global_position.x, 0.0, follow_target.global_position.z)
+		global_position = _goal()
+
+
+func _goal() -> Vector3:
+	return Vector3(follow_target.global_position.x, view_config.look_height, follow_target.global_position.z)
 
 
 func _on_player_spawned(_world_position: Vector3) -> void:

@@ -100,8 +100,9 @@ func _run() -> void:
 	_check(player.global_position.distance_to(spawn) < 0.5, "player should be at the spawn")
 
 	# --- Spikes: unrevealed, still lethal; end once. ---
-	for m: MeshInstance3D in loader.visuals_at(spike_cell):
-		_check(not m.visible, "spike cell should be hidden (unrevealed) before the player touches it")
+	var reveal: Node = main.get_node("MapReveal")
+	_check(reveal.call("state_of", spike_cell) == 0 and (reveal.call("mask_at", spike_cell) as Color).r == 0.0,
+			"spike cell should be hidden (unrevealed, mask draws nothing) before the player touches it")
 	_put(player, loader, spike_cell)
 	await _wait(0.2)
 	_check(_requests == [&"spikes"], "spikes should request exactly one end, got %s" % [_requests])

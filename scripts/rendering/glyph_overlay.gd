@@ -74,7 +74,7 @@ func _process(delta: float) -> void:
 	_update_scramble(level, delta)
 	_label.modulate = Color(1.0, 1.0, 1.0, lerpf(1.0, fx_config.fade_min_alpha, level))
 	_settings.font_color = player_config.glyph_color.lerp(_tint, level * fx_config.tint_strength)
-	var screen_pos: Vector2 = camera_rig.camera.unproject_position(player.global_position)
+	var screen_pos: Vector2 = camera_rig.camera.unproject_position(player.global_position + Vector3.UP * player_config.glyph_height)
 	_label.position = (screen_pos - _label.size * 0.5 + _jitter).round()
 
 

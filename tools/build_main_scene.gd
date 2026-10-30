@@ -1,11 +1,12 @@
 extends SceneTree
-## Rebuilds res://main.tscn: map loader, player, locked camera rig, overlays, run manager.
-## Run tools/build_resources.gd first. Idempotent.
+## Rebuilds res://main.tscn: map loader (glyph-surface world), player, isometric camera rig, glyph world
+## view, overlays, run manager. Run tools/build_resources.gd and tools/build_glyph_material.gd first. Idempotent.
 ## Usage: godot --headless --path . -s tools/build_main_scene.gd
 
 const SCENE_PATH := "res://main.tscn"
 const CFG := "res://resources/config/"
 const DISPLAY_CONFIG := "res://resources/config/display_config.tres"
+const GLYPH_MATERIAL := "res://resources/glyphs/glyph_surface_material.tres"
 const NARRATION_DIR := "res://resources/narration/"
 const MAP_PATH := "res://data/maps/m1_awakening.txt"
 const OVERLAY_LAYER := 10
@@ -30,14 +31,9 @@ func _build() -> void:
 	loader.name = "MapLoader"
 	loader.legend = load(CFG + "map_legend.tres") as MapLegend
 	loader.world_config = load(CFG + "world_config.tres") as WorldConfig
-	loader.hazard_fx = load(CFG + "hazard_fx_config.tres") as HazardFxConfig
+	loader.surface_material = load(GLYPH_MATERIAL) as Material
 	loader.map_path = MAP_PATH
 	_add(world, loader)
-
-	var light := DirectionalLight3D.new()
-	light.name = "Sun"
-	light.rotation_degrees = Vector3(-60.0, 30.0, 0.0)
-	_add(world, light)
 
 	var save: Node = load("res://scripts/core/save_service.gd").new()
 	save.name = "SaveService"
@@ -55,10 +51,15 @@ func _build() -> void:
 
 	var rig: Node3D = load("res://scripts/rendering/camera_rig.gd").new()
 	rig.name = "CameraRig"
-	rig.set("view_config", load(CFG + "camera_top_down.tres"))
+	rig.set("view_config", load(CFG + "camera_isometric.tres"))
 	_add(root, rig)
 	var cam := Camera3D.new()
 	cam.name = "Camera3D"
+	var env := Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.008, 0.01, 0.018)
+	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+	cam.environment = env
 	_add(rig, cam)
 
 	var player_cfg: PlayerConfig = load(CFG + "player_config.tres")
@@ -92,29 +93,16 @@ func _build() -> void:
 	discovery.set("config", player_cfg)
 	_add(root, discovery)
 
-	# Layer 0 post-process: reads the data-encoded 3D render and replaces it with glyphs.
-	var ascii: CanvasLayer = load("res://scripts/rendering/ascii_post_process.gd").new()
-	ascii.name = "AsciiPostProcess"
-	ascii.layer = 0
-	ascii.set("config", load(CFG + "ascii_config.tres"))
-	ascii.set("display_config", load(DISPLAY_CONFIG))
-	ascii.set("palette", load(CFG + "palette_config.tres"))
-	ascii.set("light_config", load(CFG + "light_config.tres"))
-	ascii.set("hazard_fx", load(CFG + "hazard_fx_config.tres"))
-	ascii.set("glyph_fx", load(CFG + "glyph_fx_config.tres"))
-	ascii.set("camera_rig", rig)
-	ascii.set("player", player)
-	_add(root, ascii)
-	var screen := ColorRect.new()
-	screen.name = "Screen"
-	screen.set_anchors_preset(Control.PRESET_FULL_RECT)
-	screen.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var mat := ShaderMaterial.new()
-	mat.shader = load("res://shaders/ascii_post.gdshader")
-	screen.material = mat
-	_add(ascii, screen)
+	# The glyph-surface world feeds its material (lights, cut-away). No full-screen post-process.
+	var glyph_view: Node = load("res://scripts/rendering/glyph_world_view.gd").new()
+	glyph_view.name = "GlyphWorldView"
+	glyph_view.set("config", load(CFG + "glyph_world_config.tres"))
+	glyph_view.set("map_loader", loader)
+	glyph_view.set("player", player)
+	glyph_view.set("map_reveal", reveal)
+	_add(root, glyph_view)
 
-	# Layer 10 overlay: crisp glyphs the ASCII shader must not touch (decision-001).
+	# Layer 10 overlay: the player's crisp glyph, above the 3D world (decision-001).
 	var overlay: CanvasLayer = load("res://scripts/rendering/glyph_overlay.gd").new()
 	overlay.name = "GlyphOverlay"
 	overlay.layer = OVERLAY_LAYER
@@ -125,7 +113,7 @@ func _build() -> void:
 	overlay.set("display_config", load(DISPLAY_CONFIG))
 	_add(root, overlay)
 
-	# Narration text: above the ASCII shader and above the intro veil (decision-001).
+	# Narration text: above the world and above the intro veil (decision-001).
 	var narration: CanvasLayer = load("res://scripts/narrator/narration_overlay.gd").new()
 	narration.name = "NarrationOverlay"
 	narration.layer = narrator_cfg.overlay_layer

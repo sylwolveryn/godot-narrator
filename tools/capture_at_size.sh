@@ -13,4 +13,4 @@ mkdir -p "$out"
 printf '[display]\nwindow/size/viewport_width=%s\nwindow/size/viewport_height=%s\nwindow/size/mode=0\n' "$w" "$h" > override.cfg
 trap 'rm -f override.cfg' EXIT
 if [ "$#" -gt 0 ]; then extra=(-- "$@"); else extra=(); fi
-timeout 300 godot --path . --fixed-fps 30 --quit-after "$frames" --write-movie "$out/f.png" -s "$tool" "${extra[@]}"
+timeout 300 godot --path . --fixed-fps 30 --max-fps 30 --quit-after "$frames" --write-movie "$out/f.png" -s "$tool" "${extra[@]}"

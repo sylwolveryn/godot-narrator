@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CameraViewConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/camera_view_config.gd" id="1_7dtr7"]
+
+[resource]
+script = ExtResource("1_7dtr7")
+size = 12.6
+pitch_degrees = -35.264
+yaw_degrees = 45.0
+look_height = 0.6
+near = 1.0
+far = 80.0
+distance = 30.0

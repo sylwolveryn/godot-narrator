@@ -8,10 +8,12 @@ extends Node
 ## SaveService records them. This node only reads persistent data.
 ##
 ## Presentation: the look of every cell lives in a small mask texture (one texel per map cell,
-## the global shader parameter `reveal_mask`) read by the world shader:
+## the global shader parameter `reveal_mask`) read by the glyph-surface shader:
 ##   r = reveal brightness / 1.25 (grows from 0 with an overshoot, staggered by distance),
 ##   g = seen fraction (0 = remembered, 1 = seen; a remembered cell turns into a seen one over
-##       RevealConfig.memory_to_seen_duration), b = cyan glint at RevealConfig.reveal_glint_at.
+##       RevealConfig.memory_to_seen_duration), b = cyan glint at RevealConfig.reveal_glint_at,
+##   a = 1 when the floor of the cell may be shown (RevealConfig.reveal_floor), else 0.
+## The world is one merged mesh, so nothing is shown or hidden per node: a cell with r = 0 draws nothing.
 
 enum CellState { HIDDEN, MEMORY, SEEN }
 
@@ -96,6 +98,13 @@ func cell_look(cell: Vector2i) -> Vector3:
 	return Vector3(_brightness[i], _seen[i], _glint[i])
 
 
+## The raw mask texel of a cell, exactly what the shader reads (see the class comment for the channels).
+func mask_at(cell: Vector2i) -> Color:
+	if _index(cell) < 0:
+		return Color(0.0, 0.0, 0.0, 0.0)
+	return _mask.get_pixel(cell.x, cell.y)
+
+
 ## True while a cell is still animating its reveal or its memory-to-seen change.
 func is_animating(cell: Vector2i) -> bool:
 	return _animations.has(cell)
@@ -115,9 +124,8 @@ func begin_run() -> void:
 		var stored: PackedVector2Array = save_service.get_revealed_cells(map_loader.map_id)
 		for v in stored:
 			_remembered[Vector2i(int(v.x), int(v.y))] = true
-	for cell: Vector2i in map_loader.visuals:
+	for cell: Vector2i in map_loader.drawn_cells:
 		var state: CellState = state_of(cell)
-		_apply(cell, state)
 		_set_look(cell, 1.0 if state == CellState.MEMORY else 0.0, 0.0, 0.0)
 	_flush()
 
@@ -132,7 +140,7 @@ func reveal_around(world_position: Vector3) -> void:
 	for dy in range(-span, span + 1):
 		for dx in range(-span, span + 1):
 			var cell := centre + Vector2i(dx, dy)
-			if seen_this_run.has(cell) or not map_loader.visuals.has(cell):
+			if seen_this_run.has(cell) or not map_loader.is_drawn(cell):
 				continue
 			var cell_centre: Vector3 = map_loader.cell_to_world(cell)
 			var distance: float = Vector2(cell_centre.x - world_position.x, cell_centre.z - world_position.z).length()
@@ -140,7 +148,6 @@ func reveal_around(world_position: Vector3) -> void:
 				continue
 			var from_memory: bool = _remembered.has(cell)
 			seen_this_run[cell] = true
-			_apply(cell, CellState.SEEN)
 			_start_animation(cell, from_memory, distance / size)
 			_announce_kind(cell)
 			if not from_memory:
@@ -169,16 +176,6 @@ func _on_run_ended(_cause: StringName) -> void:
 
 func _on_map_built(_data: MapData) -> void:
 	begin_run()
-
-
-## Shows or hides the meshes of a cell. How it looks is decided by the mask, not the mesh.
-func _apply(cell: Vector2i, state: CellState) -> void:
-	for mesh: MeshInstance3D in map_loader.visuals_at(cell):
-		var kind: StringName = mesh.get_meta(&"kind", &"")
-		if kind == MapLegend.FLOOR and not config.reveal_floor:
-			mesh.visible = false
-			continue
-		mesh.visible = state != CellState.HIDDEN
 
 
 ## Announces, once per run, the first revealed cell of each type that has a narration event.
@@ -211,7 +208,7 @@ func _resize_mask(size: Vector2i) -> void:
 	_brightness.fill(0.0)
 	_seen.fill(0.0)
 	_glint.fill(0.0)
-	_mask.fill(Color(0.0, 0.0, 0.0, 1.0))
+	_mask.fill(Color(0.0, 0.0, 0.0, 1.0 if config.reveal_floor else 0.0))
 	_dirty = true
 
 
@@ -222,7 +219,7 @@ func _set_look(cell: Vector2i, brightness: float, seen: float, glint: float) -> 
 	_brightness[i] = brightness
 	_seen[i] = seen
 	_glint[i] = glint
-	var encoded := Color(clampf(brightness / MASK_BRIGHTNESS_MAX, 0.0, 1.0), clampf(seen, 0.0, 1.0), clampf(glint, 0.0, 1.0), 1.0)
+	var encoded := Color(clampf(brightness / MASK_BRIGHTNESS_MAX, 0.0, 1.0), clampf(seen, 0.0, 1.0), clampf(glint, 0.0, 1.0), 1.0 if config.reveal_floor else 0.0)
 	_mask.set_pixel(cell.x, cell.y, encoded)
 	_dirty = true
 

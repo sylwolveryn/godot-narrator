@@ -1,0 +1,164 @@
+class_name WorldMeshBuilder
+extends RefCounted
+## Builds the whole map as ONE ArrayMesh for the glyph-surface material (one surface, one draw call).
+## Per vertex: COLOR.r = GlyphSurfaceType id / TYPE_DIV, UV = the map cell the vertex belongs to (the
+## shader reads the reveal mask with it), NORMAL = the flat face normal.
+## Every non-void cell has a floor quad (under walls it shows where the cut-away opens a wall).
+## Only the faces an isometric camera at +x,+z (yaw 45) can see are emitted: tops, +x faces, +z faces.
+
+## Triangle vertex order of a quad (a, b, c, d).
+const QUAD_ORDER: Array[int] = [0, 1, 2, 0, 2, 3]
+const CORRUPT_SEED_A: float = 12.9898
+const CORRUPT_SEED_B: float = 78.233
+const CORRUPT_SEED_SALT: float = 37.719
+const CORRUPT_HASH_MUL: float = 43758.5453
+
+var _config: WorldConfig
+var _positions: PackedVector3Array = PackedVector3Array()
+var _normals: PackedVector3Array = PackedVector3Array()
+var _colors: PackedColorArray = PackedColorArray()
+var _uvs: PackedVector2Array = PackedVector2Array()
+var _cell: Vector2i = Vector2i.ZERO
+
+
+## Mesh of the whole map; null for an empty map.
+func build(map: MapData, config: WorldConfig) -> ArrayMesh:
+	_config = config
+	_positions.clear()
+	_normals.clear()
+	_colors.clear()
+	_uvs.clear()
+	if map.is_empty():
+		return null
+	for y in map.height:
+		for x in map.width:
+			_cell = Vector2i(x, y)
+			var type: StringName = map.type_at(_cell)
+			if type == MapLegend.VOID:
+				continue
+			_floor()
+			if type == MapLegend.WALL:
+				_wall(map)
+				continue
+			match type:
+				MapLegend.ITEM:
+					_item()
+				MapLegend.SPIKES:
+					_spikes()
+				MapLegend.CORRUPT:
+					_corruption()
+	if _positions.is_empty():
+		return null
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = _positions
+	arrays[Mesh.ARRAY_NORMAL] = _normals
+	arrays[Mesh.ARRAY_COLOR] = _colors
+	arrays[Mesh.ARRAY_TEX_UV] = _uvs
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+## Number of triangles of the last build.
+func triangle_count() -> int:
+	return _positions.size() / 3
+
+
+func _origin() -> Vector3:
+	return Vector3(_cell.x, 0.0, _cell.y) * _config.cell_size
+
+
+func _floor() -> void:
+	var o: Vector3 = _origin()
+	var s: float = _config.cell_size
+	_quad(o, o + Vector3(s, 0, 0), o + Vector3(s, 0, s), o + Vector3(0, 0, s), Vector3.UP, GlyphSurfaceType.FLOOR)
+
+
+func _wall(map: MapData) -> void:
+	var s: float = _config.cell_size
+	var o: Vector3 = _origin() + Vector3(s, 0, s) * 0.5
+	_box(o.x, o.z, 0.0, _config.wall_height, s * 0.5, s * 0.5, GlyphSurfaceType.WALL,
+			map.type_at(_cell + Vector2i(1, 0)) != MapLegend.WALL, map.type_at(_cell + Vector2i(0, 1)) != MapLegend.WALL)
+
+
+func _item() -> void:
+	var s: float = _config.cell_size
+	var c: Vector3 = _origin() + Vector3(s, 0, s) * 0.5
+	var half: float = _config.item_pillar_half * s
+	_box(c.x, c.z, 0.0, _config.item_pillar_height, half, half, GlyphSurfaceType.ITEM, true, true)
+
+
+func _spikes() -> void:
+	var n: int = _config.spike_pyramid_grid
+	var s: float = _config.cell_size
+	var o: Vector3 = _origin()
+	var half: float = _config.spike_pyramid_half * s
+	for ix in n:
+		for iz in n:
+			var base := Vector3(o.x + (ix + 0.5) * s / n, 0.0, o.z + (iz + 0.5) * s / n)
+			var apex: Vector3 = base + Vector3(0, _config.spike_pyramid_height, 0)
+			var corners: Array[Vector3] = [
+				base + Vector3(-half, 0, -half), base + Vector3(half, 0, -half),
+				base + Vector3(half, 0, half), base + Vector3(-half, 0, half)]
+			for i in 4:
+				_tri(corners[i], corners[(i + 1) % 4], apex, base, GlyphSurfaceType.SPIKES)
+
+
+func _corruption() -> void:
+	var n: int = _config.corrupt_grid
+	var s: float = _config.cell_size
+	var o: Vector3 = _origin()
+	var half: float = _config.corrupt_column_half * s
+	for sx in n:
+		for sz in n:
+			var sub := Vector2i(_cell.x * n + sx, _cell.y * n + sz)
+			if _hash(sub, 0.0) < _config.corrupt_gap_chance:
+				continue
+			var height: float = _config.corrupt_column_min + _config.corrupt_column_span * _hash(sub, 1.0) * _hash(sub, 2.0)
+			_box(o.x + (sx + 0.5) * s / n, o.z + (sz + 0.5) * s / n, 0.0, height, half, half, GlyphSurfaceType.CORRUPT, true, true)
+
+
+## Deterministic hash in 0..1 of a sub-cell (stable across builds and runs).
+func _hash(c: Vector2i, salt: float) -> float:
+	return fposmod(sin(float(c.x) * CORRUPT_SEED_A + float(c.y) * CORRUPT_SEED_B + salt * CORRUPT_SEED_SALT) * CORRUPT_HASH_MUL, 1.0)
+
+
+## Box with a top and optionally the +x / +z faces (the only side faces the camera can see).
+func _box(cx: float, cz: float, y0: float, y1: float, hx: float, hz: float, type: int, face_x: bool, face_z: bool) -> void:
+	_quad(Vector3(cx - hx, y1, cz - hz), Vector3(cx + hx, y1, cz - hz), Vector3(cx + hx, y1, cz + hz), Vector3(cx - hx, y1, cz + hz), Vector3.UP, type)
+	if face_x:
+		_quad(Vector3(cx + hx, y0, cz - hz), Vector3(cx + hx, y0, cz + hz), Vector3(cx + hx, y1, cz + hz), Vector3(cx + hx, y1, cz - hz), Vector3.RIGHT, type)
+	if face_z:
+		_quad(Vector3(cx - hx, y0, cz + hz), Vector3(cx + hx, y0, cz + hz), Vector3(cx + hx, y1, cz + hz), Vector3(cx - hx, y1, cz + hz), Vector3.BACK, type)
+
+
+func _vertex(p: Vector3, n: Vector3, type: int) -> void:
+	_positions.append(p)
+	_normals.append(n)
+	_colors.append(Color(float(type) / GlyphSurfaceType.TYPE_DIV, 0.0, 0.0, 1.0))
+	_uvs.append(Vector2(_cell))
+
+
+## Quad with outward normal n, wound clockwise seen from outside (Godot's front face).
+func _quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, n: Vector3, type: int) -> void:
+	if (b - a).cross(c - a).dot(n) > 0.0:
+		var tmp: Vector3 = b
+		b = d
+		d = tmp
+	var corners: Array[Vector3] = [a, b, c, d]
+	for i in QUAD_ORDER:
+		_vertex(corners[i], n, type)
+
+
+## Triangle whose outward normal points away from `inside`.
+func _tri(a: Vector3, b: Vector3, c: Vector3, inside: Vector3, type: int) -> void:
+	var n: Vector3 = (b - a).cross(c - a).normalized()
+	if n.dot((a + b + c) / 3.0 - inside) < 0.0:
+		n = -n
+	if (b - a).cross(c - a).dot(n) > 0.0:
+		var tmp: Vector3 = b
+		b = c
+		c = tmp
+	for p in [a, b, c]:
+		_vertex(p, n, type)

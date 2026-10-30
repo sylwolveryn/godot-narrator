@@ -1,7 +1,8 @@
 class_name WorldConfig
 extends Resource
 ## Dimensions and look of the 3D world. Gameplay plane is XZ, y is up.
-## The world materials encode data for the ASCII post-process (see shaders/world_encode.gdshader).
+## Geometry values feed WorldMeshBuilder (glyph-surface world, task-031). The luminance values and
+## the cone/plane spike and corruption values are legacy (post-process world), removed with task-035.
 
 ## World units per map cell.
 @export var cell_size: float = 1.0
@@ -31,3 +32,20 @@ extends Resource
 @export_range(0.1, 1.0) var spike_radius_ratio: float = 0.4
 ## Height of the corrupting-glyph plane above the floor.
 @export var corrupt_height: float = 0.02
+
+@export_group("Glyph world geometry")
+## Item pillar: half width as a fraction of cell_size, and height.
+@export_range(0.05, 0.5) var item_pillar_half: float = 0.16
+@export var item_pillar_height: float = 0.95
+## Spike pyramids: grid per axis, half base as a fraction of cell_size, and height.
+@export_range(1, 4) var spike_pyramid_grid: int = 2
+@export_range(0.02, 0.25) var spike_pyramid_half: float = 0.13
+@export var spike_pyramid_height: float = 0.38
+## Corruption columns: grid per axis, half width as a fraction of cell_size.
+@export_range(1, 4) var corrupt_grid: int = 2
+@export_range(0.02, 0.25) var corrupt_column_half: float = 0.19
+## Chance (0..1) that a corruption sub-cell stays empty.
+@export_range(0.0, 1.0) var corrupt_gap_chance: float = 0.25
+## Corruption column height: min + random(0..1) * random(0..1) * span.
+@export var corrupt_column_min: float = 0.12
+@export var corrupt_column_span: float = 0.55
