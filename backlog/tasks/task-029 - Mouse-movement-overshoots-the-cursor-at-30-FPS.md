@@ -24,8 +24,8 @@ With the potato rule (--max-fps 30, physics 60 Hz), tools/test_input_movement.gd
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 tools/test_input_movement.gd passes with --max-fps 30 and without a cap
-- [ ] #2 Pointer movement stops at the cursor without overshoot or jitter at 30 FPS and 60 FPS
+- [x] #1 tools/test_input_movement.gd passes with --max-fps 30 and without a cap
+- [x] #2 Pointer movement stops at the cursor without overshoot or jitter at 30 FPS and 60 FPS
 <!-- AC:END -->
 
 ## Implementation Plan
