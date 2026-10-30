@@ -1,9 +1,11 @@
 ---
 id: TASK-021
 title: Fullscreen by default with resolution-independent scaling
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T17:45:00Z'
+updated_date: '2026-10-30T17:46:00Z'
 labels:
   - rendering
   - ux
