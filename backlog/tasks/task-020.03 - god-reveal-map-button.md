@@ -1,11 +1,11 @@
 ---
 id: TASK-020.03
 title: 'god: reveal map button'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T17:51:00Z'
+updated_date: '2026-10-30T17:52:00Z'
 labels:
   - tools
   - world
@@ -41,3 +41,9 @@ Testing late-game reveal and memory visuals should not need walking the whole ma
 <!-- SECTION:NOTES:BEGIN -->
 tools/dev_reveal_map.gd uses SaveService+MapLoader; refuses missing/corrupt save. tools/test_dev_reveal_map.gd PASS (temp save, 3 cases). Real run via god on copy of real save: 733 cells written, other fields kept; real save restored byte-identical.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented in god/ (core.py logic + god.py tkinter GUI); verified by 27 unittest cases, tools/test_dev_reveal_map.gd PASS, a GUI smoke run and a real start/warn/restart/close cycle (user save backed up and restored, md5 identical). See task notes for evidence.
+<!-- SECTION:FINAL_SUMMARY:END -->
