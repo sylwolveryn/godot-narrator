@@ -1,11 +1,11 @@
 ---
 id: TASK-001
 title: Project structure and core autoloads
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:29:00Z'
-updated_date: '2026-10-30T15:58:00Z'
+updated_date: '2026-10-30T16:00:00Z'
 labels:
   - core
 milestone: m-0
@@ -43,3 +43,9 @@ The project needs a folder layout and a single signal bus so that every later ta
 <!-- SECTION:NOTES:BEGIN -->
 Folders created (scripts/{core,world,player,rendering,narrator,ui}, resources/{config,narration}, data/maps, shaders, scenes; empty ones hold .gitkeep). scripts/core/signal_bus.gd registered as the only autoload in project.godot [autoload]. SignalBus holds signals only (run_started, run_ended, run_end_requested). Validation: boot 'godot --headless --path . --quit-after 60' prints 0 ERROR lines. Note: --check-only on scripts referencing SignalBus (run_manager.gd) reports 'Identifier not found: SignalBus' because autoloads are not registered in check-only mode; the same script compiles and runs fine in the full boot and in tools/test_run_manager.gd. Visual not verified (headless only).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added the M1 folder layout (scripts/{core,world,player,rendering,narrator,ui}, resources/{config,narration}, data/maps, shaders, scenes) and the single SignalBus autoload (signals only: run_started, run_ended, run_end_requested). Validated: headless boot has zero errors; godot-validator PASS. Note: --check-only reports a false "SignalBus not found" on scripts using the autoload; tool scripts defer work to the first process_frame for the same reason.
+<!-- SECTION:FINAL_SUMMARY:END -->
