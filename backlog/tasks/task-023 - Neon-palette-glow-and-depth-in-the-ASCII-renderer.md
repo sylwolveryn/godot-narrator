@@ -1,11 +1,11 @@
 ---
 id: TASK-023
 title: Neon palette, glow and depth in the ASCII renderer
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T20:35:00Z'
+updated_date: '2026-10-30T20:39:00Z'
 labels:
   - rendering
 milestone: m-2
@@ -53,3 +53,9 @@ Perf (tools/measure_perf.gd, 1920x1061 window, spikes+item+corruption in view): 
 Tuning deviations from spec defaults (documented in configs): light radii are glyph cells (12/24 instead of 6/11, to cover the 2-cell reveal radius), bg_pool_strength 0.22 (amber pool on empty background), bloom_strength 0.2 (0.5 filled corruption patches with solid fog), wall_luminance 0.75, hue_noise_detail 1.0 (extra field), atlas_font_scale 1.1. Overlay colours: PlayerConfig glyph #FFF6E6 + amber outline, narration #EAF2FF, intro wave cyan.
 Tests: all tools/test_*.gd PASS (test_reveal updated to assert the mask look: memory (1,0,0), seen (1,1,0), reveal overshoot peak <=1.15, starts dark); boot has 0 ERROR lines; progress.tres md5 unchanged (5935d363...). Not done: overlay (player/erosion/death/narration) morphing is task-025; floor is hidden by default (reveal_floor=false) so the floor palette row is built but not seen.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+World renderer rebuilt per docs/visual_direction.md: unshaded world materials encode material id / luminance / state; the post shader picks per-type glyph ramps from a GPU-baked SDF atlas and colours them from a palette LUT, with player light pool, own-cell halo, 4-neighbour bloom, wall rim glow, depth falloff, vignette and static dither. Encoding verified by tools/test_encoding.gd (non-headless, 147 cases). 60 FPS at 1920x1080 (GPU ~1.2 ms). Tuned defaults differ from the spec (light radii 12/24 cells, bloom 0.2). Density/brightness still short of the moodboard → task-026.
+<!-- SECTION:FINAL_SUMMARY:END -->
