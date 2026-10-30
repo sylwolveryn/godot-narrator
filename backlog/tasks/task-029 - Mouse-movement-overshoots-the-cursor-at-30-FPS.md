@@ -35,3 +35,9 @@ With the potato rule (--max-fps 30, physics 60 Hz), tools/test_input_movement.gd
 2. Add per-physics-step arrival clamp in Player so travel never exceeds the remaining distance to the cursor.
 3. Make the test deterministic (reachable target, cursor held on a fixed world point) and run it at both 30 FPS and uncapped.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+ROOT CAUSE: not a frame-rate bug in the arrival logic. The test aimed at spawn-area player z+1.0 (target z 14.93) but the wall at row 15 limits the body centre to z 14.65 (15 - body_radius 0.35); the player was simply stopped by the wall (z 14.649 == wall clearance) and the message 'overshot' was misleading (it was an undershoot). Where the player started that phase depends on timer-driven earlier phases, which differ per frame rate, so it passed uncapped. Also the camera follows the player, so a cursor left at a fixed screen point recedes in world space. Fix: test now starts from spawn, targets open floor 1 unit away, re-places the cursor on the same world point each physics frame, and measures worst overshoot past the target, arrival distance and settle wobble. Hardening: Player._limit_to_cursor() clamps velocity each physics step so one step never travels past the cursor (independent of frame rate / residual speed); uses physics delta only. Test runs the full suite with Engine.max_fps 30 then 0.
+<!-- SECTION:NOTES:END -->
