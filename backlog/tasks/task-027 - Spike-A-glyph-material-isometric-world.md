@@ -1,11 +1,11 @@
 ---
 id: TASK-027
 title: 'Spike A: glyph-material isometric world'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T21:53:00Z'
-updated_date: '2026-10-30T22:07:00Z'
+updated_date: '2026-10-30T22:27:00Z'
 labels:
   - rendering
 milestone: m-3
@@ -52,3 +52,9 @@ SHADER COST: surface fragment = 1 textureGrad atlas fetch (L8, mipmapped), 0 dep
 CAPTURES (viewport screenshots in-scene, not Movie Maker): contact sheets C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/spikeA_contact_1920x1080.png and C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/spikeA_contact_1366x768.png ; frames in C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/spikeA_final_1920x1080/ and C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/spikeA_final_1366x768/ shot_00..07.png ; iteration history spikeA_try1..try6.
 CAVEATS: GPU timing on a GTX 1060 says nothing absolute about HD 4000; estimate ~15-30x slower ALU -> roughly 12-24 ms at 1080p, 6-12 ms at 1366x768 worst case (full-screen coverage is only ~35% of pixels here, rest is black clear) - to be confirmed on real hardware. Lights pass through walls (no occlusion); walls hide the far room from the +x+z iso camera (h=1.0 compromise).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Throwaway spike built and validated (godot-validator PASS: no errors, main game untouched). Launch from god (Prototypes row) or the command in the notes. GTX 1060 numbers are in the notes; real low-end laptop check and the direction choice are pending with the user.
+<!-- SECTION:FINAL_SUMMARY:END -->
