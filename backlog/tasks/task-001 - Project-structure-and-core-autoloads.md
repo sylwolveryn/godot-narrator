@@ -4,10 +4,12 @@ title: Project structure and core autoloads
 status: To Do
 assignee: []
 created_date: '2026-10-30T15:29:00Z'
+updated_date: '2026-10-30T15:30:00Z'
 labels:
   - core
 milestone: m-0
-dependencies: []
+dependencies:
+  - TASK-015
 documentation:
   - docs/game_design.md
 priority: high
