@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:26:00Z'
+updated_date: '2026-10-30T16:39:00Z'
 labels:
   - player
   - input
@@ -28,10 +28,10 @@ Once the input is discovered, the character must move in the world in a way that
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The character moves in the world using the mapped input.
-- [ ] #2 Movement speed and acceleration are exported vars or `.tres` values.
-- [ ] #3 Movement stops when input stops.
-- [ ] #4 The character stays within the bounds of the M1 map.
+- [x] #1 The character moves in the world using the mapped input.
+- [x] #2 Movement speed and acceleration are exported vars or `.tres` values.
+- [x] #3 Movement stops when input stops.
+- [x] #4 The character stays within the bounds of the M1 map.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,3 +42,9 @@ Once the input is discovered, the character must move in the world in a way that
 3. MapLoader adds boundary collision (void-adjacent cells + outer slabs) under a Bounds node.
 4. Tests in tools/test_input_movement.gd.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented: Player._physics_process, FLOATING CharacterBody3D, move_toward accel/friction from PlayerConfig (max_speed, acceleration, friction, pointer_*), gated on PLAYING + discovered scheme; mouse scheme projects cursor onto y=0 plane. MapLoader adds Bounds node (void-edge boxes + 4 outer slabs). Evidence: tools/test_input_movement.gd PASS: no move before discovery, first press moves, stops on release, wall collision at z=15-radius, void and map-edge bounds hold, scheme survives restart. Visual: C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/shots_011b.
+<!-- SECTION:NOTES:END -->
