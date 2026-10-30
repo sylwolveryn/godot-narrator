@@ -28,7 +28,7 @@ The M1 world is one handmade map saved in a file, with no procedural generation.
 <!-- AC:BEGIN -->
 - [x] #1 The M1 map is loaded from a file in the project data folder.
 - [x] #2 Map data (walls, items, hazards, spawn point) comes from the file, not from code.
-- [ ] #3 Loading the map does not require editing a `.tscn` or `.tres` file as raw text.
+- [x] #3 Loading the map does not require editing a `.tscn` or `.tres` file as raw text.
 - [ ] #4 A map file with a missing or malformed entry produces a logged error and does not crash the game.
 <!-- AC:END -->
 
