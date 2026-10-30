@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:29:00Z'
-updated_date: '2026-10-30T15:50:00Z'
+updated_date: '2026-10-30T15:58:00Z'
 labels:
   - core
 milestone: m-0
@@ -31,3 +31,9 @@ The project needs a folder layout and a single signal bus so that every later ta
 - [ ] #3 No game state is stored in any autoload.
 - [ ] #4 The project boots headless with `--quit-after` without errors.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Create folder layout per architecture brief. 2. Add SignalBus autoload script (signals only) and register in project.godot. 3. Validate boot.
+<!-- SECTION:PLAN:END -->
