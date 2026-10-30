@@ -1,10 +1,11 @@
 ---
 id: TASK-029
 title: Mouse movement overshoots the cursor at 30 FPS
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T22:27:00Z'
-updated_date: '2026-10-30T22:45:00Z'
+updated_date: '2026-10-30T23:52:00Z'
 labels:
   - player
   - input
@@ -26,3 +27,11 @@ With the potato rule (--max-fps 30, physics 60 Hz), tools/test_input_movement.gd
 - [ ] #1 tools/test_input_movement.gd passes with --max-fps 30 and without a cap
 - [ ] #2 Pointer movement stops at the cursor without overshoot or jitter at 30 FPS and 60 FPS
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Reproduce at --max-fps 30 and find the true cause of the 'overshoot'.
+2. Add per-physics-step arrival clamp in Player so travel never exceeds the remaining distance to the cursor.
+3. Make the test deterministic (reachable target, cursor held on a fixed world point) and run it at both 30 FPS and uncapped.
+<!-- SECTION:PLAN:END -->
