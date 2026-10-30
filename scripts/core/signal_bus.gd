@@ -14,3 +14,7 @@ signal intro_requested(lite: bool)
 signal intro_finished
 ## Emitted by the player after it has been placed at the map spawn for a new run.
 signal player_spawned(world_position: Vector3)
+## Emitted by InputDiscovery when the first supported input is used, or the player switches to another supported device.
+signal input_scheme_discovered(scheme: StringName)
+## Emitted by MapReveal for cells seen for the first time ever on a map (never persisted before).
+signal cells_revealed(map_id: StringName, cells: PackedVector2Array)

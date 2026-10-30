@@ -49,6 +49,10 @@ func _send_input_spam() -> void:
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
 	Input.parse_input_event(click)
+	# Release again: a held button would (correctly) walk the player toward the cursor.
+	var release := click.duplicate() as InputEventMouseButton
+	release.pressed = false
+	Input.parse_input_event(release)
 
 
 func _run() -> void:

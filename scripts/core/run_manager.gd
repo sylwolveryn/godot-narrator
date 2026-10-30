@@ -11,6 +11,8 @@ var phase: Phase = Phase.INTRO
 var state: RunState = RunState.new()
 ## Number of runs started so far; also the index of the next run.
 var run_count: int = 0
+## Last discovered input scheme. Carried into each new run so a restart never loses movement.
+var input_scheme: StringName = InputScheme.NONE
 
 
 func _ready() -> void:
@@ -19,6 +21,7 @@ func _ready() -> void:
 	SignalBus.run_end_requested.connect(end_run)
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.intro_finished.connect(_on_intro_finished)
+	SignalBus.input_scheme_discovered.connect(_on_input_scheme_discovered)
 
 
 func _process(delta: float) -> void:
@@ -30,6 +33,7 @@ func _process(delta: float) -> void:
 func start_run() -> void:
 	state = RunState.new()
 	state.run_index = run_count
+	state.input_scheme = input_scheme
 	run_count += 1
 	phase = Phase.PLAYING
 	SignalBus.run_started.emit(state.run_index)
@@ -60,3 +64,8 @@ func _on_run_ended(_cause: StringName) -> void:
 func _on_intro_finished() -> void:
 	if phase == Phase.INTRO:
 		start_run()
+
+
+func _on_input_scheme_discovered(scheme: StringName) -> void:
+	input_scheme = scheme
+	state.input_scheme = scheme

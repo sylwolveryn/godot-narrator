@@ -7,3 +7,5 @@ extends Resource
 @export var identity_glyph: String = ""
 ## Number of runs started across all launches.
 @export var run_count: int = 0
+## Map memory: map id (StringName) -> PackedVector2Array of revealed cell coordinates (x, y as floats).
+@export var revealed_cells: Dictionary = {}

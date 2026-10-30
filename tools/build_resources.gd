@@ -13,6 +13,7 @@ func _init() -> void:
 
 	ok = _save(MapLegend.new(), "map_legend.tres") and ok
 	ok = _save(IntroConfig.new(), "intro_config.tres") and ok
+	ok = _save(RevealConfig.new(), "reveal_config.tres") and ok
 
 	var pool := IdentityPool.new()
 	ok = _save(pool, "identity_pool.tres") and ok

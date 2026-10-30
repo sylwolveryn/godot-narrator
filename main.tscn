@@ -1,29 +1,32 @@
 [gd_scene format=3 uid="uid://cd1bjpboqyi2w"]
 
-[ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="1_yaehf"]
-[ext_resource type="Resource" path="res://resources/config/map_legend.tres" id="2_074og"]
-[ext_resource type="Resource" path="res://resources/config/world_config.tres" id="3_cegan"]
-[ext_resource type="Script" path="res://scripts/core/save_service.gd" id="4_82xsv"]
-[ext_resource type="Script" path="res://scripts/rendering/camera_rig.gd" id="5_getpj"]
-[ext_resource type="Resource" path="res://resources/config/camera_top_down.tres" id="6_ryguw"]
-[ext_resource type="Script" path="res://scripts/player/player.gd" id="7_d13ii"]
-[ext_resource type="Resource" path="res://resources/config/player_config.tres" id="8_1u8w0"]
-[ext_resource type="Script" path="res://scripts/rendering/ascii_post_process.gd" id="9_0odxb"]
-[ext_resource type="Resource" path="res://resources/config/ascii_config.tres" id="10_lswn8"]
-[ext_resource type="Shader" path="res://shaders/ascii_post.gdshader" id="11_a6jrf"]
-[ext_resource type="Script" path="res://scripts/rendering/glyph_overlay.gd" id="12_xuqvo"]
-[ext_resource type="Script" path="res://scripts/ui/intro_sequence.gd" id="13_qsp4k"]
-[ext_resource type="Resource" path="res://resources/config/intro_config.tres" id="14_kq58d"]
-[ext_resource type="Shader" path="res://shaders/intro_wave.gdshader" id="15_seu75"]
-[ext_resource type="Script" path="res://scripts/core/run_manager.gd" id="16_htxhm"]
-[ext_resource type="Resource" path="res://resources/config/run_config.tres" id="17_jq2sk"]
+[ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="1_82xsv"]
+[ext_resource type="Resource" path="res://resources/config/map_legend.tres" id="2_getpj"]
+[ext_resource type="Resource" path="res://resources/config/world_config.tres" id="3_ryguw"]
+[ext_resource type="Script" path="res://scripts/core/save_service.gd" id="4_d13ii"]
+[ext_resource type="Script" path="res://scripts/rendering/camera_rig.gd" id="5_1u8w0"]
+[ext_resource type="Resource" path="res://resources/config/camera_top_down.tres" id="6_0odxb"]
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="7_lswn8"]
+[ext_resource type="Resource" path="res://resources/config/player_config.tres" id="8_a6jrf"]
+[ext_resource type="Script" path="res://scripts/world/map_reveal.gd" id="9_xuqvo"]
+[ext_resource type="Resource" path="res://resources/config/reveal_config.tres" id="10_qsp4k"]
+[ext_resource type="Script" path="res://scripts/player/input_discovery.gd" id="11_kq58d"]
+[ext_resource type="Script" path="res://scripts/rendering/ascii_post_process.gd" id="12_seu75"]
+[ext_resource type="Resource" path="res://resources/config/ascii_config.tres" id="13_htxhm"]
+[ext_resource type="Shader" path="res://shaders/ascii_post.gdshader" id="14_jq2sk"]
+[ext_resource type="Script" path="res://scripts/rendering/glyph_overlay.gd" id="15_4k2k6"]
+[ext_resource type="Script" path="res://scripts/ui/intro_sequence.gd" id="16_0rl1p"]
+[ext_resource type="Resource" path="res://resources/config/intro_config.tres" id="17_ok6jj"]
+[ext_resource type="Shader" path="res://shaders/intro_wave.gdshader" id="18_facbu"]
+[ext_resource type="Script" path="res://scripts/core/run_manager.gd" id="19_b1qrp"]
+[ext_resource type="Resource" path="res://resources/config/run_config.tres" id="20_come4"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4k2k6"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_h8e4i"]
 radius = 0.35
 height = 0.9
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_0rl1p"]
-shader = ExtResource("11_a6jrf")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4lmeg"]
+shader = ExtResource("14_jq2sk")
 shader_parameter/cell_px = null
 shader_parameter/glyph_count = null
 shader_parameter/fg_color = null
@@ -31,8 +34,8 @@ shader_parameter/bg_color = null
 shader_parameter/scene_color_mix = null
 shader_parameter/brightness_gain = null
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ok6jj"]
-shader = ExtResource("15_seu75")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0cp0l"]
+shader = ExtResource("18_facbu")
 shader_parameter/veil = null
 shader_parameter/envelope = null
 shader_parameter/time = null
@@ -45,70 +48,82 @@ shader_parameter/line_spacing = null
 shader_parameter/thickness = null
 shader_parameter/cell_px = null
 
-[node name="Main" type="Node3D" unique_id=126213054]
+[node name="Main" type="Node3D" unique_id=546615969]
 
-[node name="World" type="Node3D" parent="." unique_id=621748159]
+[node name="World" type="Node3D" parent="." unique_id=1502644277]
 
-[node name="MapLoader" type="Node3D" parent="World" unique_id=1094501501]
-script = ExtResource("1_yaehf")
-legend = ExtResource("2_074og")
-world_config = ExtResource("3_cegan")
+[node name="MapLoader" type="Node3D" parent="World" unique_id=1542885583]
+script = ExtResource("1_82xsv")
+legend = ExtResource("2_getpj")
+world_config = ExtResource("3_ryguw")
 map_path = "res://data/maps/m1_awakening.txt"
 
-[node name="Sun" type="DirectionalLight3D" parent="World" unique_id=2023570774]
+[node name="Sun" type="DirectionalLight3D" parent="World" unique_id=1371050006]
 transform = Transform3D(0.8660254, -0.43301272, 0.24999999, 0, 0.49999997, 0.86602545, -0.5, -0.75, 0.43301266, 0, 0, 0)
 
-[node name="SaveService" type="Node" parent="." unique_id=391712520]
-script = ExtResource("4_82xsv")
+[node name="SaveService" type="Node" parent="." unique_id=222324445]
+script = ExtResource("4_d13ii")
 
-[node name="CameraRig" type="Node3D" parent="." unique_id=70795444 node_paths=PackedStringArray("follow_target")]
-script = ExtResource("5_getpj")
-view_config = ExtResource("6_ryguw")
+[node name="CameraRig" type="Node3D" parent="." unique_id=1919708358 node_paths=PackedStringArray("follow_target")]
+script = ExtResource("5_1u8w0")
+view_config = ExtResource("6_0odxb")
 follow_target = NodePath("../Player")
 
-[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=385965787]
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=2010214350]
 
-[node name="Player" type="CharacterBody3D" parent="." unique_id=893937990 node_paths=PackedStringArray("map_loader", "save_service")]
-script = ExtResource("7_d13ii")
-config = ExtResource("8_1u8w0")
+[node name="Player" type="CharacterBody3D" parent="." unique_id=1078836220 node_paths=PackedStringArray("map_loader", "save_service", "run_manager")]
+script = ExtResource("7_lswn8")
+config = ExtResource("8_a6jrf")
 map_loader = NodePath("../World/MapLoader")
 save_service = NodePath("../SaveService")
+run_manager = NodePath("../RunManager")
 
-[node name="Collision" type="CollisionShape3D" parent="Player" unique_id=617209678]
+[node name="Collision" type="CollisionShape3D" parent="Player" unique_id=165528628]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
-shape = SubResource("CapsuleShape3D_4k2k6")
+shape = SubResource("CapsuleShape3D_h8e4i")
 
-[node name="AsciiPostProcess" type="CanvasLayer" parent="." unique_id=1228497469]
+[node name="MapReveal" type="Node" parent="." unique_id=2077876044 node_paths=PackedStringArray("map_loader", "player", "save_service")]
+script = ExtResource("9_xuqvo")
+config = ExtResource("10_qsp4k")
+map_loader = NodePath("../World/MapLoader")
+player = NodePath("../Player")
+save_service = NodePath("../SaveService")
+
+[node name="InputDiscovery" type="Node" parent="." unique_id=1076753550]
+script = ExtResource("11_kq58d")
+config = ExtResource("8_a6jrf")
+
+[node name="AsciiPostProcess" type="CanvasLayer" parent="." unique_id=2042666444]
 layer = 0
-script = ExtResource("9_0odxb")
-config = ExtResource("10_lswn8")
+script = ExtResource("12_seu75")
+config = ExtResource("13_htxhm")
 
-[node name="Screen" type="ColorRect" parent="AsciiPostProcess" unique_id=759837076]
-material = SubResource("ShaderMaterial_0rl1p")
+[node name="Screen" type="ColorRect" parent="AsciiPostProcess" unique_id=897285750]
+material = SubResource("ShaderMaterial_4lmeg")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="GlyphOverlay" type="CanvasLayer" parent="." unique_id=439047474 node_paths=PackedStringArray("camera_rig", "player")]
+[node name="GlyphOverlay" type="CanvasLayer" parent="." unique_id=227033847 node_paths=PackedStringArray("camera_rig", "player")]
 layer = 10
-script = ExtResource("12_xuqvo")
+script = ExtResource("15_4k2k6")
 camera_rig = NodePath("../CameraRig")
 player = NodePath("../Player")
-player_config = ExtResource("8_1u8w0")
+player_config = ExtResource("8_a6jrf")
 
-[node name="IntroSequence" type="CanvasLayer" parent="." unique_id=2095132527]
+[node name="IntroSequence" type="CanvasLayer" parent="." unique_id=1200940814]
 layer = 20
-script = ExtResource("13_qsp4k")
-config = ExtResource("14_kq58d")
+script = ExtResource("16_0rl1p")
+config = ExtResource("17_ok6jj")
 
-[node name="Veil" type="ColorRect" parent="IntroSequence" unique_id=566984365]
-material = SubResource("ShaderMaterial_ok6jj")
+[node name="Veil" type="ColorRect" parent="IntroSequence" unique_id=1264179046]
+material = SubResource("ShaderMaterial_0cp0l")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="RunManager" type="Node" parent="." unique_id=386388720]
-script = ExtResource("16_htxhm")
-config = ExtResource("17_jq2sk")
+[node name="RunManager" type="Node" parent="." unique_id=166522751]
+script = ExtResource("19_b1qrp")
+config = ExtResource("20_come4")

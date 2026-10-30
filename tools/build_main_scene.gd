@@ -65,6 +65,20 @@ func _build() -> void:
 	_add(root, player)
 	rig.set("follow_target", player)
 
+	# Reveal comes after the player so run-start handlers run in spawn-then-reveal order.
+	var reveal: Node = load("res://scripts/world/map_reveal.gd").new()
+	reveal.name = "MapReveal"
+	reveal.set("config", load(CFG + "reveal_config.tres"))
+	reveal.set("map_loader", loader)
+	reveal.set("player", player)
+	reveal.set("save_service", save)
+	_add(root, reveal)
+
+	var discovery: Node = load("res://scripts/player/input_discovery.gd").new()
+	discovery.name = "InputDiscovery"
+	discovery.set("config", player_cfg)
+	_add(root, discovery)
+
 	# Layer 0 post-process: reads the 3D render and replaces it with glyphs.
 	var ascii: CanvasLayer = load("res://scripts/rendering/ascii_post_process.gd").new()
 	ascii.name = "AsciiPostProcess"
@@ -108,6 +122,7 @@ func _build() -> void:
 	runs.name = "RunManager"
 	runs.set("config", load(CFG + "run_config.tres"))
 	_add(root, runs)
+	player.set("run_manager", runs)
 
 	var packed := PackedScene.new()
 	var pack_err := packed.pack(root)
