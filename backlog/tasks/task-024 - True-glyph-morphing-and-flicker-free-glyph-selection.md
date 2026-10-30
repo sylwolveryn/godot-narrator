@@ -1,11 +1,11 @@
 ---
 id: TASK-024
 title: True glyph morphing and flicker-free glyph selection
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T20:35:00Z'
+updated_date: '2026-10-30T20:39:00Z'
 labels:
   - rendering
 milestone: m-2
@@ -50,3 +50,9 @@ Flicker measurement (tools/capture_idle.gd, 1920x1080, player idle next to spike
 Morph evidence: C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/strip_024_glyph_morph.png (glyph_morph shader, # -> & in 9 eased steps, shape blends continuously); C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/strip_024_world_spike_cell.png (one spike cell in the real world render, frames 181-259 every 3rd: A <-> ^ shape and colour breathe smoothly, no swap).
 Perf as in task-023 notes (60 FPS held at 1920x1080, GPU 1.2 ms mean).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Glyph changes are continuous SDF blends (ramp morph driven by luminance; reveal fade with overshoot; 0.35 s memory→seen; corruption breathes via slow flow-noise warp, hue 0.3 Hz, luminance 0.25 Hz). Idle 5 s capture: worst cell 1.2 changes/s, ~1% of cells animate, max luminance step 2.6/255. Strips in task notes show # morphing into & and a spike cell breathing A↔^. Shared GlyphAtlas + shaders/glyph_morph.gdshader ready for the overlay (task-025).
+<!-- SECTION:FINAL_SUMMARY:END -->
