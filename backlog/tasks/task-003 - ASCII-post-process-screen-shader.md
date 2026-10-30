@@ -31,3 +31,9 @@ The core visual identity is ASCII glyphs. A full-screen post-process shader conv
 - [ ] #3 The shader can be enabled and disabled from configuration for debugging.
 - [ ] #4 Frame rate stays at the target set in project settings on the development machine for the M1 map.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. AsciiConfig resource (cell size, ramp, colors, enabled). 2. ascii_post.gdshader sampling hint_screen_texture per cell + glyph atlas. 3. AsciiPostProcess CanvasLayer(layer 0) rasterises atlas from SystemFont at runtime, sets uniforms. 4. Extend builders. 5. Validate headless + Movie Maker screenshot + fps.
+<!-- SECTION:PLAN:END -->
