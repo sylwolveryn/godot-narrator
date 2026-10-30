@@ -38,3 +38,9 @@ The core of the launcher: one click to start fresh or continue, without stray pr
 <!-- SECTION:PLAN:BEGIN -->
 1. core.py pure logic (paths, process matching, controller, ui_state, .tres parser) + god.py tkinter GUI with 3s after() poll; 2. tools/dev_reveal_map.gd + test; 3. unittest suite; 4. README, manual real run.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented god/core.py (GameController, is_game, ui_state) and god/god.py. 27 unittests pass (python -m unittest discover -s god/tests). Real run: continue started game, 2nd click warned, 3rd restarted, new_game deleted save and started, close_game left other godot (editor) processes alone.
+<!-- SECTION:NOTES:END -->
