@@ -1,9 +1,11 @@
 ---
 id: TASK-027
 title: 'Spike A: glyph-material isometric world'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T21:53:00Z'
+updated_date: '2026-10-30T21:56:00Z'
 labels:
   - rendering
 milestone: m-3
@@ -28,3 +30,13 @@ decision-002 replaces the full-screen ASCII post-process with ASCII as a surface
 - [ ] #3 Captures at 1920x1080 and 1366x768 are in the task notes, plus draw calls, GPU frame time and vertex count measured with --max-fps 30
 - [ ] #4 The spike runs from one command or from god, documented in the task notes, so the user can try it on a low-end laptop
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. tools/build_spike_glyph_atlas.gd: render monospace glyph atlas (5 ramps x 8 + specials) via SubViewport once -> PNG in scenes/spikes/glyph_world/.
+2. shaders: glyph_surface.gdshader (single world material: per-face glyph grid, ramp by lit brightness from <=8 analytic lights, palette per type id in vertex COLOR), glyph_halo.gdshader (additive billboards, one merged mesh), glyph_marker.gdshader (player glyph billboard).
+3. tools/build_spike_glyph_world.gd: M1 slice (x12-27,y2-13) -> one merged ArrayMesh (floor, walls, spikes, corrupt, item pillars), halo meshes, camera, scene saved headless.
+4. glyph_world.gd autopilot + light uniforms; spike_perf_logger.gd + capture via args.
+5. Measure at 1920x1080 and 1366x768 with --max-fps 30; iterate look vs gargoyle moodboard; record notes.
+<!-- SECTION:PLAN:END -->
