@@ -40,6 +40,11 @@ class GodApp:
         self.btn_reveal = ttk.Button(row, text="Reveal map", command=self._reveal)
         for b in (self.btn_new, self.btn_cont, self.btn_reveal):
             b.pack(side="left", padx=(0, 6))
+        spikes = ttk.Frame(self.win)
+        spikes.pack(fill="x", **pad)
+        ttk.Label(spikes, text="Prototypes:").pack(side="left", padx=(0, 6))
+        for label, scene in core.SPIKES.items():
+            ttk.Button(spikes, text=label, command=lambda s=scene, l=label: self._spike(s, l)).pack(side="left", padx=(0, 6))
         self.message = ttk.Label(self.win, text="", wraplength=450, foreground="#a15c00")
         self.message.pack(anchor="w", **pad)
         ttk.Separator(self.win).pack(fill="x", padx=10, pady=4)
@@ -157,6 +162,14 @@ class GodApp:
                 raise _Note(core.REVEAL_RUNNING_NOTE)
 
         self._act_note(run, "Map revealed.")
+
+    def _spike(self, scene: str, label: str) -> None:
+        def run() -> None:
+            if not self.ctl.godot:
+                raise RuntimeError("Godot not found: set GODOT_BIN")
+            core.spawn_spike(self.ctl.godot, self.ctl.root, scene)
+
+        self._act_note(run, "%s started." % label)
 
     def _act_note(self, fn, done_text: str) -> None:
         if self.busy:

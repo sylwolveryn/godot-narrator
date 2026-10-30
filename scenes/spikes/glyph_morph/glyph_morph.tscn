@@ -1,0 +1,52 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/spikes/glyph_morph/glyph_morph_demo.gd" id="1_lsir5"]
+[ext_resource type="Shader" path="res://scenes/spikes/glyph_morph/glyph_floor.gdshader" id="2_0nlr4"]
+[ext_resource type="Script" path="res://scenes/spikes/glyph_morph/glyph_morph_field.gd" id="3_sjcru"]
+[ext_resource type="Shader" path="res://scenes/spikes/glyph_morph/glyph_morph.gdshader" id="4_bojln"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_i6nuj"]
+render_priority = 0
+shader = ExtResource("2_0nlr4")
+shader_parameter/base_colour = null
+shader_parameter/pool_colour = null
+shader_parameter/grid_step = null
+shader_parameter/pool_radius = null
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_vx0jn"]
+material = SubResource("ShaderMaterial_i6nuj")
+size = Vector2(60, 60)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_koajd"]
+render_priority = 0
+shader = ExtResource("4_bojln")
+shader_parameter/atlas_grid = null
+shader_parameter/morph_t = null
+shader_parameter/cpu_mode = null
+shader_parameter/halo_scale = null
+shader_parameter/halo_strength = null
+shader_parameter/pop = null
+shader_parameter/flash = null
+shader_parameter/wobble = null
+
+[node name="GlyphMorph" type="Node3D" unique_id=1775748194]
+script = ExtResource("1_lsir5")
+
+[node name="Camera" type="Camera3D" parent="." unique_id=376057858]
+
+[node name="Floor" type="MeshInstance3D" parent="." unique_id=943399980]
+mesh = SubResource("PlaneMesh_vx0jn")
+
+[node name="Glyphs" type="MultiMeshInstance3D" parent="." unique_id=72999105]
+cast_shadow = 0
+script = ExtResource("3_sjcru")
+glyph_material = SubResource("ShaderMaterial_koajd")
+
+[node name="Hud" type="CanvasLayer" parent="." unique_id=494862299]
+
+[node name="Label" type="Label" parent="Hud" unique_id=1950187582]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 16.0
+offset_bottom = 12.0
+theme_override_font_sizes/font_size = 16

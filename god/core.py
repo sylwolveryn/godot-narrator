@@ -79,6 +79,15 @@ def is_editor(cmdline: str) -> bool:
 
 _NOT_GAME_FLAGS = ("--headless", "--script", "-s", "--check-only", "--import", "--export", "--quit")
 
+# Throwaway rendering prototypes (task-027/028); running one is not "the game".
+SPIKE_DIR = "scenes/spikes/"
+SPIKES = {
+    "Spike A: glyph world": "res://scenes/spikes/glyph_world/glyph_world.tscn",
+    "Spike B: glyph morph": "res://scenes/spikes/glyph_morph/glyph_morph.tscn",
+}
+# Potato-first rule (CLAUDE.md): every CLI run is capped at 30 FPS.
+MAX_FPS_ARGS = ["--max-fps", "30"]
+
 
 def is_game(proc: Proc, root: Path) -> bool:
     """True for a Godot process running this project's game (not the editor, not a headless tool)."""
@@ -89,6 +98,8 @@ def is_game(proc: Proc, root: Path) -> bool:
         return False
     tokens = cmd.replace('"', " ").split()
     if any(flag in tokens for flag in _NOT_GAME_FLAGS):
+        return False
+    if SPIKE_DIR in _norm(cmd):
         return False
     return _norm(str(root)) in _norm(cmd)
 
@@ -131,11 +142,23 @@ def kill_pid(pid: int) -> None:
                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
 
-def spawn_game(godot: str, root: Path) -> None:
+def spike_args(godot: str, root: Path, scene: str) -> list[str]:
+    return [godot, "--path", str(root), *MAX_FPS_ARGS, scene]
+
+
+def _spawn_detached(args: list[str], root: Path) -> None:
     flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-    subprocess.Popen([godot, "--path", str(root)], cwd=str(root), creationflags=flags,
+    subprocess.Popen(args, cwd=str(root), creationflags=flags,
                      stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                      close_fds=True)
+
+
+def spawn_game(godot: str, root: Path) -> None:
+    _spawn_detached([godot, "--path", str(root), *MAX_FPS_ARGS], root)
+
+
+def spawn_spike(godot: str, root: Path, scene: str) -> None:
+    _spawn_detached(spike_args(godot, root, scene), root)
 
 
 def run_reveal_tool(godot: str, root: Path) -> tuple[bool, str]:

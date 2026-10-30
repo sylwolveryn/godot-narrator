@@ -71,6 +71,13 @@ class Matching(unittest.TestCase):
     def test_headless_tool_excluded(self):
         self.assertFalse(self.game('godot --headless --path E:\\git\\godot-narrator -s tools/x.gd'))
 
+    def test_spike_is_not_the_game(self):
+        self.assertTrue(self.game('godot.exe --path E:\\git\\godot-narrator --max-fps 30'))
+        for scene in core.SPIKES.values():
+            cmd = " ".join(core.spike_args("godot.exe", ROOT, scene))
+            self.assertIn("--max-fps", cmd)
+            self.assertFalse(self.game(cmd))
+
 
 class Fake:
     """Fake process table: terminate removes the process unless it is 'stubborn'."""

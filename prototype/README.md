@@ -1,6 +1,6 @@
 # Legacy prototype (reference only)
 
-`legacy_main.tscn` is the first Godot experiment, preserved when the main scene was
+`legacy_main.tscn.txt` is the first Godot experiment, preserved when the main scene was
 reset (task-015). The `.gdignore` file keeps Godot from importing or parsing this
 folder, so nothing here is loaded at runtime. Do not reference it from game code.
 
