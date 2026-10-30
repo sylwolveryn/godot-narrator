@@ -1,5 +1,22 @@
 # Visual Direction (M1)
 
+> **Status: superseded 2026-10-30 (decision-002).** The Midnight Neon post-process spec below is no longer the target. It is kept for reference, and its palette ideas may still be reused. A new spec follows the spikes (see the last bullet of Current direction).
+
+## Current direction (decision-002)
+
+- The world is real 3D geometry in an isometric 2.5D view from the very first frame. The old "starts in flat 2D, 2.5D unlocked later" idea is dropped.
+- ASCII is a glyph-atlas material on 3D surfaces (walls, floor, objects). Lighting picks the glyph and its brightness. Reference: Illuminascii.
+- The full-screen ASCII post-process (task-023/024, SDF "Midnight Neon") is superseded. It stays in the code as legacy until the rebuild.
+- "Morph" means a shape built from many glyph objects (batched glyph quads) that fly, rotate and reassemble. It does not mean one glyph blending into another. Reference: Effulgence RPG. Moments: the hero grows into the multi-glyph entity; surroundings lift off and become menu items; narration letters fly in to form a sentence.
+- Glow is cheap (additive halo sprites), not full-screen bloom.
+- Potato-first: integrated OpenGL 3.3 GPU (Intel HD 2500/4000 class), stable 30+ FPS, Compatibility renderer only. The user tests prototypes on a real low-end laptop.
+- Next: two throwaway spikes, Spike A (glyph-material isometric world) and Spike B (glyph-object morph moments). A new spec follows the user's pick from the spikes. Unfinished SDF overlay work (task-025/026) is parked on git branch `parked/sdf-overlay`.
+- Unknown: whether the flicker and morph limits in section 6 below carry over. Not decided.
+
+---
+
+## Superseded: Midnight Neon post-process spec
+
 Target look: `docs/art/` moodboards (reference only, never loaded). The midnight-cavern image gives the base: near-black blue, sparse cool glyphs, warm amber light around the hero. The neon-sunset image gives the accents: cyan/green glowing stone, violet corruption, sunset-orange treasure. Dense glyphs read as solid, sparse glyphs read as shadow, and bright glyphs carry a soft halo.
 
 This spec answers the playtest complaint ("dull colours, glyphs change instead of morph, hurts the eyes") with three rules:
@@ -7,7 +24,7 @@ This spec answers the playtest complaint ("dull colours, glyphs change instead o
 2. **Colour comes from gradients.** Never a flat fill.
 3. **Nothing animates faster than about 0.5 Hz** unless it is a one-shot event.
 
-## 1. Pipeline (what makes this implementable)
+### 1. Pipeline (what makes this implementable)
 
 - **World materials are unshaded and encode data, not colour.** Each pixel of the 3D render carries:
   - R = material id (`round(r*15)`)
@@ -24,7 +41,7 @@ This spec answers the playtest complaint ("dull colours, glyphs change instead o
   3. Store the result as an `ImageTexture`.
 - **The overlay (player, narration, death fragments) uses the same SDF atlas** through a `glyph_morph` canvas shader on per-glyph quads. It does not use `Label`, so overlay text can morph too.
 
-## 2. Palette (default set "Midnight Neon")
+### 2. Palette (default set "Midnight Neon")
 
 Colour = `LUT[type](u)`, where `u = L + noise(world_cell * 0.08) * hue_noise_amp + height * height_amp`. Noise is static world-space value noise, never per-frame random. Player light adds a warm tint: `col = mix(col, col * light_tint, light_factor * light_tint_strength)`.
 
@@ -44,7 +61,7 @@ Colour = `LUT[type](u)`, where `u = L + noise(world_cell * 0.08) * hue_noise_amp
 
 **Optional palette sets:** `PaletteConfig` resources can be swapped per run or region. Candidates: "Neon Dusk" (violet background gradient `#1A0B2E`→`#3A1550`, saturated green walls `#39FF7A`) and "Ember Cavern" (slate walls, all-amber highlights). M1 ships the default only, with a `palette_by_run` array left empty.
 
-## 3. Light and depth
+### 3. Light and depth
 
 | Effect | Rule |
 |---|---|
@@ -55,7 +72,7 @@ Colour = `LUT[type](u)`, where `u = L + noise(world_cell * 0.08) * hue_noise_amp
 | Vignette | Brightness falloff toward the screen edges (`vignette_strength`). It also lowers L, which thins the glyphs |
 | Depth-of-field equivalent | The SDF edge softness grows with distance from the player beyond `dof_start` (`edge_soft_near`→`edge_soft_far`). Colour slides 20% toward the background. In 2.5D, distance from the focal plane is used instead |
 
-## 4. Glyph language
+### 4. Glyph language
 
 The glyph ramp is per type, ordered sparse to dense, so the type is readable from shape alone. Glyph cell size is 10x14 px at 1080p (192x77 cells), scaled by `ui_scale`.
 
@@ -69,7 +86,7 @@ The glyph ramp is per type, ordered sparse to dense, so the type is readable fro
 | Remembered | Type ramp, capped at `memory_density_cap` (default 0.45 of the ramp) |
 | Abstract set (narration/death) | `·`, `-`, `~`, `°`, plus a circle SDF |
 
-## 5. Morphing
+### 5. Morphing
 
 **Definition.** A morph is a continuous SDF blend: `d = mix(sdfA, sdfB, ease(t))`, `alpha = smoothstep(0.5-w, 0.5+w, d)`. Mid-morph the glyph scales to 0.92 and gets +15% glow, which sells the motion. Default easing is `easeInOutCubic`.
 
@@ -84,7 +101,7 @@ The glyph ramp is per type, ordered sparse to dense, so the type is readable fro
 | Corruption breathe | See §6 | continuous |
 | Erosion, death, narration | See §6 | see §6 |
 
-## 6. Flicker rules and effects
+### 6. Flicker rules and effects
 
 **Hard limits:**
 - Ambient cells never change target glyph more than 2 times per second.
@@ -109,7 +126,7 @@ The glyph ramp is per type, ordered sparse to dense, so the type is readable fro
 | Narration out | Reverse: letter → abstract → alpha 0 over 0.5 s, staggered 0.02 s |
 | Reveal | Cells grow from darkness through `.` up to their ramp level (see §5) with a cyan glint at 60% progress |
 
-## 7. Tunables (defaults)
+### 7. Tunables (defaults)
 
 | Resource | Field | Default |
 |---|---|---|
@@ -140,7 +157,7 @@ The glyph ramp is per type, ordered sparse to dense, so the type is readable fro
 | | text_color / mood_tints | `#EAF2FF` / see §2 |
 | PlayerVisualConfig | core_color / glow_color / glow_strength | `#FFF6E6` / `#FFB347` / 1.0 |
 
-## 8. Performance budget (60 FPS, 1920x1080, GTX 1060, gl_compatibility)
+### 8. Performance budget (60 FPS, 1920x1080, GTX 1060, gl_compatibility; superseded, see banner)
 
 | Item | Budget | Cheaper fallback |
 |---|---|---|

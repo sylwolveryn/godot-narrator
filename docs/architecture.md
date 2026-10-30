@@ -42,15 +42,24 @@ All folders and files use snake_case.
 - The world is real 3D. The gameplay plane is XZ (y up).
 - One map cell = 1 world unit. The cell size lives in `WorldConfig`.
 - Camera:
-  - `CameraRig` (Node3D) holds a Camera3D, orthographic, looking straight down for the "2D" view.
+  - Target (decision-002, 2026-10-30): isometric orthographic 2.5D view from the first frame. There is no 2D start and no later 2.5D unlock.
+  - The current `CameraRig` (Node3D, Camera3D looking straight down, plus a tilted profile in `CameraViewConfig`) is legacy until the rebuild.
   - The rig exposes a view profile (`CameraViewConfig` resource: projection, size, pitch, follow smoothing).
-  - A tilted 2.5D profile exists in config but is not selectable by the player in M1.
 - Walls: simple box meshes + StaticBody3D.
 - Floor: plane.
 - Items: small meshes.
 - Hazards: Area3D.
 
 ## Rendering
+
+### Direction change (decision-002, 2026-10-30)
+- The full-screen ASCII post-process pipeline below is legacy. It stays in the code until the rebuild and is not the target.
+- Target pipeline:
+  - Surfaces (walls, floor, objects): glyph-atlas materials on isometric 3D geometry. Lighting picks the glyph and its brightness (reference: Illuminascii).
+  - Actors, effects, menu and narration: MultiMesh glyph objects (batched glyph quads) that fly, rotate and reassemble. A morph is a shape of many glyph objects, not one glyph blending into another.
+  - Glow: cheap additive halo sprites. No full-screen bloom.
+- Potato budget: stable 30+ FPS on integrated OpenGL 3.3 GPUs (Intel HD 2500/4000 class), Compatibility renderer only. Per-pass millisecond budgets are not set yet.
+- Status: Spike A (glyph-material isometric world) and Spike B (glyph-object morph moments) are throwaway. The rebuild waits for the user's pick from the spikes. Unfinished SDF overlay work (task-025/026) is parked on branch `parked/sdf-overlay` and archived.
 
 ### ASCII Post-Process (task-023/024, spec: `docs/visual_direction.md`)
 - The 3D world renders **data, not colour**. `MapLoader` gives every cell type a `ShaderMaterial` on `shaders/world_encode.gdshader` (unshaded). Each pixel: R = material id (`MaterialIds`), G = luminance (player light, reveal fade and hazard pulse already applied), B = state (visible: palette offset from world noise/height/glint; remembered: memory amount). The encoding lives in `shaders/world_encoding.gdshaderinc` and keeps every channel at 0.2 or above, because the compat renderer returns values below about 0.2 too low (see test pattern `tools/test_encoding.gd`).
