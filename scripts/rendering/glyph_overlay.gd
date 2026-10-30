@@ -10,7 +10,10 @@ extends CanvasLayer
 @export var player: Player
 @export var player_config: PlayerConfig
 @export var fx_config: GlyphFxConfig
+@export var display_config: DisplayConfig
 
+## Current window scale (viewport height / reference height).
+var _scale: float = 1.0
 var _label: Label
 var _settings: LabelSettings
 var _shard_settings: LabelSettings
@@ -35,24 +38,25 @@ func _ready() -> void:
 		player_config = PlayerConfig.new()
 	if fx_config == null:
 		fx_config = GlyphFxConfig.new()
+	if display_config == null:
+		display_config = DisplayConfig.new()
 	_rng.randomize()
 	_settings = LabelSettings.new()
 	var font := SystemFont.new()
 	font.font_names = player_config.font_names
 	font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 	_settings.font = font
-	_settings.font_size = player_config.font_size
 	_settings.font_color = player_config.glyph_color
 	_settings.outline_color = player_config.outline_color
-	_settings.outline_size = player_config.outline_size
 	_shard_settings = _settings.duplicate()
-	_shard_settings.font_size = roundi(player_config.font_size * fx_config.shard_size_ratio)
 	_label = Label.new()
 	_label.name = "PlayerGlyph"
 	_label.label_settings = _settings
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_label.visible = false
 	add_child(_label)
+	get_viewport().size_changed.connect(_apply_scale)
+	_apply_scale()
 	SignalBus.erosion_changed.connect(_on_erosion_changed)
 	SignalBus.hazard_lethal.connect(_on_hazard_lethal)
 	SignalBus.run_ended.connect(_on_run_ended)
@@ -74,6 +78,16 @@ func _process(delta: float) -> void:
 	_label.position = (screen_pos - _label.size * 0.5 + _jitter).round()
 
 
+## Re-derives every pixel size from the window height.
+func _apply_scale() -> void:
+	_scale = display_config.scale_for(get_viewport())
+	_settings.font_size = DisplayConfig.px(player_config.font_size, _scale)
+	_settings.outline_size = DisplayConfig.px(player_config.outline_size, _scale, 0)
+	_shard_settings.font_size = DisplayConfig.px(player_config.font_size * fx_config.shard_size_ratio, _scale)
+	_shard_settings.outline_size = _settings.outline_size
+	_label.reset_size()
+
+
 ## Re-rolls the substitute glyph and jitter at a rate that climbs with erosion.
 func _update_scramble(level: float, delta: float) -> void:
 	if level <= fx_config.scramble_start:
@@ -91,7 +105,7 @@ func _update_scramble(level: float, delta: float) -> void:
 		_set_text(_random_glyph())
 	else:
 		_set_text(_identity)
-	var reach: float = fx_config.jitter_max * level
+	var reach: float = fx_config.jitter_max * _scale * level
 	_jitter = Vector2(_rng.randf_range(-reach, reach), _rng.randf_range(-reach, reach))
 
 
@@ -172,7 +186,7 @@ func _burst() -> void:
 		shard.reset_size()
 		_shards.append(shard)
 		var angle: float = TAU * (float(i) + _rng.randf()) / float(fx_config.shard_count)
-		var reach: float = fx_config.shard_distance * (1.0 - _rng.randf() * fx_config.shard_distance_spread)
+		var reach: float = fx_config.shard_distance * _scale * (1.0 - _rng.randf() * fx_config.shard_distance_spread)
 		shard.position = (centre - shard.size * 0.5).round()
 		var target: Vector2 = shard.position + Vector2.from_angle(angle) * reach
 		_shard_tween.tween_property(shard, "position", target, drift).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)

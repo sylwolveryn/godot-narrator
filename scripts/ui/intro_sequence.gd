@@ -6,6 +6,7 @@ extends CanvasLayer
 ## then dissolves the veil to reveal the world and the spawned player.
 
 @export var config: IntroConfig
+@export var display_config: DisplayConfig
 
 @onready var _veil: ColorRect = $Veil
 
@@ -17,9 +18,12 @@ var _tween: Tween
 func _ready() -> void:
 	if config == null:
 		config = IntroConfig.new()
+	if display_config == null:
+		display_config = DisplayConfig.new()
 	_material = _veil.material as ShaderMaterial
 	_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_apply_config()
+	get_viewport().size_changed.connect(_apply_cell_size)
 	SignalBus.intro_requested.connect(play)
 	play(false)
 
@@ -69,4 +73,12 @@ func _apply_config() -> void:
 	_material.set_shader_parameter("amplitude", config.amplitude)
 	_material.set_shader_parameter("line_spacing", config.line_spacing)
 	_material.set_shader_parameter("thickness", config.thickness)
-	_material.set_shader_parameter("cell_px", Vector2(config.cell_size))
+	_apply_cell_size()
+
+
+## The halftone cell grid scales with the window height; everything else in the wave is
+## already a fraction of the screen.
+func _apply_cell_size() -> void:
+	var factor: float = display_config.scale_for(get_viewport())
+	var cell := Vector2(DisplayConfig.px(config.cell_size.x, factor), DisplayConfig.px(config.cell_size.y, factor))
+	_material.set_shader_parameter("cell_px", cell)

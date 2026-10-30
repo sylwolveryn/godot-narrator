@@ -4,20 +4,47 @@ extends CanvasLayer
 ## ascii_post shader. The glyph atlas is rasterised once from the configured font.
 
 @export var config: AsciiConfig
+@export var display_config: DisplayConfig
 
 @onready var _screen: ColorRect = $Screen
+
+## Cell size and font size currently baked into the atlas (already scaled to the window).
+var _cell: Vector2i = Vector2i.ZERO
+var _font_size: int = 0
+var _building: bool = false
 
 
 func _ready() -> void:
 	if config == null:
 		config = AsciiConfig.new()
-	await _build_atlas_and_apply()
+	if display_config == null:
+		display_config = DisplayConfig.new()
+	get_viewport().size_changed.connect(_refresh)
+	await _refresh()
 
 
 ## Enables or disables the effect at runtime (debug toggle).
 func set_enabled(value: bool) -> void:
 	config.enabled = value
 	_screen.visible = value
+
+
+## Re-derives cell and font size from the window and rebuilds the atlas when they changed.
+## Rebuilds never overlap: a resize during a build is picked up by the loop below.
+func _refresh() -> void:
+	if _building:
+		return
+	_building = true
+	while true:
+		var factor: float = display_config.scale_for(get_viewport())
+		var cell := Vector2i(DisplayConfig.px(config.cell_size.x, factor), DisplayConfig.px(config.cell_size.y, factor))
+		var font_size: int = DisplayConfig.px(config.font_size, factor)
+		if cell == _cell and font_size == _font_size:
+			break
+		_cell = cell
+		_font_size = font_size
+		await _build_atlas_and_apply()
+	_building = false
 
 
 func _build_atlas_and_apply() -> void:
@@ -29,7 +56,7 @@ func _build_atlas_and_apply() -> void:
 	var atlas := await _rasterise_atlas()
 	var mat := _screen.material as ShaderMaterial
 	mat.set_shader_parameter("glyph_atlas", atlas)
-	mat.set_shader_parameter("cell_px", Vector2(config.cell_size))
+	mat.set_shader_parameter("cell_px", Vector2(_cell))
 	mat.set_shader_parameter("glyph_count", count)
 	mat.set_shader_parameter("fg_color", config.foreground_color)
 	mat.set_shader_parameter("bg_color", config.background_color)
@@ -45,14 +72,14 @@ func _rasterise_atlas() -> ImageTexture:
 	font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 
 	var vp := SubViewport.new()
-	vp.size = Vector2i(config.cell_size.x * count, config.cell_size.y)
+	vp.size = Vector2i(_cell.x * count, _cell.y)
 	vp.transparent_bg = false
 	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	var canvas := _AtlasCanvas.new()
 	canvas.font = font
 	canvas.ramp = config.glyph_ramp
-	canvas.cell = config.cell_size
-	canvas.font_size = config.font_size
+	canvas.cell = _cell
+	canvas.font_size = _font_size
 	vp.add_child(canvas)
 	add_child(vp)
 	await RenderingServer.frame_post_draw

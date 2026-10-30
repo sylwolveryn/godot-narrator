@@ -7,6 +7,7 @@ extends CanvasLayer
 
 @export var narrator: Narrator
 @export var config: NarratorConfig
+@export var display_config: DisplayConfig
 
 var _label: Label
 var _settings: LabelSettings
@@ -25,16 +26,16 @@ var _tween: Tween
 func _ready() -> void:
 	if config == null:
 		config = NarratorConfig.new()
+	if display_config == null:
+		display_config = DisplayConfig.new()
 	_rng.randomize()
 	_settings = LabelSettings.new()
 	var font := SystemFont.new()
 	font.font_names = config.font_names
 	font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 	_settings.font = font
-	_settings.font_size = config.font_size
 	_settings.font_color = config.text_color
 	_settings.outline_color = config.outline_color
-	_settings.outline_size = config.outline_size
 	_label = Label.new()
 	_label.name = "NarrationText"
 	_label.label_settings = _settings
@@ -42,20 +43,31 @@ func _ready() -> void:
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_label.set_anchor(SIDE_LEFT, config.side_margin)
-	_label.set_anchor(SIDE_RIGHT, 1.0 - config.side_margin)
+	_label.set_anchor(SIDE_LEFT, 0.5)
+	_label.set_anchor(SIDE_RIGHT, 0.5)
 	_label.set_anchor(SIDE_TOP, config.vertical_anchor)
 	_label.set_anchor(SIDE_BOTTOM, config.vertical_anchor)
 	_label.grow_vertical = Control.GROW_DIRECTION_BOTH
-	_label.offset_left = 0.0
-	_label.offset_right = 0.0
 	_label.visible = false
 	add_child(_label)
 	for i in config.scramble_glyphs.length():
 		_glyphs.append(config.scramble_glyphs[i])
+	get_viewport().size_changed.connect(_apply_scale)
+	_apply_scale()
 	if narrator != null:
 		narrator.beat_started.connect(show_beat)
 		narrator.beat_dissolving.connect(dissolve)
+
+
+## Re-derives font, outline and text width from the window size.
+func _apply_scale() -> void:
+	var factor: float = display_config.scale_for(get_viewport())
+	_settings.font_size = DisplayConfig.px(config.font_size, factor)
+	_settings.outline_size = DisplayConfig.px(config.outline_size, factor, 0)
+	var viewport_width: float = get_viewport().get_visible_rect().size.x
+	var half_width: float = minf(viewport_width * (1.0 - 2.0 * config.side_margin), config.max_text_width * factor) * 0.5
+	_label.offset_left = -half_width
+	_label.offset_right = half_width
 
 
 func _process(delta: float) -> void:

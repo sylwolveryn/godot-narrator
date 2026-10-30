@@ -5,6 +5,7 @@ extends SceneTree
 
 const SCENE_PATH := "res://main.tscn"
 const CFG := "res://resources/config/"
+const DISPLAY_CONFIG := "res://resources/config/display_config.tres"
 const NARRATION_DIR := "res://resources/narration/"
 const MAP_PATH := "res://data/maps/m1_awakening.txt"
 const OVERLAY_LAYER := 10
@@ -95,6 +96,7 @@ func _build() -> void:
 	ascii.name = "AsciiPostProcess"
 	ascii.layer = 0
 	ascii.set("config", load(CFG + "ascii_config.tres"))
+	ascii.set("display_config", load(DISPLAY_CONFIG))
 	_add(root, ascii)
 	var screen := ColorRect.new()
 	screen.name = "Screen"
@@ -113,6 +115,7 @@ func _build() -> void:
 	overlay.set("player", player)
 	overlay.set("player_config", player_cfg)
 	overlay.set("fx_config", load(CFG + "glyph_fx_config.tres"))
+	overlay.set("display_config", load(DISPLAY_CONFIG))
 	_add(root, overlay)
 
 	# Narration text: above the ASCII shader and above the intro veil (decision-001).
@@ -121,6 +124,7 @@ func _build() -> void:
 	narration.layer = narrator_cfg.overlay_layer
 	narration.set("narrator", narrator)
 	narration.set("config", narrator_cfg)
+	narration.set("display_config", load(DISPLAY_CONFIG))
 	_add(root, narration)
 
 	var sfx: Node = load("res://scripts/narrator/narration_sfx.gd").new()
@@ -134,6 +138,7 @@ func _build() -> void:
 	intro.name = "IntroSequence"
 	intro.layer = INTRO_LAYER
 	intro.set("config", load(CFG + "intro_config.tres"))
+	intro.set("display_config", load(DISPLAY_CONFIG))
 	_add(root, intro)
 	var veil := ColorRect.new()
 	veil.name = "Veil"
@@ -143,6 +148,11 @@ func _build() -> void:
 	veil_mat.shader = load("res://shaders/intro_wave.gdshader")
 	veil.material = veil_mat
 	_add(intro, veil)
+
+	var fullscreen: Node = load("res://scripts/ui/fullscreen_toggle.gd").new()
+	fullscreen.name = "FullscreenToggle"
+	fullscreen.set("config", load(DISPLAY_CONFIG))
+	_add(root, fullscreen)
 
 	var runs: Node = load("res://scripts/core/run_manager.gd").new()
 	runs.name = "RunManager"

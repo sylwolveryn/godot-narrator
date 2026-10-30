@@ -32,7 +32,7 @@ extends Resource
 
 @export_group("Overlay glyph")
 @export var font_names: PackedStringArray = PackedStringArray(["Segoe UI Symbol", "Nirmala UI", "Segoe UI", "Consolas", "monospace"])
-@export var font_size: int = 44
+@export var font_size: int = 88
 @export var glyph_color: Color = Color(0.95, 0.97, 1.0)
 @export var outline_color: Color = Color(0.0, 0.0, 0.0)
-@export var outline_size: int = 6
+@export var outline_size: int = 12

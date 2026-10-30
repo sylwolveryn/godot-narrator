@@ -1,5 +1,5 @@
 extends SceneTree
-## Writes the movement InputMap actions into project.godot ([input]) and removes the legacy
+## Writes the movement and toggle_fullscreen InputMap actions into project.godot ([input]) and removes the legacy
 ## prototype `transform` action. Idempotent.
 ## Usage: godot --headless --path . -s tools/build_input_map.gd
 
@@ -17,6 +17,9 @@ func _init() -> void:
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	_set_action("move_pointer", [click])
+	var alt_enter := _key(KEY_ENTER)
+	alt_enter.alt_pressed = true
+	_set_action("toggle_fullscreen", [_key(KEY_F11), alt_enter])
 	var err: int = ProjectSettings.save()
 	if err != OK:
 		push_error("Failed to save project.godot: %s" % error_string(err))

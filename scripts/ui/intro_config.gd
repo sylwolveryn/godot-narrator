@@ -30,5 +30,5 @@ extends Resource
 @export_range(0.0, 0.3) var line_spacing: float = 0.05
 ## Thickness of a wave line, as a fraction of screen height.
 @export_range(0.005, 0.2) var thickness: float = 0.022
-## Size of the dotted cells the wave is quantised to, in pixels.
-@export var cell_size: Vector2i = Vector2i(10, 18)
+## Size of the dotted cells the wave is quantised to, in reference pixels (scaled at runtime).
+@export var cell_size: Vector2i = Vector2i(20, 36)

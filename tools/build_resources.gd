@@ -10,6 +10,7 @@ func _init() -> void:
 	ok = _save(RunConfig.new(), "run_config.tres") and ok
 	ok = _save(WorldConfig.new(), "world_config.tres") and ok
 	ok = _save(AsciiConfig.new(), "ascii_config.tres") and ok
+	ok = _save(DisplayConfig.new(), "display_config.tres") and ok
 
 	var spikes := HazardDefinition.new()
 	spikes.kind = MapLegend.SPIKES
