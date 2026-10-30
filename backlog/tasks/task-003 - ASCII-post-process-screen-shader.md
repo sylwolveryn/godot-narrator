@@ -1,11 +1,11 @@
 ---
 id: TASK-003
 title: ASCII post-process screen shader
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:04:00Z'
+updated_date: '2026-10-30T16:06:00Z'
 labels:
   - rendering
 milestone: m-0
@@ -43,3 +43,9 @@ The core visual identity is ASCII glyphs. A full-screen post-process shader conv
 <!-- SECTION:NOTES:BEGIN -->
 Implemented: scripts/rendering/ascii_config.gd, ascii_post_process.gd (CanvasLayer 0, glyph atlas rasterised at runtime from SystemFont into ImageTexture), shaders/ascii_post.gdshader, resources/config/ascii_config.tres, builders extended. Evidence: Movie Maker frame shows glyph grid (scratchpad/shots_003/frame00000019.png); with enabled=false the raw grey render shows (shots_003_off). --check-only clean, headless boot 0 ERROR. --print-fps at 1280x720 on GTX 1060: 60 FPS (vsync; project has no explicit max_fps, so target = monitor refresh 60Hz). Note: top-down ortho view currently shows only floor so image is uniform glyphs; walls not in frame.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added AsciiPostProcess (CanvasLayer 0, full-rect ColorRect) with shaders/ascii_post.gdshader: per-cell luminance from hint_screen_texture picks a glyph from an atlas rasterised at runtime from a system monospace font. All tunables in AsciiConfig (resources/config/ascii_config.tres), including an enabled toggle. Verified by Movie Maker frames (on/off), 60 FPS at 1280x720, clean headless boot, godot-validator PASS. Follow-ups: the atlas appears one frame after load (the black intro hides it); the floor currently reads as a uniform % grid, so tune colours/gain once the map is in.
+<!-- SECTION:FINAL_SUMMARY:END -->
