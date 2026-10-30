@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:21:00Z'
+updated_date: '2026-10-30T16:22:00Z'
 labels:
   - player
   - rendering
@@ -29,7 +29,7 @@ The player character is the core of the M1 experience and must appear as a rando
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A player character spawns at the center of the screen after the intro.
+- [x] #1 A player character spawns at the center of the screen after the intro.
 - [ ] #2 The character's ASCII identity is chosen randomly from a data-driven set (resource or exported list).
 - [ ] #3 The identity is readable on screen under the ASCII shader at the chosen cell size.
 - [ ] #4 The identity is chosen randomly only on the very first run; later runs reuse the saved identity
