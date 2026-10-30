@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:21:00Z'
+updated_date: '2026-10-30T16:22:00Z'
 labels:
   - ux
   - rendering
@@ -28,7 +28,7 @@ The first moment of the game sets the mood and shows the ASCII identity before t
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 On launch the screen is black, then an abstract wave effect plays.
-- [ ] #2 The intro ends automatically and hands off to the spawn step without a pause or menu.
+- [x] #2 The intro ends automatically and hands off to the spawn step without a pause or menu.
 - [ ] #3 Intro timings are exported vars or `.tres` values.
 - [ ] #4 Input during the intro does not break the sequence.
 <!-- AC:END -->
