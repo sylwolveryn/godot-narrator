@@ -1,0 +1,33 @@
+class_name MapData
+extends RefCounted
+## A parsed map: a rectangular grid of cell types plus the spawn cell and any
+## problems found while parsing. Pure data; contains no nodes.
+
+var width: int = 0
+var height: int = 0
+## Row-major cell types, length width * height.
+var types: Array[StringName] = []
+var spawn_cell: Vector2i = Vector2i.ZERO
+var has_spawn: bool = false
+## Errors make the map unusable or degrade it (e.g. missing file, no spawn).
+var errors: PackedStringArray = PackedStringArray()
+## Warnings are recoverable oddities (unknown char, ragged rows).
+var warnings: PackedStringArray = PackedStringArray()
+
+
+func is_empty() -> bool:
+	return width <= 0 or height <= 0
+
+
+func in_bounds(cell: Vector2i) -> bool:
+	return cell.x >= 0 and cell.y >= 0 and cell.x < width and cell.y < height
+
+
+func type_at(cell: Vector2i) -> StringName:
+	if not in_bounds(cell):
+		return MapLegend.VOID
+	return types[cell.y * width + cell.x]
+
+
+func set_type(cell: Vector2i, type: StringName) -> void:
+	types[cell.y * width + cell.x] = type

@@ -17,6 +17,6 @@ extends Resource
 ## Cell background colour.
 @export var background_color: Color = Color(0.02, 0.03, 0.02)
 ## 0 = glyphs use foreground_color, 1 = glyphs use the scene colour of the cell.
-@export_range(0.0, 1.0) var scene_color_mix: float = 0.0
+@export_range(0.0, 1.0) var scene_color_mix: float = 0.8
 ## Multiplier applied to the sampled luminance before choosing a glyph.
 @export var brightness_gain: float = 1.6

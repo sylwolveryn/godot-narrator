@@ -13,6 +13,7 @@ func _ready() -> void:
 	if view_config == null:
 		view_config = CameraViewConfig.new()
 	apply_view(view_config)
+	SignalBus.player_spawned.connect(_on_player_spawned)
 
 
 func _process(delta: float) -> void:
@@ -36,3 +37,13 @@ func apply_view(config: CameraViewConfig) -> void:
 	else:
 		camera.projection = Camera3D.PROJECTION_PERSPECTIVE
 		camera.fov = config.fov
+
+
+## Jumps straight to the follow target (no smoothing), e.g. after a respawn.
+func snap_to_target() -> void:
+	if follow_target != null:
+		global_position = Vector3(follow_target.global_position.x, 0.0, follow_target.global_position.z)
+
+
+func _on_player_spawned(_world_position: Vector3) -> void:
+	snap_to_target()

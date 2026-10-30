@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="PlayerConfig" format=3]
+
+[ext_resource type="Resource" path="res://resources/config/identity_pool.tres" id="1_fvfnr"]
+[ext_resource type="Script" path="res://scripts/player/player_config.gd" id="2_1tosk"]
+
+[resource]
+script = ExtResource("2_1tosk")
+identity_pool = ExtResource("1_fvfnr")
+font_names = PackedStringArray("Segoe UI Symbol", "Nirmala UI", "Segoe UI", "Consolas", "monospace")

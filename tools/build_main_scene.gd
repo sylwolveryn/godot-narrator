@@ -1,12 +1,13 @@
 extends SceneTree
-## Rebuilds res://main.tscn: world placeholder geometry, locked camera rig, run manager.
+## Rebuilds res://main.tscn: map loader, player, locked camera rig, overlays, run manager.
 ## Run tools/build_resources.gd first. Idempotent.
 ## Usage: godot --headless --path . -s tools/build_main_scene.gd
 
 const SCENE_PATH := "res://main.tscn"
 const CFG := "res://resources/config/"
-const FLOOR_SIZE := Vector2(20.0, 20.0)
-const WALL_SIZE := Vector3(20.0, 1.0, 1.0)
+const MAP_PATH := "res://data/maps/m1_awakening.txt"
+const OVERLAY_LAYER := 10
+const INTRO_LAYER := 20
 
 
 func _init() -> void:
@@ -23,20 +24,21 @@ func _build() -> void:
 	world.name = "World"
 	_add(root, world)
 
-	var floor_mesh := MeshInstance3D.new()
-	floor_mesh.name = "Floor"
-	var plane := PlaneMesh.new()
-	plane.size = FLOOR_SIZE
-	floor_mesh.mesh = plane
-	_add(world, floor_mesh)
-
-	for wall_def: Array in [["WallNorth", Vector3(0, 0.5, -10)], ["WallSouth", Vector3(0, 0.5, 10)]]:
-		_add(world, _make_wall(wall_def[0], wall_def[1]))
+	var loader: MapLoader = MapLoader.new()
+	loader.name = "MapLoader"
+	loader.legend = load(CFG + "map_legend.tres") as MapLegend
+	loader.world_config = load(CFG + "world_config.tres") as WorldConfig
+	loader.map_path = MAP_PATH
+	_add(world, loader)
 
 	var light := DirectionalLight3D.new()
 	light.name = "Sun"
 	light.rotation_degrees = Vector3(-60.0, 30.0, 0.0)
 	_add(world, light)
+
+	var save: Node = load("res://scripts/core/save_service.gd").new()
+	save.name = "SaveService"
+	_add(root, save)
 
 	var rig: Node3D = load("res://scripts/rendering/camera_rig.gd").new()
 	rig.name = "CameraRig"
@@ -45,6 +47,23 @@ func _build() -> void:
 	var cam := Camera3D.new()
 	cam.name = "Camera3D"
 	_add(rig, cam)
+
+	var player_cfg: PlayerConfig = load(CFG + "player_config.tres")
+	var player: CharacterBody3D = load("res://scripts/player/player.gd").new()
+	player.name = "Player"
+	player.set("config", player_cfg)
+	player.set("map_loader", loader)
+	player.set("save_service", save)
+	var body := CollisionShape3D.new()
+	body.name = "Collision"
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = player_cfg.body_radius
+	capsule.height = player_cfg.body_height
+	body.shape = capsule
+	body.position.y = player_cfg.body_height * 0.5
+	player.add_child(body)
+	_add(root, player)
+	rig.set("follow_target", player)
 
 	# Layer 0 post-process: reads the 3D render and replaces it with glyphs.
 	var ascii: CanvasLayer = load("res://scripts/rendering/ascii_post_process.gd").new()
@@ -60,6 +79,30 @@ func _build() -> void:
 	mat.shader = load("res://shaders/ascii_post.gdshader")
 	screen.material = mat
 	_add(ascii, screen)
+
+	# Layer 10 overlay: crisp glyphs the ASCII shader must not touch (decision-001).
+	var overlay: CanvasLayer = load("res://scripts/rendering/glyph_overlay.gd").new()
+	overlay.name = "GlyphOverlay"
+	overlay.layer = OVERLAY_LAYER
+	overlay.set("camera_rig", rig)
+	overlay.set("player", player)
+	overlay.set("player_config", player_cfg)
+	_add(root, overlay)
+
+	# Layer 20: intro veil + wave, above everything.
+	var intro: CanvasLayer = load("res://scripts/ui/intro_sequence.gd").new()
+	intro.name = "IntroSequence"
+	intro.layer = INTRO_LAYER
+	intro.set("config", load(CFG + "intro_config.tres"))
+	_add(root, intro)
+	var veil := ColorRect.new()
+	veil.name = "Veil"
+	veil.set_anchors_preset(Control.PRESET_FULL_RECT)
+	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var veil_mat := ShaderMaterial.new()
+	veil_mat.shader = load("res://shaders/intro_wave.gdshader")
+	veil.material = veil_mat
+	_add(intro, veil)
 
 	var runs: Node = load("res://scripts/core/run_manager.gd").new()
 	runs.name = "RunManager"
@@ -92,25 +135,6 @@ func _build() -> void:
 
 	print("Saved %s (uid %s)" % [SCENE_PATH, ResourceUID.id_to_text(ResourceLoader.get_resource_uid(SCENE_PATH))])
 	quit()
-
-
-func _make_wall(wall_name: String, pos: Vector3) -> StaticBody3D:
-	var body := StaticBody3D.new()
-	body.name = wall_name
-	body.position = pos
-	var mesh := MeshInstance3D.new()
-	mesh.name = "Mesh"
-	var box := BoxMesh.new()
-	box.size = WALL_SIZE
-	mesh.mesh = box
-	body.add_child(mesh)
-	var shape := CollisionShape3D.new()
-	shape.name = "Collision"
-	var bs := BoxShape3D.new()
-	bs.size = WALL_SIZE
-	shape.shape = bs
-	body.add_child(shape)
-	return body
 
 
 ## Adds child and sets owner (recursively) to the scene root so it is packed.

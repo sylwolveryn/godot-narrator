@@ -11,6 +11,15 @@ func _init() -> void:
 	ok = _save(WorldConfig.new(), "world_config.tres") and ok
 	ok = _save(AsciiConfig.new(), "ascii_config.tres") and ok
 
+	ok = _save(MapLegend.new(), "map_legend.tres") and ok
+	ok = _save(IntroConfig.new(), "intro_config.tres") and ok
+
+	var pool := IdentityPool.new()
+	ok = _save(pool, "identity_pool.tres") and ok
+	var player_cfg := PlayerConfig.new()
+	player_cfg.identity_pool = load(DIR + "identity_pool.tres") as IdentityPool
+	ok = _save(player_cfg, "player_config.tres") and ok
+
 	var top_down := CameraViewConfig.new()
 	ok = _save(top_down, "camera_top_down.tres") and ok
 

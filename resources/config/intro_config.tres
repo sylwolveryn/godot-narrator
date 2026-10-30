@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="IntroConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/intro_config.gd" id="1_nqlo0"]
+
+[resource]
+script = ExtResource("1_nqlo0")

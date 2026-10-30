@@ -18,6 +18,7 @@ func _ready() -> void:
 		config = RunConfig.new()
 	SignalBus.run_end_requested.connect(end_run)
 	SignalBus.run_ended.connect(_on_run_ended)
+	SignalBus.intro_finished.connect(_on_intro_finished)
 
 
 func _process(delta: float) -> void:
@@ -46,5 +47,16 @@ func end_run(cause: StringName = &"") -> void:
 func _on_run_ended(_cause: StringName) -> void:
 	if config.restart_delay > 0.0:
 		await get_tree().create_timer(config.restart_delay).timeout
-	if phase == Phase.DYING:
+	if phase != Phase.DYING:
+		return
+	if config.intro_on_restart:
+		phase = Phase.INTRO
+		SignalBus.intro_requested.emit(true)
+	else:
+		start_run()
+
+
+## The intro hands off by signal; the run starts only if we are still waiting for it.
+func _on_intro_finished() -> void:
+	if phase == Phase.INTRO:
 		start_run()

@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="IdentityPool" format=3]
+
+[ext_resource type="Script" path="res://scripts/player/identity_pool.gd" id="1_52331"]
+
+[resource]
+script = ExtResource("1_52331")
+glyphs = PackedStringArray("ꙮ", "ᚠ", "ঔ", "༄", "☿", "⍟", "ψ", "ж", "ʘ", "∰")
