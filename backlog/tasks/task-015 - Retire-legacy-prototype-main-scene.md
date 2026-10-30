@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T15:43:00Z'
+updated_date: '2026-10-30T15:44:00Z'
 labels:
   - core
 milestone: m-0
@@ -27,3 +27,12 @@ The validator found that the current main.tscn is left over from the first exper
 - [ ] #2 Stray main.tscn*.tmp files are removed from the project root
 - [ ] #3 Any prototype code worth keeping is noted or moved before the scene is replaced; scene changes are made through tools/ scripts or the Godot MCP, not raw text edits
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Preserve the current (uncommitted) prototype scene as prototype/legacy_main.tscn, with a .gdignore so Godot neither imports nor parses it; add prototype/README.md describing the W/が morph prototype.
+2. Add tools/build_main_scene.gd (extends SceneTree) that rebuilds res://main.tscn as an empty Main Node3D root, keeping the scene UID so run/main_scene still resolves.
+3. Run the tool headless; delete the four main.tscn*.tmp files.
+4. Validate: parse-check the tool script, headless boot with no ERROR lines (godot-validator).
+<!-- SECTION:PLAN:END -->
