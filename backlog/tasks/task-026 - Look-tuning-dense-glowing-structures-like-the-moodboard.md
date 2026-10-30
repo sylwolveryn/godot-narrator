@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T20:36:00Z'
-updated_date: '2026-10-30T20:40:00Z'
+updated_date: '2026-10-30T21:52:00Z'
 labels:
   - rendering
 milestone: m-2
@@ -31,3 +31,9 @@ After the neon renderer (task-023) walls read as faint uniform dot grids and rem
 - [ ] #3 Side-by-side sheet against the current look is reviewed in task notes; flicker and 60 FPS limits from task-024 still hold
 - [ ] #4 docs/visual_direction.md tunables table is updated with any changed defaults
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Superseded 2026-10-30: visual direction changed to a glyph-material isometric 3D world + glyph-object morphing (see decision-002). Unfinished work parked on branch parked/sdf-overlay (commit cfcc6ff).
+<!-- SECTION:NOTES:END -->
