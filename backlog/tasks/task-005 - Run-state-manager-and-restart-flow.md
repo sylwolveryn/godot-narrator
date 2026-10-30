@@ -26,10 +26,10 @@ Every run needs a single owner of its lifecycle: starting, ending, and starting 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A run state node or resource tracks the current run's state and is the only owner of run lifecycle transitions.
-- [ ] #2 Ending a run emits a signal through `SignalBus`, and the manager starts a new run in response.
-- [ ] #3 Restart produces a clean run state with no leftover values from the previous run (verified by a forced run end in a test scene).
-- [ ] #4 No game state is stored in an autoload.
+- [x] #1 A run state node or resource tracks the current run's state and is the only owner of run lifecycle transitions.
+- [x] #2 Ending a run emits a signal through `SignalBus`, and the manager starts a new run in response.
+- [x] #3 Restart produces a clean run state with no leftover values from the previous run (verified by a forced run end in a test scene).
+- [x] #4 No game state is stored in an autoload.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,3 +37,9 @@ Every run needs a single owner of its lifecycle: starting, ending, and starting 
 <!-- SECTION:PLAN:BEGIN -->
 1. RunConfig, RunState, RunManager (Node under Main). 2. SignalBus signals. 3. tools/test_run_manager.gd forced run end test.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+RunManager (scripts/core/run_manager.gd, child of Main) owns phases INTRO/PLAYING/DYING; end_run() or SignalBus.run_end_requested -> emits SignalBus.run_ended; manager's own listener on run_ended restarts after RunConfig.restart_delay by creating a fresh RunState. Per-run data lives only in RunState. No autoload state. tools/test_run_manager.gd: PASS (forced end -> run_ended(test_cause), run_started(1), fresh state with no leaked elapsed/end_cause, repeated ends give one start each). Boot 0 ERROR. Note: first run is not auto-started on boot (phase stays INTRO); the intro task (006) should call start_run(). Visual not verified (headless only).
+<!-- SECTION:NOTES:END -->
