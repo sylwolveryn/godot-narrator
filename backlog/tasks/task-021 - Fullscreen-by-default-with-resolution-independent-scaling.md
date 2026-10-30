@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T17:46:00Z'
+updated_date: '2026-10-30T17:58:00Z'
 labels:
   - rendering
   - ux
@@ -29,3 +29,9 @@ Playtest: the window is small and every overlay size was tuned only for 960x540.
 - [ ] #3 Ultrawide and 4:3 windows keep the player centred with no stretched glyphs
 - [ ] #4 A key toggles fullscreen/windowed through an InputMap action
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. DisplayConfig resource (reference 1920x1080) + scale = viewport height/ref. 2. Config reference sizes doubled (authored 960x540). 3. AsciiPostProcess/GlyphOverlay/NarrationOverlay/IntroSequence rescale on size_changed (atlas rebuild). 4. FullscreenToggle node + toggle_fullscreen action (F11, Alt+Enter). 5. Project settings via tools/build_project_settings.gd. 6. Movie Maker captures at 5 resolutions + contact sheet.
+<!-- SECTION:PLAN:END -->
