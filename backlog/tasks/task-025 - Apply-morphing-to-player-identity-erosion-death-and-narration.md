@@ -1,9 +1,11 @@
 ---
 id: TASK-025
 title: Apply morphing to player identity, erosion, death and narration
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T17:45:00Z'
+updated_date: '2026-10-30T20:40:00Z'
 labels:
   - rendering
   - narrator
