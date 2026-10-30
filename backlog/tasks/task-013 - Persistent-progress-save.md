@@ -1,11 +1,11 @@
 ---
 id: TASK-013
 title: Persistent progress save
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:54:00Z'
+updated_date: '2026-10-30T16:57:00Z'
 labels:
   - save
   - core
@@ -48,3 +48,9 @@ Progress must survive a death and a restart, so the player is not starting from 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented: SaveConfig (save_path, allowed script whitelist), SaveService loads in _ready (before any run) and saves atomically (temp+rename) on run_ended; PersistentProgress gains death_count, heard_beats. Load safety: text pre-scan rejects sub_resources/foreign scripts, ResourceLoader CACHE_MODE_IGNORE, is PersistentProgress check, field sanitizing; missing/corrupt -> fresh + push_warning. Existing tests now use temp save paths (tools/test_support.gd). Evidence: tools/test_save.gd PASS (round trip, only 5 persistent fields, run_ended writes file, load-before-first-run applies identity/memory/counts, missing, garbage, truncated, wrong type, embedded script, foreign script, sanitization, cleanup); all tests PASS; no real user://progress.tres created by tests. Note: save happens on run end only (and when identity is first chosen); quitting mid-run loses that run's new reveals. Truncated file with an intact header makes the engine log an ERROR line before fallback.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+SaveService loads user://progress.tres in _ready (before the first run) and writes it atomically on run_ended and on first identity choice. Persistent fields: run_count, death_count, identity_glyph, revealed_cells, heard_beats. Loading pre-scans the text (no sub_resources, only allowed script paths), loads with CACHE_MODE_IGNORE, checks the type and sanitizes values; missing/corrupt/forged files fall back to fresh progress with a warning. Tests use temp save paths and clean up. Known gap: quitting mid-run loses that run's new reveals (save happens at run end).
+<!-- SECTION:FINAL_SUMMARY:END -->
