@@ -1,11 +1,11 @@
 ---
 id: TASK-004
 title: 'Spike: narration and menu overlay vs. ASCII shader'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:05:00Z'
+updated_date: '2026-10-30T16:06:00Z'
 labels:
   - rendering
   - narrator
@@ -46,3 +46,9 @@ A full-screen shader will scramble narration text and in-world menus if they are
 <!-- SECTION:NOTES:BEGIN -->
 Prototype tools/spike_overlay.gd (deleted afterwards) captured via Movie Maker: crisp Label and a '@' at unproject_position((3,0,-2)) over ASCII output (scratchpad/shots_004/f00000028.png). Decision decision-001 recorded; note: backlog CLI cannot write decision body, so body text was filled directly in the file. game_design.md risks marked resolved, one open item added.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Decision-001 (accepted): narration, menus and the player identity glyph render on an overlay CanvasLayer (layer >= 10) above the ASCII post shader; the player glyph is placed at camera.unproject_position, so it is independent of shader cell size. A throwaway prototype (since deleted) showed crisp overlay text and a correctly placed glyph over the ASCII output. The design doc marks both shader risks resolved. Note: the decision body was written into the decision file directly because the backlog CLI has no command for decision content.
+<!-- SECTION:FINAL_SUMMARY:END -->
