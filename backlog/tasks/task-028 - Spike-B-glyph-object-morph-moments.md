@@ -28,10 +28,10 @@ decision-002 defines morph as many glyph objects that fly, rotate and reassemble
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Hero grows: a single-glyph hero rearranges into a larger multi-glyph entity and back
-- [ ] #2 Surroundings to menu: nearby world glyphs lift off and rearrange into readable menu items, then return
-- [ ] #3 Narration assembles: letters fly in to form a readable sentence, hold, then disperse
-- [ ] #4 All glyph objects are batched (e.g. MultiMeshInstance3D or one canvas batch); captures, draw calls and GPU frame time at --max-fps 30 are in the task notes, and the spike runs from one command or from god
+- [x] #1 Hero grows: a single-glyph hero rearranges into a larger multi-glyph entity and back
+- [x] #2 Surroundings to menu: nearby world glyphs lift off and rearrange into readable menu items, then return
+- [x] #3 Narration assembles: letters fly in to form a readable sentence, hold, then disperse
+- [x] #4 All glyph objects are batched (e.g. MultiMeshInstance3D or one canvas batch); captures, draw calls and GPU frame time at --max-fps 30 are in the task notes, and the spike runs from one command or from god
 <!-- AC:END -->
 
 ## Implementation Plan
