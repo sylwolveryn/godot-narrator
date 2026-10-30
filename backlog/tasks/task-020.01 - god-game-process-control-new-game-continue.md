@@ -25,7 +25,7 @@ The core of the launcher: one click to start fresh or continue, without stray pr
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Start new game: closes the running game if any, deletes progress.tres if it exists (no error if missing), then starts the game
-- [ ] #2 Continue game is disabled while progress.tres does not exist; the app polls existence every 3 seconds and enables the button when it appears
+- [x] #2 Continue game is disabled while progress.tres does not exist; the app polls existence every 3 seconds and enables the button when it appears
 - [ ] #3 Continue game when the game is not running: starts it
 - [ ] #4 Continue game while the game is running: first click shows a warning that the game is already running; a second click closes the game and starts it again
 - [ ] #5 A running game is detected even if it was not started by god (editor instances are not treated as the game)
