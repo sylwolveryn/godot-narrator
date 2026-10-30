@@ -40,3 +40,11 @@ The user chose Spike A (scenes/spikes/glyph_world) as the direction. The real ga
 <!-- SECTION:PLAN:BEGIN -->
 1. Port Spike A shader to shaders/glyph_surface.gdshader (reveal mask, cut-away, camera-derived axes). 2. WorldMeshBuilder + MapLoader: one merged mesh. 3. GlyphWorldConfig/GlyphWorldView: lights + cut-away uniforms. 4. Isometric CameraViewConfig profile; remove AsciiPostProcess from main. 5. MapReveal via mask only. 6. Update tests, measure, capture, docs.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+IMPLEMENTED. Files: shaders/glyph_surface.gdshader, scripts/world/world_mesh_builder.gd, scripts/rendering/{glyph_world_view,glyph_world_config,glyph_light_source,glyph_surface_type,glyph_atlas_spec}.gd, resources/glyphs/{glyph_atlas.png,glyph_surface_material.tres}, resources/config/{camera_isometric,glyph_world_config}.tres, tools/{build_glyph_atlas,build_glyph_material,capture_glyph_world,measure_glyph_world}.gd; changed MapLoader, MapReveal (mask only, floor flag in alpha), CameraRig/ViewConfig, WorldConfig, RevealConfig (reveal_floor now true), overlay glyph height, build_main_scene, tests (camera_rig, map_loader, reveal, hazards), capture_at_size.sh (--max-fps 30), docs/architecture.md. AsciiPostProcess removed from main scene (files kept for task-035).
+
+MEASURED (GTX 1060, --max-fps 30, 300 frames): 1366x768 opening: draws 4.2, prims 3338, GPU mean 0.42ms, 30.0 FPS; worst (radius 8 reveal, hazards): draws 3.9, prims 3313, GPU 0.58ms, 30.0 FPS. 1920x1061 (window clipped from 1080): opening GPU 1.02ms, worst 1.87ms (p99 3.56), 30.0 FPS. Raw: scratchpad/t031_perf.txt. Contact sheets: scratchpad/t031_contact_{world,reveal,hazards}_{1366,1920}.png. Tests: all tools/test_*.gd PASS headless except test_input_movement (same mouse-overshoot failure as before, identical numbers on stashed baseline: unchanged) and test_encoding (SKIP, needs GPU).
+<!-- SECTION:NOTES:END -->
