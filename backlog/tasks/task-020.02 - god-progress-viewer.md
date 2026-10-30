@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T17:46:00Z'
+updated_date: '2026-10-30T17:51:00Z'
 labels:
   - tools
 milestone: m-2
@@ -29,3 +29,9 @@ Playtesting needs a quick look at what the save contains without opening files b
 - [ ] #3 The list refreshes when the file appears, disappears or changes (checked by the same 3-second poll)
 - [ ] #4 Reading the save never modifies it; malformed files show an error message instead of crashing
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. core.py pure logic (paths, process matching, controller, ui_state, .tres parser) + god.py tkinter GUI with 3s after() poll; 2. tools/dev_reveal_map.gd + test; 3. unittest suite; 4. README, manual real run.
+<!-- SECTION:PLAN:END -->
