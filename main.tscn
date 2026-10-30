@@ -1,59 +1,83 @@
 [gd_scene format=3 uid="uid://cd1bjpboqyi2w"]
 
-[ext_resource type="Script" path="res://scripts/rendering/camera_rig.gd" id="1_1bvp3"]
-[ext_resource type="Resource" path="res://resources/config/camera_top_down.tres" id="2_lquwl"]
-[ext_resource type="Script" path="res://scripts/core/run_manager.gd" id="3_7mycd"]
-[ext_resource type="Resource" path="res://resources/config/run_config.tres" id="4_272bh"]
+[ext_resource type="Script" path="res://scripts/rendering/camera_rig.gd" id="1_272bh"]
+[ext_resource type="Resource" path="res://resources/config/camera_top_down.tres" id="2_5vw27"]
+[ext_resource type="Script" path="res://scripts/rendering/ascii_post_process.gd" id="3_kek77"]
+[ext_resource type="Resource" path="res://resources/config/ascii_config.tres" id="4_4c57u"]
+[ext_resource type="Shader" path="res://shaders/ascii_post.gdshader" id="5_efxa6"]
+[ext_resource type="Script" path="res://scripts/core/run_manager.gd" id="6_dg77c"]
+[ext_resource type="Resource" path="res://resources/config/run_config.tres" id="7_ycdy4"]
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_5vw27"]
+[sub_resource type="PlaneMesh" id="PlaneMesh_w48qg"]
 size = Vector2(20, 20)
 
-[sub_resource type="BoxMesh" id="BoxMesh_kek77"]
+[sub_resource type="BoxMesh" id="BoxMesh_vivmo"]
 size = Vector3(20, 1, 1)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_4c57u"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_2cqfq"]
 size = Vector3(20, 1, 1)
 
-[sub_resource type="BoxMesh" id="BoxMesh_efxa6"]
+[sub_resource type="BoxMesh" id="BoxMesh_yaehf"]
 size = Vector3(20, 1, 1)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_dg77c"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_074og"]
 size = Vector3(20, 1, 1)
 
-[node name="Main" type="Node3D" unique_id=937857213]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cegan"]
+shader = ExtResource("5_efxa6")
+shader_parameter/cell_px = null
+shader_parameter/glyph_count = null
+shader_parameter/fg_color = null
+shader_parameter/bg_color = null
+shader_parameter/scene_color_mix = null
+shader_parameter/brightness_gain = null
 
-[node name="World" type="Node3D" parent="." unique_id=1302900447]
+[node name="Main" type="Node3D" unique_id=1175093792]
 
-[node name="Floor" type="MeshInstance3D" parent="World" unique_id=1738030783]
-mesh = SubResource("PlaneMesh_5vw27")
+[node name="World" type="Node3D" parent="." unique_id=2136756436]
 
-[node name="WallNorth" type="StaticBody3D" parent="World" unique_id=982489944]
+[node name="Floor" type="MeshInstance3D" parent="World" unique_id=1299843974]
+mesh = SubResource("PlaneMesh_w48qg")
+
+[node name="WallNorth" type="StaticBody3D" parent="World" unique_id=1592742581]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -10)
 
-[node name="Mesh" type="MeshInstance3D" parent="World/WallNorth" unique_id=100573535]
-mesh = SubResource("BoxMesh_kek77")
+[node name="Mesh" type="MeshInstance3D" parent="World/WallNorth" unique_id=1506100311]
+mesh = SubResource("BoxMesh_vivmo")
 
-[node name="Collision" type="CollisionShape3D" parent="World/WallNorth" unique_id=2007479619]
-shape = SubResource("BoxShape3D_4c57u")
+[node name="Collision" type="CollisionShape3D" parent="World/WallNorth" unique_id=1293760686]
+shape = SubResource("BoxShape3D_2cqfq")
 
-[node name="WallSouth" type="StaticBody3D" parent="World" unique_id=41792913]
+[node name="WallSouth" type="StaticBody3D" parent="World" unique_id=2053143566]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 10)
 
-[node name="Mesh" type="MeshInstance3D" parent="World/WallSouth" unique_id=474874762]
-mesh = SubResource("BoxMesh_efxa6")
+[node name="Mesh" type="MeshInstance3D" parent="World/WallSouth" unique_id=1949095706]
+mesh = SubResource("BoxMesh_yaehf")
 
-[node name="Collision" type="CollisionShape3D" parent="World/WallSouth" unique_id=2014974409]
-shape = SubResource("BoxShape3D_dg77c")
+[node name="Collision" type="CollisionShape3D" parent="World/WallSouth" unique_id=1937192531]
+shape = SubResource("BoxShape3D_074og")
 
-[node name="Sun" type="DirectionalLight3D" parent="World" unique_id=1968205849]
+[node name="Sun" type="DirectionalLight3D" parent="World" unique_id=1177100858]
 transform = Transform3D(0.8660254, -0.43301272, 0.24999999, 0, 0.49999997, 0.86602545, -0.5, -0.75, 0.43301266, 0, 0, 0)
 
-[node name="CameraRig" type="Node3D" parent="." unique_id=641439438]
-script = ExtResource("1_1bvp3")
-view_config = ExtResource("2_lquwl")
+[node name="CameraRig" type="Node3D" parent="." unique_id=1193403344]
+script = ExtResource("1_272bh")
+view_config = ExtResource("2_5vw27")
 
-[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=180941307]
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=1605414233]
 
-[node name="RunManager" type="Node" parent="." unique_id=1514811637]
-script = ExtResource("3_7mycd")
-config = ExtResource("4_272bh")
+[node name="AsciiPostProcess" type="CanvasLayer" parent="." unique_id=490325002]
+layer = 0
+script = ExtResource("3_kek77")
+config = ExtResource("4_4c57u")
+
+[node name="Screen" type="ColorRect" parent="AsciiPostProcess" unique_id=2087754397]
+material = SubResource("ShaderMaterial_cegan")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="RunManager" type="Node" parent="." unique_id=2129129710]
+script = ExtResource("6_dg77c")
+config = ExtResource("7_ycdy4")

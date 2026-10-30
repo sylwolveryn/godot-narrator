@@ -46,6 +46,21 @@ func _build() -> void:
 	cam.name = "Camera3D"
 	_add(rig, cam)
 
+	# Layer 0 post-process: reads the 3D render and replaces it with glyphs.
+	var ascii: CanvasLayer = load("res://scripts/rendering/ascii_post_process.gd").new()
+	ascii.name = "AsciiPostProcess"
+	ascii.layer = 0
+	ascii.set("config", load(CFG + "ascii_config.tres"))
+	_add(root, ascii)
+	var screen := ColorRect.new()
+	screen.name = "Screen"
+	screen.set_anchors_preset(Control.PRESET_FULL_RECT)
+	screen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = load("res://shaders/ascii_post.gdshader")
+	screen.material = mat
+	_add(ascii, screen)
+
 	var runs: Node = load("res://scripts/core/run_manager.gd").new()
 	runs.name = "RunManager"
 	runs.set("config", load(CFG + "run_config.tres"))

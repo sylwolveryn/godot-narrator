@@ -187,10 +187,11 @@ World map editor. Additional handcrafted maps and content.
 ## Open Questions and Risks
 
 ### Risks
-1. **Narration and menus under the ASCII shader.** A full-screen post-process shader will scramble text and in-world menus if they are rendered in the 3D scene. Options: (a) render narration and menus as an overlay layer that bypasses the shader, or (b) design the text so it survives the shader. Undecided. A spike is planned in M1.
-2. **Character identity under the shader.** How the "exotic ASCII art" identity of the player character survives a post-process shader depends on shader cell size relative to character size. Undecided. The larger multi-glyph entity (M2) makes this harder to keep readable.
+1. **Narration and menus under the ASCII shader.** A full-screen post-process shader will scramble text and in-world menus if they are rendered in the 3D scene. Options: (a) render narration and menus as an overlay layer that bypasses the shader, or (b) design the text so it survives the shader. **Resolved** by Backlog decision-001: narration and menus render on an overlay CanvasLayer (layer >= 10) above the shader (option a).
+2. **Character identity under the shader.** How the "exotic ASCII art" identity of the player character survives a post-process shader depends on shader cell size relative to character size. The larger multi-glyph entity (M2) makes this harder to keep readable. **Resolved** by decision-001: the identity glyph is drawn on the overlay at `camera.unproject_position` of the player's 3D position, so it does not depend on the shader cell size.
 
 ### Open Questions
+- How closely overlay glyph size should track the shader cell size (follow-up from decision-001, settle with the multi-glyph entity in M2).
 - Exact unlock mechanics and costs for the post-3-death menu (M2).
 - Whether the third run and the third death are the same trigger for the menu and for the multi-glyph growth.
 - How identity changes over time beyond the third-run growth (stages, pacing, what changes).

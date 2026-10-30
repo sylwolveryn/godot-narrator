@@ -9,6 +9,7 @@ func _init() -> void:
 	var ok := true
 	ok = _save(RunConfig.new(), "run_config.tres") and ok
 	ok = _save(WorldConfig.new(), "world_config.tres") and ok
+	ok = _save(AsciiConfig.new(), "ascii_config.tres") and ok
 
 	var top_down := CameraViewConfig.new()
 	ok = _save(top_down, "camera_top_down.tres") and ok
