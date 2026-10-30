@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:26:00Z'
+updated_date: '2026-10-30T16:39:00Z'
 labels:
   - world
   - ux
@@ -28,11 +28,11 @@ The world must be discovered through play, so walls, items and hazards are hidde
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 At run start, walls, items and hazards are hidden.
-- [ ] #2 An element becomes visible when the character reaches or is near it, using the reveal distance from an exported var or `.tres` value.
-- [ ] #3 Revealed elements stay revealed for the rest of the run.
-- [ ] #4 Revealed map memory persists across runs: areas seen in earlier runs are remembered at the start of a new run, with their display style coming from a resource
-- [ ] #5 Revealed state is exposed so the save task can persist it
+- [x] #1 At run start, walls, items and hazards are hidden.
+- [x] #2 An element becomes visible when the character reaches or is near it, using the reveal distance from an exported var or `.tres` value.
+- [x] #3 Revealed elements stay revealed for the rest of the run.
+- [x] #4 Revealed map memory persists across runs: areas seen in earlier runs are remembered at the start of a new run, with their display style coming from a resource
+- [x] #5 Revealed state is exposed so the save task can persist it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,3 +43,9 @@ The world must be discovered through play, so walls, items and hazards are hidde
 3. MapReveal node: hides all at run start, shows remembered cells in memory style, reveals radius around player, emits SignalBus.cells_revealed; SaveService merges into PersistentProgress.revealed_cells[map_id].
 4. tools/test_reveal.gd + capture script for visual check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented: RevealConfig (radius 2.0 cells, reveal_floor=false default, memory_desaturation/brightness), MapLoader per-cell visuals (visuals_at), MapReveal node (hides all at run start, memory style for remembered cells, reveal around player, emits SignalBus.cells_revealed), SaveService merges into PersistentProgress.revealed_cells[map_id] (PackedVector2Array) and exposes get_revealed_cells for task-013. Evidence: tools/test_reveal.gd PASS (hidden at start, radius exactness, sticks, persists into run 2 as dimmer/desaturated memory, re-seen becomes normal, no duplicate announcements). Visual check via tools/capture_reveal.gd (debug autopilot, not in boot path): C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/shots_011b f00000110 (opening: only glyph), f00000240 (walked), f00000300 and f00000360 (run 2 memory).
+<!-- SECTION:NOTES:END -->
