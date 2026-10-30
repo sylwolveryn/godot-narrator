@@ -35,3 +35,9 @@ Testing late-game reveal and memory visuals should not need walking the whole ma
 <!-- SECTION:PLAN:BEGIN -->
 1. core.py pure logic (paths, process matching, controller, ui_state, .tres parser) + god.py tkinter GUI with 3s after() poll; 2. tools/dev_reveal_map.gd + test; 3. unittest suite; 4. README, manual real run.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+tools/dev_reveal_map.gd uses SaveService+MapLoader; refuses missing/corrupt save. tools/test_dev_reveal_map.gd PASS (temp save, 3 cases). Real run via god on copy of real save: 733 cells written, other fields kept; real save restored byte-identical.
+<!-- SECTION:NOTES:END -->
