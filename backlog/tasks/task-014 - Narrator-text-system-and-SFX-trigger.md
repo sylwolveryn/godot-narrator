@@ -31,7 +31,7 @@ The narrator is the story's voice in M1 and must show morphing ASCII text with a
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Narration text assembles on screen as morphing ASCII text using the presentation approach chosen by the spike.
-- [ ] #2 Ambient SFX plays alongside narration when a beat is triggered.
+- [x] #2 Ambient SFX plays alongside narration when a beat is triggered.
 - [ ] #3 Narration beats are data-driven (resource or exported list) and each beat specifies its trigger (event or time).
 - [ ] #4 Narration progress persists: a beat already heard does not repeat in later runs, and new beats unlock by run or death count
 - [ ] #5 Beats can be gated by run count so tone can shift from cryptic to clearer over runs
