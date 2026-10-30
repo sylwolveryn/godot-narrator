@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T17:46:00Z'
+updated_date: '2026-10-30T17:51:00Z'
 labels:
   - tools
 milestone: m-2
@@ -32,3 +32,9 @@ The core of the launcher: one click to start fresh or continue, without stray pr
 - [ ] #6 The Godot executable is found on PATH or via a GODOT_BIN override; the project path is resolved relative to the repo
 - [ ] #7 Logic (state, file checks, process matching) is covered by unit tests that run without opening a window
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. core.py pure logic (paths, process matching, controller, ui_state, .tres parser) + god.py tkinter GUI with 3s after() poll; 2. tools/dev_reveal_map.gd + test; 3. unittest suite; 4. README, manual real run.
+<!-- SECTION:PLAN:END -->
