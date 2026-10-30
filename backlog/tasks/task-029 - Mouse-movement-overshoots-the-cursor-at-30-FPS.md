@@ -4,10 +4,11 @@ title: Mouse movement overshoots the cursor at 30 FPS
 status: To Do
 assignee: []
 created_date: '2026-10-30T22:27:00Z'
+updated_date: '2026-10-30T22:45:00Z'
 labels:
   - player
   - input
-milestone: m-3
+milestone: m-5
 dependencies: []
 priority: high
 type: bug
