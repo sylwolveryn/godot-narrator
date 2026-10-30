@@ -1,11 +1,11 @@
 ---
 id: TASK-010
 title: Handcrafted map loading
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:22:00Z'
+updated_date: '2026-10-30T16:23:00Z'
 labels:
   - world
 milestone: m-0
@@ -43,3 +43,9 @@ The M1 world is one handmade map saved in a file, with no procedural generation.
 <!-- SECTION:NOTES:BEGIN -->
 Implemented scripts/world/{map_legend,map_data,map_cell,map_loader}.gd, resources/config/map_legend.tres, data/maps/m1_awakening.txt (40x23, spawn (20,12), 8 items, spike strips, 3 corrupting patches, nothing lethal near spawn). Walls merged per horizontal run (StaticBody3D), floors per run, items/spikes/corrupt are MapCell (Area3D) with cell_type + groups map_items/map_spikes/map_corrupt/map_hazards. Malformed input (unknown char, missing @, extra @, ragged rows, empty, missing file) logs warning/error and never crashes. Evidence: tools/test_map_loader.gd PASS; boot --quit-after 60 zero ERROR; screenshot scratchpad/shots_010/f00000215.png shows walls/pillars/corridors through the ASCII shader. Tuning: default clear colour set black in project.godot (void was rendering as '=' grey), world colours tinted + AsciiConfig.scene_color_mix 0.8.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+MapLoader builds the World from data/maps/m1_awakening.txt (40x23 handmade map: central chamber with pillars, 8 side rooms, 8 items, spike strips, 3 corrupting patches) using the MapLegend resource. Walls/floor are merged per row and unshaded so colours drive glyph choice. Malformed input (unknown char, missing/extra @, ragged rows, empty, missing file) logs and never crashes (tools/test_map_loader.gd PASS). Placeholder mesh dimensions in map_loader.gd are hardcoded; move to config if they become gameplay-relevant.
+<!-- SECTION:FINAL_SUMMARY:END -->
