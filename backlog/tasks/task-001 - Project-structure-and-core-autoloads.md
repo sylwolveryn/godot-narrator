@@ -26,10 +26,10 @@ The project needs a folder layout and a single signal bus so that every later ta
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Folder structure matches the project conventions (snake_case files and folders, PascalCase node names).
-- [ ] #2 A single signal bus autoload named `SignalBus` exists and is the only autoload added in this task.
-- [ ] #3 No game state is stored in any autoload.
-- [ ] #4 The project boots headless with `--quit-after` without errors.
+- [x] #1 Folder structure matches the project conventions (snake_case files and folders, PascalCase node names).
+- [x] #2 A single signal bus autoload named `SignalBus` exists and is the only autoload added in this task.
+- [x] #3 No game state is stored in any autoload.
+- [x] #4 The project boots headless with `--quit-after` without errors.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,3 +37,9 @@ The project needs a folder layout and a single signal bus so that every later ta
 <!-- SECTION:PLAN:BEGIN -->
 1. Create folder layout per architecture brief. 2. Add SignalBus autoload script (signals only) and register in project.godot. 3. Validate boot.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Folders created (scripts/{core,world,player,rendering,narrator,ui}, resources/{config,narration}, data/maps, shaders, scenes; empty ones hold .gitkeep). scripts/core/signal_bus.gd registered as the only autoload in project.godot [autoload]. SignalBus holds signals only (run_started, run_ended, run_end_requested). Validation: boot 'godot --headless --path . --quit-after 60' prints 0 ERROR lines. Note: --check-only on scripts referencing SignalBus (run_manager.gd) reports 'Identifier not found: SignalBus' because autoloads are not registered in check-only mode; the same script compiles and runs fine in the full boot and in tools/test_run_manager.gd. Visual not verified (headless only).
+<!-- SECTION:NOTES:END -->
