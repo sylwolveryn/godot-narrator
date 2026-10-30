@@ -1,9 +1,11 @@
 ---
 id: TASK-005
 title: Run state manager and restart flow
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T15:30:00Z'
+updated_date: '2026-10-30T15:50:00Z'
 labels:
   - core
 milestone: m-0
