@@ -1,11 +1,11 @@
 ---
 id: TASK-012
 title: Hazard death
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:54:00Z'
+updated_date: '2026-10-30T16:57:00Z'
 labels:
   - world
   - core
@@ -50,3 +50,9 @@ The M1 run must end through a hazard, which is the first real loss condition. De
 <!-- SECTION:NOTES:BEGIN -->
 Implemented: HazardDefinition (+hazard_spikes/hazard_corrupting .tres, referenced via MapLegend.hazards), HazardMonitor (cell lookup per physics frame, PLAYING only, one-shot per run, lethal when unrevealed), SignalBus erosion_changed/hazard_lethal, RunState.erosion, GlyphOverlay erosion scramble/jitter/fade/tint + death shatter (GlyphFxConfig). Evidence: tools/test_hazards.gd PASS (no fire in INTRO, spike kills once while hidden, no double fire in DYING, tree not paused, auto restart, erosion partial/recovers/kills, no leak); all tools/test_*.gd PASS; boot --quit-after 60 zero ERROR. Visual: Movie Maker capture via tools/capture_hazards.gd; erosion scramble frames f00000135..f00000175, death shatter f00000209..f00000245, restart f00000256 in C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/shots_012 (sheets sheet_erosion.png, sheet_death.png).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Two data-driven hazards (HazardDefinition: hazard_spikes.tres, hazard_corrupting.tres). HazardMonitor does a deterministic cell lookup each physics frame during PLAYING: spikes end the run on touch; corrupting glyphs raise RunState.erosion (recovering outside) and end the run at the threshold. Hazards stay lethal while unrevealed (intended). GlyphOverlay shows erosion as glyph scramble/fade and death as a red flash + shatter during the restart delay; no pause, no menu. tools/test_hazards.gd PASS; Movie Maker frames confirm erosion, death and restart.
+<!-- SECTION:FINAL_SUMMARY:END -->
