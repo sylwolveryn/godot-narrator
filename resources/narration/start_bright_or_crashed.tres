@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_wfw6e"]
+
+[resource]
+script = ExtResource("1_wfw6e")
+id = "start_bright_or_crashed"
+text = "You fell from somewhere bright. Or you crashed."
+event = &"run_started"
+min_run = 6
+max_run = 6
+min_deaths = 5
+mood = &"chime"
+origin_tags = PackedStringArray("angelic", "alien")
+order = 24

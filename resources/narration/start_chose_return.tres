@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_dg0y1"]
+
+[resource]
+script = ExtResource("1_dg0y1")
+id = "start_chose_return"
+text = "Whatever you were, you chose to come back."
+event = &"run_started"
+min_run = 7
+min_deaths = 6
+origin_tags = PackedStringArray("none")
+order = 25

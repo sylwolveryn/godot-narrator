@@ -22,3 +22,9 @@ signal cells_revealed(map_id: StringName, cells: PackedVector2Array)
 signal erosion_changed(amount: float, tint: Color)
 ## Emitted by HazardMonitor just before it requests the run end, so presentation can colour the death.
 signal hazard_lethal(cause: StringName, tint: Color)
+## Emitted by the systems that own a narration trigger (e.g. first move, first reveal, hazard entry). `event` is a NarrationEvents name.
+signal narration_event(event: StringName)
+## Emitted by the player when it starts or stops moving during a run.
+signal player_motion_changed(moving: bool)
+## Emitted by the narrator when a beat starts displaying; SaveService records it as heard.
+signal beat_heard(beat_id: String)

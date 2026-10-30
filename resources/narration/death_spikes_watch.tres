@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_lfm2u"]
+
+[resource]
+script = ExtResource("1_lfm2u")
+id = "death_spikes_watch"
+text = "I'm sorry. I watch every time."
+event = &"died_spikes"
+min_run = 5
+min_deaths = 4
+origin_tags = PackedStringArray("none")
+order = 23

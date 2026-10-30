@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_7sa86"]
+
+[resource]
+script = ExtResource("1_7sa86")
+id = "start_invented_voice"
+text = "I remember your voice. Or I invented it."
+event = &"run_started"
+min_run = 4
+max_run = 4
+min_deaths = 3
+origin_tags = PackedStringArray("none")
+order = 19

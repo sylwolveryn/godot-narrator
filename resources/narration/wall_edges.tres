@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_0d1ii"]
+
+[resource]
+script = ExtResource("1_0d1ii")
+id = "wall_edges"
+text = "Edges. Always edges."
+event = &"wall_revealed"
+origin_tags = PackedStringArray("none")
+order = 3

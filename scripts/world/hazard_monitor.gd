@@ -16,6 +16,7 @@ extends Node
 var _fired: bool = false
 var _active: HazardDefinition
 var _last_announced: float = -1.0
+var _entered_corruption: bool = false
 
 
 func _ready() -> void:
@@ -35,6 +36,7 @@ func _physics_process(delta: float) -> void:
 	if def != null and def.erosion_rate > 0.0:
 		_active = def
 		state.erosion += def.erosion_rate * delta
+		_announce_entry()
 	elif state.erosion > 0.0:
 		var recovery: float = _active.recovery_rate if _active != null else 0.0
 		state.erosion = maxf(0.0, state.erosion - recovery * delta)
@@ -66,6 +68,15 @@ func _announce(erosion: float) -> void:
 func _on_run_started(_run_index: int) -> void:
 	_fired = false
 	_active = null
+	_entered_corruption = false
 	if _last_announced != 0.0:
 		_last_announced = 0.0
 		SignalBus.erosion_changed.emit(0.0, Color.WHITE)
+
+
+## Narration: the first time this run the player stands in a corrupting area.
+func _announce_entry() -> void:
+	if _entered_corruption:
+		return
+	_entered_corruption = true
+	SignalBus.narration_event.emit(NarrationEvents.CORRUPTION_ENTERED)

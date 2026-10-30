@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_jp7l5"]
+
+[resource]
+script = ExtResource("1_jp7l5")
+id = "spikes_for_your_kind"
+text = "They built these for your kind."
+event = &"spikes_revealed"
+min_run = 2
+min_deaths = 1
+mood = &"low_drone"
+origin_tags = PackedStringArray("alien", "villain")
+order = 11

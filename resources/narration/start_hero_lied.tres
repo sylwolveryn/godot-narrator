@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_1bb57"]
+
+[resource]
+script = ExtResource("1_1bb57")
+id = "start_hero_lied"
+text = "I told you you were a hero. Maybe I lied."
+event = &"run_started"
+min_run = 5
+max_run = 5
+min_deaths = 4
+origin_tags = PackedStringArray("hero", "villain")
+order = 22

@@ -1,0 +1,96 @@
+[gd_resource type="Resource" script_class="NarratorConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_nmvcx"]
+[ext_resource type="Resource" path="res://resources/narration/wake_first.tres" id="2_566ke"]
+[ext_resource type="Resource" path="res://resources/narration/move_first.tres" id="3_j42l8"]
+[ext_resource type="Resource" path="res://resources/narration/idle_still.tres" id="4_70fj4"]
+[ext_resource type="Resource" path="res://resources/narration/wall_edges.tres" id="5_kuleh"]
+[ext_resource type="Resource" path="res://resources/narration/item_not_yet.tres" id="6_dmogt"]
+[ext_resource type="Resource" path="res://resources/narration/spikes_teeth.tres" id="7_6lal2"]
+[ext_resource type="Resource" path="res://resources/narration/corrupt_knows.tres" id="8_kq7ri"]
+[ext_resource type="Resource" path="res://resources/narration/erosion_again.tres" id="9_rq3o1"]
+[ext_resource type="Resource" path="res://resources/narration/death_spikes_down.tres" id="10_yu00t"]
+[ext_resource type="Resource" path="res://resources/narration/death_corrupt_scatter.tres" id="11_33gah"]
+[ext_resource type="Resource" path="res://resources/narration/start_came_back.tres" id="12_wccx6"]
+[ext_resource type="Resource" path="res://resources/narration/spikes_for_your_kind.tres" id="13_r4pv4"]
+[ext_resource type="Resource" path="res://resources/narration/corrupt_after_war.tres" id="14_qcqac"]
+[ext_resource type="Resource" path="res://resources/narration/death_spikes_willing.tres" id="15_x27ba"]
+[ext_resource type="Resource" path="res://resources/narration/start_saviour.tres" id="16_p1gc4"]
+[ext_resource type="Resource" path="res://resources/narration/item_across_stars.tres" id="17_rhd2r"]
+[ext_resource type="Resource" path="res://resources/narration/idle_burned.tres" id="18_rn0ba"]
+[ext_resource type="Resource" path="res://resources/narration/death_corrupt_halo.tres" id="19_yv5hh"]
+[ext_resource type="Resource" path="res://resources/narration/time_counting_signals.tres" id="20_et45b"]
+[ext_resource type="Resource" path="res://resources/narration/start_invented_voice.tres" id="21_aegcp"]
+[ext_resource type="Resource" path="res://resources/narration/wall_keep_them_out.tres" id="22_w1av2"]
+[ext_resource type="Resource" path="res://resources/narration/erosion_true_name.tres" id="23_sh7d7"]
+[ext_resource type="Resource" path="res://resources/narration/start_hero_lied.tres" id="24_5f5kx"]
+[ext_resource type="Resource" path="res://resources/narration/death_spikes_watch.tres" id="25_knoth"]
+[ext_resource type="Resource" path="res://resources/narration/start_bright_or_crashed.tres" id="26_tb4bk"]
+[ext_resource type="Resource" path="res://resources/narration/start_chose_return.tres" id="27_gmrd6"]
+[ext_resource type="Script" path="res://scripts/narrator/narration_mood.gd" id="28_wryu0"]
+[ext_resource type="Script" path="res://scripts/narrator/narrator_config.gd" id="29_s0ifg"]
+
+[sub_resource type="Resource" id="Resource_hghde"]
+script = ExtResource("28_wryu0")
+id = &"hum"
+duration = 2.6
+overtone_level = 0.35
+attack = 0.8
+release = 1.2
+
+[sub_resource type="Resource" id="Resource_fbf1b"]
+script = ExtResource("28_wryu0")
+id = &"chime"
+duration = 1.4
+freq_start = 660.0
+freq_end = 990.0
+overtone_ratio = 2.0
+overtone_level = 0.3
+attack = 0.02
+release = 1.2
+volume_db = -5.0
+
+[sub_resource type="Resource" id="Resource_6gmvw"]
+script = ExtResource("28_wryu0")
+id = &"static"
+duration = 1.2
+freq_start = 140.0
+freq_end = 140.0
+noise_level = 0.45
+tone_level = 0.0
+attack = 0.05
+release = 0.9
+crackle = 0.9
+volume_db = -6.0
+
+[sub_resource type="Resource" id="Resource_dehwh"]
+script = ExtResource("28_wryu0")
+id = &"low_drone"
+duration = 3.4
+freq_start = 55.0
+freq_end = 48.0
+overtone_ratio = 1.505
+overtone_level = 0.6
+attack = 1.0
+release = 1.6
+volume_db = 2.0
+
+[sub_resource type="Resource" id="Resource_k36tr"]
+script = ExtResource("28_wryu0")
+id = &"pulse"
+duration = 2.2
+freq_start = 520.0
+freq_end = 520.0
+overtone_level = 0.2
+attack = 0.01
+release = 0.3
+pulse_count = 4
+pulse_interval = 0.5
+pulse_length = 0.22
+volume_db = -5.0
+
+[resource]
+script = ExtResource("29_s0ifg")
+beats = Array[ExtResource("1_nmvcx")]([ExtResource("2_566ke"), ExtResource("3_j42l8"), ExtResource("4_70fj4"), ExtResource("5_kuleh"), ExtResource("6_dmogt"), ExtResource("7_6lal2"), ExtResource("8_kq7ri"), ExtResource("9_rq3o1"), ExtResource("10_yu00t"), ExtResource("11_33gah"), ExtResource("12_wccx6"), ExtResource("13_r4pv4"), ExtResource("14_qcqac"), ExtResource("15_x27ba"), ExtResource("16_p1gc4"), ExtResource("17_rhd2r"), ExtResource("18_rn0ba"), ExtResource("19_yv5hh"), ExtResource("20_et45b"), ExtResource("21_aegcp"), ExtResource("22_w1av2"), ExtResource("23_sh7d7"), ExtResource("24_5f5kx"), ExtResource("25_knoth"), ExtResource("26_tb4bk"), ExtResource("27_gmrd6")])
+moods = Array[ExtResource("28_wryu0")]([SubResource("Resource_hghde"), SubResource("Resource_fbf1b"), SubResource("Resource_6gmvw"), SubResource("Resource_dehwh"), SubResource("Resource_k36tr")])
+font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")

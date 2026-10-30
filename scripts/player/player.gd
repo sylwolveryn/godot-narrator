@@ -16,6 +16,8 @@ signal identity_changed(glyph: String)
 var identity_glyph: String = ""
 
 var _ground: Plane = Plane(Vector3.UP, 0.0)
+var _moving: bool = false
+var _moved_this_run: bool = false
 
 
 func _ready() -> void:
@@ -35,6 +37,7 @@ func _physics_process(delta: float) -> void:
 	velocity.y = 0.0
 	move_and_slide()
 	global_position.y = 0.0
+	_announce_motion()
 
 
 func _on_run_started(_run_index: int) -> void:
@@ -43,6 +46,8 @@ func _on_run_started(_run_index: int) -> void:
 
 ## Puts the player on the map spawn and (re)applies the persistent identity.
 func spawn() -> void:
+	_moving = false
+	_moved_this_run = false
 	if map_loader != null:
 		global_position = map_loader.spawn_position
 	velocity = Vector3.ZERO
@@ -83,3 +88,18 @@ func _pointer_direction() -> Vector2:
 	if distance <= config.pointer_stop_distance:
 		return Vector2.ZERO
 	return offset / distance * clampf(distance / config.pointer_full_speed_distance, 0.0, 1.0)
+
+
+## Tells the bus when movement starts or stops during a run, and when the run's first move happens.
+func _announce_motion() -> void:
+	var playing: bool = run_manager != null and run_manager.phase == RunManager.Phase.PLAYING
+	var moving: bool = playing and velocity.length() > config.moving_speed_threshold
+	if moving == _moving:
+		return
+	_moving = moving
+	if not playing:
+		return
+	SignalBus.player_motion_changed.emit(moving)
+	if moving and not _moved_this_run:
+		_moved_this_run = true
+		SignalBus.narration_event.emit(NarrationEvents.FIRST_MOVE)

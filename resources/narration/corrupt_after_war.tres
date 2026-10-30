@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_gtktn"]
+
+[resource]
+script = ExtResource("1_gtktn")
+id = "corrupt_after_war"
+text = "Static. Like after the war."
+event = &"corruption_entered"
+min_run = 2
+min_deaths = 1
+mood = &"static"
+origin_tags = PackedStringArray("ai")
+order = 12

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_2blo6"]
+
+[resource]
+script = ExtResource("1_2blo6")
+id = "corrupt_knows"
+text = "It knows the shape."
+event = &"corruption_entered"
+mood = &"static"
+origin_tags = PackedStringArray("demonic", "ai")
+order = 6

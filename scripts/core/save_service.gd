@@ -10,6 +10,9 @@ signal progress_changed
 
 var progress: PersistentProgress = PersistentProgress.new()
 
+## True when progress changed since the last write; used to save on quit without needless writes.
+var _dirty: bool = false
+
 ## Header tags a progress file may contain. Embedded sub-resources (e.g. scripts) are never allowed.
 const _ALLOWED_TAGS: PackedStringArray = ["gd_resource", "ext_resource", "resource"]
 
@@ -21,6 +24,7 @@ func _ready() -> void:
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.cells_revealed.connect(_on_cells_revealed)
+	SignalBus.beat_heard.connect(_on_beat_heard)
 
 
 ## Reads the progress file. Missing, corrupt or foreign files give fresh progress and a warning.
@@ -56,6 +60,24 @@ func save_progress() -> void:
 	if err != OK:
 		push_warning("[SaveService] Could not move %s to %s: %s" % [temp, path, error_string(err)])
 		DirAccess.remove_absolute(temp)
+		return
+	_dirty = false
+
+
+## Saves on quit so mid-run reveals and heard beats survive closing the game.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		save_if_dirty()
+
+
+func _exit_tree() -> void:
+	save_if_dirty()
+
+
+## Writes the progress only when something changed since the last write.
+func save_if_dirty() -> void:
+	if _dirty and config != null:
+		save_progress()
 
 
 ## Returns the stored identity glyph, picking and storing a random one from `pool` if none exists yet.
@@ -76,16 +98,27 @@ func _on_cells_revealed(map_id: StringName, cells: PackedVector2Array) -> void:
 	var known: PackedVector2Array = get_revealed_cells(map_id)
 	known.append_array(cells)
 	progress.revealed_cells[map_id] = known
+	_dirty = true
+	progress_changed.emit()
+
+
+func _on_beat_heard(beat_id: String) -> void:
+	if progress.heard_beats.has(beat_id):
+		return
+	progress.heard_beats.append(beat_id)
+	_dirty = true
 	progress_changed.emit()
 
 
 func _on_run_started(_run_index: int) -> void:
 	progress.run_count += 1
+	_dirty = true
 	progress_changed.emit()
 
 
 func _on_run_ended(_cause: StringName) -> void:
 	progress.death_count += 1
+	_dirty = true
 	progress_changed.emit()
 	save_progress()
 

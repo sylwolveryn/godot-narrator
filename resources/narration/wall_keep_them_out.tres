@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_jmh68"]
+
+[resource]
+script = ExtResource("1_jmh68")
+id = "wall_keep_them_out"
+text = "You built walls like these. To keep them out."
+event = &"wall_revealed"
+min_run = 4
+min_deaths = 3
+origin_tags = PackedStringArray("hero", "villain")
+order = 20

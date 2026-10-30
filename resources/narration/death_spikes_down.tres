@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_opvv7"]
+
+[resource]
+script = ExtResource("1_opvv7")
+id = "death_spikes_down"
+text = "Down."
+event = &"died_spikes"
+mood = &"low_drone"
+origin_tags = PackedStringArray("none")
+order = 8

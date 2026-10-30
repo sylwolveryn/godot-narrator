@@ -22,6 +22,8 @@ var _memory_materials: Dictionary[StringName, StandardMaterial3D] = {}
 ## Becomes true when the player is placed for a run; false again when the run ends.
 var _tracking: bool = false
 var _last_position: Vector3 = Vector3.INF
+## Reveal events already announced this run.
+var _announced: Dictionary[StringName, bool] = {}
 
 
 func _ready() -> void:
@@ -57,6 +59,7 @@ func state_of(cell: Vector2i) -> CellState:
 ## Resets to the run-start picture: only remembered cells show, in the memory style.
 func begin_run() -> void:
 	seen_this_run.clear()
+	_announced.clear()
 	_remembered.clear()
 	_last_position = Vector3.INF
 	if map_loader == null:
@@ -87,6 +90,7 @@ func reveal_around(world_position: Vector3) -> void:
 				continue
 			seen_this_run[cell] = true
 			_apply(cell, CellState.SEEN)
+			_announce_kind(cell)
 			if not _remembered.has(cell):
 				_remembered[cell] = true
 				fresh.append(Vector2(cell))
@@ -151,3 +155,12 @@ func _build_memory_materials() -> void:
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		mat.albedo_color = dull
 		_memory_materials[kind] = mat
+
+
+## Announces, once per run, the first revealed cell of each type that has a narration event.
+func _announce_kind(cell: Vector2i) -> void:
+	var event: StringName = config.reveal_events.get(map_loader.data.type_at(cell), &"")
+	if event == &"" or _announced.has(event):
+		return
+	_announced[event] = true
+	SignalBus.narration_event.emit(event)

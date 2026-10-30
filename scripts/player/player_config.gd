@@ -10,6 +10,8 @@ extends Resource
 @export_group("Movement")
 ## Top speed in world units per second.
 @export var max_speed: float = 4.5
+## Speed (units per second) above which the player counts as moving (narration: first move, idle).
+@export var moving_speed_threshold: float = 0.3
 ## Units per second squared while input is held.
 @export var acceleration: float = 30.0
 ## Units per second squared when input stops.

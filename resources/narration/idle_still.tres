@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_nvigh"]
+
+[resource]
+script = ExtResource("1_nvigh")
+id = "idle_still"
+text = "Still. As it was kept."
+event = &"idle"
+mood = &"low_drone"
+origin_tags = PackedStringArray("villain", "demonic")
+order = 2

@@ -5,6 +5,7 @@ extends SceneTree
 
 const SCENE_PATH := "res://main.tscn"
 const CFG := "res://resources/config/"
+const NARRATION_DIR := "res://resources/narration/"
 const MAP_PATH := "res://data/maps/m1_awakening.txt"
 const OVERLAY_LAYER := 10
 const INTRO_LAYER := 20
@@ -40,6 +41,15 @@ func _build() -> void:
 	save.name = "SaveService"
 	save.set("config", load(CFG + "save_config.tres"))
 	_add(root, save)
+
+	# Narrator sits right after SaveService and before Player/MapReveal: signal handlers run in tree
+	# order, so counters are updated and run_started is seen before the first reveal events.
+	var narrator_cfg: NarratorConfig = load(NARRATION_DIR + "narrator_config.tres")
+	var narrator: Node = load("res://scripts/narrator/narrator.gd").new()
+	narrator.name = "Narrator"
+	narrator.set("config", narrator_cfg)
+	narrator.set("save_service", save)
+	_add(root, narrator)
 
 	var rig: Node3D = load("res://scripts/rendering/camera_rig.gd").new()
 	rig.name = "CameraRig"
@@ -104,6 +114,20 @@ func _build() -> void:
 	overlay.set("player_config", player_cfg)
 	overlay.set("fx_config", load(CFG + "glyph_fx_config.tres"))
 	_add(root, overlay)
+
+	# Narration text: above the ASCII shader and above the intro veil (decision-001).
+	var narration: CanvasLayer = load("res://scripts/narrator/narration_overlay.gd").new()
+	narration.name = "NarrationOverlay"
+	narration.layer = narrator_cfg.overlay_layer
+	narration.set("narrator", narrator)
+	narration.set("config", narrator_cfg)
+	_add(root, narration)
+
+	var sfx: Node = load("res://scripts/narrator/narration_sfx.gd").new()
+	sfx.name = "NarrationSfx"
+	sfx.set("narrator", narrator)
+	sfx.set("config", narrator_cfg)
+	_add(root, sfx)
 
 	# Layer 20: intro veil + wave, above everything.
 	var intro: CanvasLayer = load("res://scripts/ui/intro_sequence.gd").new()

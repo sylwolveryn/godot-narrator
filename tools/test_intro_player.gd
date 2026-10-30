@@ -116,6 +116,7 @@ func _run() -> void:
 	await create_timer(0.6).timeout
 	_check(runs3.get("phase") == PHASE_PLAYING and runs3.get("run_count") == 2, "lite intro should hand off to run 2")
 	main3.queue_free()
+	await process_frame
 
 	Support.remove_file("user://test_progress_intro_player.tres")
 	if _failures.is_empty():

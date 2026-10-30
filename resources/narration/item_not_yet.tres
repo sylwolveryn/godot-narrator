@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_h7b8n"]
+
+[resource]
+script = ExtResource("1_h7b8n")
+id = "item_not_yet"
+text = "Not yours. Not yet."
+event = &"item_revealed"
+mood = &"chime"
+origin_tags = PackedStringArray("none")
+order = 4

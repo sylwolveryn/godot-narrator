@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_s5jio"]
+
+[resource]
+script = ExtResource("1_s5jio")
+id = "item_across_stars"
+text = "You carried things like this. Across stars."
+event = &"item_revealed"
+min_run = 3
+min_deaths = 2
+mood = &"pulse"
+origin_tags = PackedStringArray("alien")
+order = 15

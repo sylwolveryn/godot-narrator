@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_wsgyl"]
+
+[resource]
+script = ExtResource("1_wsgyl")
+id = "move_first"
+text = "So. It moves."
+event = &"first_move"
+max_run = 1
+mood = &"chime"
+origin_tags = PackedStringArray("none")
+order = 1

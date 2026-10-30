@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_2lms2"]
+
+[resource]
+script = ExtResource("1_2lms2")
+id = "death_spikes_willing"
+text = "You fell for them once. Willingly."
+event = &"died_spikes"
+min_run = 2
+min_deaths = 1
+mood = &"chime"
+origin_tags = PackedStringArray("hero", "angelic")
+order = 13

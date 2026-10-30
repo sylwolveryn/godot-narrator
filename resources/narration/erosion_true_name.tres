@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_qccqx"]
+
+[resource]
+script = ExtResource("1_qccqx")
+id = "erosion_true_name"
+text = "Hold on. Don't let it read your name."
+event = &"erosion_high"
+min_run = 4
+min_deaths = 3
+mood = &"low_drone"
+origin_tags = PackedStringArray("demonic")
+order = 21

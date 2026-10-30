@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_7l5ag"]
+
+[resource]
+script = ExtResource("1_7l5ag")
+id = "start_saviour"
+text = "Third waking. Some called you saviour."
+event = &"run_started"
+min_run = 3
+max_run = 3
+min_deaths = 2
+mood = &"chime"
+origin_tags = PackedStringArray("hero")
+order = 14
