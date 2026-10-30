@@ -1,9 +1,11 @@
 ---
 id: TASK-010
 title: Handcrafted map loading
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T15:30:00Z'
+updated_date: '2026-10-30T16:08:00Z'
 labels:
   - world
 milestone: m-0
