@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T18:08:00Z'
+updated_date: '2026-10-30T20:35:00Z'
 labels:
   - rendering
 milestone: m-2
@@ -41,3 +41,12 @@ Glyph changes are instant swaps between characters, which read as noise. Glyphs 
 4. Measure flicker: capture N static frames, per-cell glyph/colour change counts (python); morph strip for one cell.
 5. Measure 1080p frame time.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented with task-023 (same pipeline): ramp morph d=mix(sdf[i],sdf[i+1],smoothstep(band)) in ascii_post, driven by continuous L; reveal fade with easeOutQuart+overshoot and distance stagger; memory->seen lerp 0.35 s; spike pulse 0.4 Hz; corruption breathing (flow-noise warp 3.2 s, noise-picked glyph blend, hue 0.3 Hz, L +-0.12 at 0.25 Hz); reusable glyph_morph canvas shader + GlyphAtlas for task-025.
+Flicker measurement (tools/capture_idle.gd, 1920x1080, player idle next to spikes/item/corruption, frames 181-330 = 5 s at 30 fps, python in scratchpad flicker23.py; C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/flicker_023_after.txt): threshold luma 90: max 6 single-frame glyph changes per cell in 5 s = 1.21/s (limit 2/s), only 6 cells (0.05%) change in any frame pair; ~1% of cells morph at all (limit 15% ambient); largest single-frame pixel flip in a cell 21% (slow corruption morph); max per-cell luminance step 2.6/255 per frame. Everything else in the static scene is bit-identical between frames.
+Morph evidence: C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/strip_024_glyph_morph.png (glyph_morph shader, # -> & in 9 eased steps, shape blends continuously); C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/strip_024_world_spike_cell.png (one spike cell in the real world render, frames 181-259 every 3rd: A <-> ^ shape and colour breathe smoothly, no swap).
+Perf as in task-023 notes (60 FPS held at 1920x1080, GPU 1.2 ms mean).
+<!-- SECTION:NOTES:END -->
