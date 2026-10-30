@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T17:46:00Z'
+updated_date: '2026-10-30T17:51:00Z'
 labels:
   - tools
 milestone: m-2
@@ -27,3 +27,9 @@ Resetting or continuing playtests currently needs shell commands that fail when 
 - [ ] #2 Godot ignores the god/ folder
 - [ ] #3 All subtasks are Done
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. core.py pure logic (paths, process matching, controller, ui_state, .tres parser) + god.py tkinter GUI with 3s after() poll; 2. tools/dev_reveal_map.gd + test; 3. unittest suite; 4. README, manual real run.
+<!-- SECTION:PLAN:END -->
