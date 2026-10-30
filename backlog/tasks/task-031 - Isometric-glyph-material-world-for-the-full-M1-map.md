@@ -28,11 +28,11 @@ The user chose Spike A (scenes/spikes/glyph_world) as the direction. The real ga
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 MapLoader builds the whole M1 map as merged meshes (few draw calls) with the glyph-surface material; the full-screen post-process is no longer in the main scene
-- [ ] #2 The camera is isometric orthographic from the first frame and follows the player; values live in config resources
-- [ ] #3 The player light drives glyph density and colour on nearby surfaces, as in Spike A
-- [ ] #4 Walls never hide the player: walls between camera and player are cut away or faded
-- [ ] #5 Draw calls, GPU time and FPS at 1366x768 and 1920x1080 with --max-fps 30 are recorded in the notes
+- [x] #1 MapLoader builds the whole M1 map as merged meshes (few draw calls) with the glyph-surface material; the full-screen post-process is no longer in the main scene
+- [x] #2 The camera is isometric orthographic from the first frame and follows the player; values live in config resources
+- [x] #3 The player light drives glyph density and colour on nearby surfaces, as in Spike A
+- [x] #4 Walls never hide the player: walls between camera and player are cut away or faded
+- [x] #5 Draw calls, GPU time and FPS at 1366x768 and 1920x1080 with --max-fps 30 are recorded in the notes
 <!-- AC:END -->
 
 ## Implementation Plan
