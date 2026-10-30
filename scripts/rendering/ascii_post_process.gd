@@ -24,6 +24,10 @@ const RAMP_LEN_TEXEL := RAMP_LUT_WIDTH - 1
 @export var display_config: DisplayConfig
 @export var camera_rig: CameraRig
 @export var player: Node3D
+## Sources of the overlay glyphs baked into the shared atlas: the player identities and the text
+## of every narration beat (plus AsciiConfig.overlay_charset and the GlyphFxConfig shapes).
+@export var identity_pool: IdentityPool
+@export var narrator_config: NarratorConfig
 
 @onready var _screen: ColorRect = $Screen
 
@@ -34,6 +38,8 @@ var _material: ShaderMaterial
 var _cell: Vector2 = Vector2.ZERO
 var _world_per_px: float = 0.0
 var _ready_to_draw: bool = false
+var _dim_tween: Tween
+var _flash_tween: Tween
 
 
 func _ready() -> void:
@@ -50,9 +56,11 @@ func _ready() -> void:
 	if display_config == null:
 		display_config = DisplayConfig.new()
 	_material = _screen.material as ShaderMaterial
+	_material.set_shader_parameter("world_dim", 1.0)
+	_material.set_shader_parameter("flash", 0.0)
 	_screen.visible = false
 	set_process(false)
-	await atlas.bake(self, config)
+	await atlas.bake(self, config, _overlay_glyphs())
 	_apply_tables(palette)
 	_apply_static()
 	_ready_to_draw = true
@@ -60,6 +68,7 @@ func _ready() -> void:
 	set_process(true)
 	get_viewport().size_changed.connect(_apply_static)
 	SignalBus.run_started.connect(_on_run_started)
+	SignalBus.run_ended.connect(_on_run_ended)
 	ready_to_draw.emit()
 
 
@@ -85,6 +94,48 @@ func world_per_px() -> float:
 
 func _on_run_started(run_index: int) -> void:
 	_apply_tables(palette.for_run(run_index))
+	if _flash_tween != null:
+		_flash_tween.kill()
+	_material.set_shader_parameter("flash", 0.0)
+	_tween_dim(1.0)
+
+
+## Death presentation: the world dims over `death_dim_time`; spikes add one soft brightening.
+func _on_run_ended(cause: StringName) -> void:
+	_tween_dim(glyph_fx.death_world_dim)
+	if cause == glyph_fx.flash_cause:
+		if _flash_tween != null:
+			_flash_tween.kill()
+		_flash_tween = create_tween()
+		_flash_tween.tween_method(_set_flash, 0.0, glyph_fx.spike_death_flash, glyph_fx.flash_rise).set_ease(Tween.EASE_OUT)
+		_flash_tween.tween_method(_set_flash, glyph_fx.spike_death_flash, 0.0, glyph_fx.flash_decay).set_ease(Tween.EASE_IN_OUT)
+
+
+func _tween_dim(target: float) -> void:
+	if _dim_tween != null:
+		_dim_tween.kill()
+	var from: float = _material.get_shader_parameter("world_dim")
+	_dim_tween = create_tween()
+	_dim_tween.tween_method(_set_dim, from, target, glyph_fx.death_dim_time).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+
+
+func _set_dim(value: float) -> void:
+	_material.set_shader_parameter("world_dim", value)
+
+
+func _set_flash(value: float) -> void:
+	_material.set_shader_parameter("flash", value)
+
+
+## Every character the overlay needs: configured charset, identities, narration text, effect shapes.
+func _overlay_glyphs() -> String:
+	var text: String = config.overlay_charset + glyph_fx.corrupt_glyphs + glyph_fx.fragment_glyphs
+	if identity_pool != null:
+		text += "".join(identity_pool.glyphs) + identity_pool.fallback_glyph
+	if narrator_config != null:
+		for beat in narrator_config.beats:
+			text += beat.text
+	return text
 
 
 ## Palette LUT, ramp LUT and the colours that come from the palette.
@@ -126,6 +177,16 @@ func _apply_static() -> void:
 	_material.set_shader_parameter("corrupt_warp_amp", hazard_fx.corrupt_warp_amp)
 	_material.set_shader_parameter("corrupt_period", hazard_fx.corrupt_warp_period)
 	_material.set_shader_parameter("corrupt_hue_hz", hazard_fx.corrupt_hue_hz)
+	_material.set_shader_parameter("swirl_scale", hazard_fx.corrupt_swirl_scale)
+	_material.set_shader_parameter("swirl_warp", hazard_fx.corrupt_swirl_warp)
+	_material.set_shader_parameter("swirl_flow", hazard_fx.corrupt_swirl_flow)
+	_material.set_shader_parameter("swirl_floor", hazard_fx.corrupt_swirl_floor)
+	_material.set_shader_parameter("swirl_jitter", hazard_fx.corrupt_swirl_jitter)
+	_material.set_shader_parameter("corrupt_bloom_share", hazard_fx.corrupt_bloom_share)
+	_material.set_shader_parameter("density_floor", config.density_floor)
+	_material.set_shader_parameter("variation", config.density_variation)
+	_material.set_shader_parameter("t_mid", config.variation_mid)
+	_material.set_shader_parameter("mem_variation", config.memory_variation)
 	_world_per_px = 0.0
 	_apply_view()
 

@@ -5,4 +5,6 @@
 [resource]
 script = ExtResource("1_7rq5x")
 font_names = PackedStringArray("Consolas", "Courier New", "monospace")
-glow_weights = PackedFloat32Array(0, 0, 0, 1, 1, 1, 0, 0)
+glow_weights = PackedFloat32Array(0, 0.6, 0, 1, 1, 1, 0, 0)
+density_floor = PackedFloat32Array(0, 0.55, 0, 0.35, 0.3, 0, 0, 0)
+density_variation = PackedFloat32Array(0, 0.6, 0.3, 0.2, 0, 0, 0, 0)

@@ -20,11 +20,16 @@ extends Resource
 @export var atlas_font_scale: float = 1.1
 ## The atlas is rasterised at this multiple of its final size before the distance pass (corner quality).
 @export_range(1, 4) var atlas_supersample: int = 2
+## Glyphs wider than this share of the tile shrink to fit (exotic identity glyphs from fallback fonts).
+@export_range(0.5, 1.0) var atlas_fit_width: float = 0.95
+## Extra characters baked for the overlay: narration text (printable ASCII and typography). Player
+## identities, the text of every narration beat and the corrupt / fragment shapes are added automatically.
+@export var overlay_charset: String = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~…—–’‘“”"
 
 @export_group("Glyph ramps")
 ## Ramps are ordered sparse to dense; the type is readable from the shape alone.
 @export var ramp_floor: String = " .·:;"
-@export var ramp_wall: String = ".:=+*#%@"
+@export var ramp_wall: String = ".:=+*#%&@8"
 @export var ramp_item: String = ".:o*$"
 @export var ramp_spikes: String = ".,'^A"
 @export var ramp_corruption: String = ".~?§&%"
@@ -52,7 +57,7 @@ extends Resource
 @export var bloom_strength: float = 0.2
 ## Glow weight per material id (0 void, 1 wall, 2 floor, 3 item, 4 spikes, 5 corruption, 6-7 unused).
 ## Walls use the rim rule instead; remembered cells never glow.
-@export var glow_weights: PackedFloat32Array = PackedFloat32Array([0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0])
+@export var glow_weights: PackedFloat32Array = PackedFloat32Array([0.0, 0.6, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0])
 ## Rim glow on walls inside the player light (0 disables it).
 @export var wall_rim_strength: float = 0.5
 
@@ -68,8 +73,19 @@ extends Resource
 @export var hue_noise_detail: float = 1.0
 @export var height_amp: float = 0.2
 
+@export_group("Structure density (task-026)")
+## Per material id (0 void, 1 wall, 2 floor, 3 item, 4 spikes, 5 corruption, 6-7 unused): the lowest
+## ramp position a lit cell uses. Walls stay dense (the light changes colour, not density).
+@export var density_floor: PackedFloat32Array = PackedFloat32Array([0.0, 0.55, 0.0, 0.35, 0.3, 0.0, 0.0, 0.0])
+## Per material id: how strongly the palette offset (static noise, height, edges) moves the ramp position.
+@export var density_variation: PackedFloat32Array = PackedFloat32Array([0.0, 0.6, 0.3, 0.2, 0.0, 0.0, 0.0, 0.0])
+## The palette offset that moves nothing.
+@export var variation_mid: float = 0.15
+## Amplitude of the static per-cell variation of remembered cells.
+@export var memory_variation: float = 0.5
+
 @export_group("Memory")
 ## Remembered cells use at most this share of their glyph ramp.
-@export_range(0.0, 1.0) var memory_density_cap: float = 0.45
+@export_range(0.0, 1.0) var memory_density_cap: float = 0.75
 ## Share of the type colour mixed into the memory colour.
 @export_range(0.0, 1.0) var memory_type_mix: float = 0.15

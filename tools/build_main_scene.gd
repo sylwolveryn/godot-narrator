@@ -104,6 +104,8 @@ func _build() -> void:
 	ascii.set("glyph_fx", load(CFG + "glyph_fx_config.tres"))
 	ascii.set("camera_rig", rig)
 	ascii.set("player", player)
+	ascii.set("identity_pool", player_cfg.identity_pool)
+	ascii.set("narrator_config", narrator_cfg)
 	_add(root, ascii)
 	var screen := ColorRect.new()
 	screen.name = "Screen"
@@ -123,6 +125,8 @@ func _build() -> void:
 	overlay.set("player_config", player_cfg)
 	overlay.set("fx_config", load(CFG + "glyph_fx_config.tres"))
 	overlay.set("display_config", load(DISPLAY_CONFIG))
+	overlay.set("world_config", loader.world_config)
+	overlay.set("ascii", ascii)
 	_add(root, overlay)
 
 	# Narration text: above the ASCII shader and above the intro veil (decision-001).
@@ -132,6 +136,7 @@ func _build() -> void:
 	narration.set("narrator", narrator)
 	narration.set("config", narrator_cfg)
 	narration.set("display_config", load(DISPLAY_CONFIG))
+	narration.set("ascii", ascii)
 	_add(root, narration)
 
 	var sfx: Node = load("res://scripts/narrator/narration_sfx.gd").new()

@@ -15,14 +15,17 @@ func _run() -> void:
 	for i in 5:
 		await process_frame
 	var t0: int = Time.get_ticks_usec()
-	await _atlas.bake(root, config)
+	var fx: GlyphFxConfig = load("res://resources/config/glyph_fx_config.tres")
+	var pool: IdentityPool = load("res://resources/config/identity_pool.tres")
+	var extra: String = config.overlay_charset + fx.corrupt_glyphs + fx.fragment_glyphs + "".join(pool.glyphs)
+	await _atlas.bake(root, config, extra)
 	var ms: float = (Time.get_ticks_usec() - t0) / 1000.0
 	var out: String = OS.get_cmdline_user_args()[0] if OS.get_cmdline_user_args().size() > 0 else "user://atlas.png"
 	var img: Image = _atlas.texture.get_image()
 	var circle: int = _atlas.index_of(GlyphAtlas.CIRCLE)
 	var cx: int = (circle % _atlas.columns) * _atlas.tile_px.x + _atlas.tile_px.x / 2
 	var cy: int = (circle / _atlas.columns) * _atlas.tile_px.y + _atlas.tile_px.y / 2
-	print("CIRCLE centre value ", img.get_pixel(cx, cy), " edge ", img.get_pixel(cx + 12, cy), " ", img.get_pixel(cx + 13, cy), " ", img.get_pixel(cx + 14, cy), " out ", img.get_pixel(cx + 20, cy), " format ", img.get_format())
+	print("CIRCLE centre value ", img.get_pixel(cx, cy), " edge ", img.get_pixel(cx + 12, cy), " ", img.get_pixel(cx + 13, cy), " ", img.get_pixel(cx + 14, cy), " out ", img.get_pixel(mini(cx + 20, img.get_width() - 1), cy), " format ", img.get_format())
 	var gray := Image.create(img.get_width(), img.get_height(), false, Image.FORMAT_L8)
 	for y in img.get_height():
 		for x in img.get_width():
@@ -31,5 +34,5 @@ func _run() -> void:
 	img.save_png(out)
 	_atlas.debug_raster.save_png(out.get_basename() + "_raster.png")
 	print("ATLAS %dx%d tiles %dx%d cols %d glyphs %d bake %.1f ms -> %s" % [img.get_width(), img.get_height(),
-			_atlas.tile_px.x, _atlas.tile_px.y, _atlas.columns, GlyphAtlas.characters_for(config).size(), ms, out])
+			_atlas.tile_px.x, _atlas.tile_px.y, _atlas.columns, GlyphAtlas.characters_for(config, extra).size(), ms, out])
 	quit()

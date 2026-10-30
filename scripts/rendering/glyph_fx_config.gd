@@ -1,37 +1,8 @@
 class_name GlyphFxConfig
 extends Resource
-## Presentation tuning for the player's overlay glyph under erosion and at death.
-## Instance: resources/config/glyph_fx_config.tres.
-
-@export_group("Erosion")
-## Substitute glyphs the eroding identity flickers through.
-@export var scramble_glyphs: String = "#%&@$?!/|<>=+*~^;:"
-## Erosion fraction below which the glyph is still untouched.
-@export_range(0.0, 1.0) var scramble_start: float = 0.05
-## Substitution attempts per second at erosion 0 (just started) and 1 (about to die).
-@export var scramble_rate_low: float = 4.0
-@export var scramble_rate_high: float = 30.0
-## Probability of showing a substitute glyph at erosion 1 (scales linearly from 0 at scramble_start).
-@export_range(0.0, 1.0) var scramble_chance_max: float = 0.95
-## Largest positional jitter in reference pixels (scaled at runtime), reached at erosion 1.
-@export var jitter_max: float = 14.0
-## Glyph opacity at erosion 1 (1 at no erosion).
-@export_range(0.0, 1.0) var fade_min_alpha: float = 0.45
-## How strongly the hazard tint replaces the glyph colour at erosion 1.
-@export_range(0.0, 1.0) var tint_strength: float = 0.85
-
-@export_group("Death")
-## Seconds the death presentation takes; keep at or below RunConfig.restart_delay.
-@export var death_duration: float = 1.1
-## Fragments the glyph breaks into.
-@export var shard_count: int = 14
-## Distance in reference pixels a shard drifts, and the random spread around that.
-@export var shard_distance: float = 180.0
-@export_range(0.0, 1.0) var shard_distance_spread: float = 0.5
-## Shard glyph size as a fraction of the identity glyph size.
-@export var shard_size_ratio: float = 0.55
-## Seconds the glyph flickers violently before it bursts.
-@export var shatter_flash: float = 0.18
+## Presentation tuning for the overlay glyph effects (docs/visual_direction.md sections 5 and 6):
+## the identity glyph morphing under erosion, the death fragments and the flicker limits that
+## every effect must respect. Instance: resources/config/glyph_fx_config.tres.
 
 @export_group("Morph (visual direction)")
 ## Mid-morph scale dip and glow boost: the glyph shrinks to this scale and glows this much more.
@@ -52,15 +23,45 @@ extends Resource
 ## Optional per-cell luminance smoothing time constant (seconds), for a later stateful buffer.
 @export var l_smoothing_tau: float = 0.12
 
-@export_group("Erosion and death (task-025)")
-@export var erosion_tint: Color = Color("#B44DFF")
+@export_group("Erosion")
+## Shapes the identity glyph morphs toward as erosion rises (a seeded pick, never a random swap).
+@export var corrupt_glyphs: String = "#%&@§?~"
+## The target may change at most this often, and only through a morph of this duration.
 @export var erosion_retarget_min: float = 1.5
+@export var erosion_retarget_morph: float = 0.9
+## Colour the glyph shifts to at full erosion; the glow shifts to the same hue.
+@export var erosion_tint: Color = Color("#B44DFF")
+## Slow domain warp of the glyph: amplitude (share of the glyph size at full erosion) and frequency.
+@export_range(0.0, 0.3) var erosion_warp_amp: float = 0.06
+@export_range(0.0, 0.5) var erosion_warp_hz: float = 0.35
+## Above this erosion one fragment is shed every erosion_shed_interval and drifts off.
 @export_range(0.0, 1.0) var erosion_shed_threshold: float = 0.5
 @export var erosion_shed_interval: float = 0.8
+@export var erosion_shed_duration: float = 1.0
+## Shed fragments drift this far, in glyph heights.
+@export var erosion_shed_drift: float = 0.9
+
+@export_group("Death")
+## The identity glyph splits into this many fragments (angular slices). Each flies `death_spread_cells`
+## map cells outward (ease-out) and morphs identity -> abstract -> empty over `death_duration`.
 @export var death_fragments: int = 10
 @export var death_spread_cells: float = 1.5
+## Seconds of the fragment flight and morph; keep at or below RunConfig.restart_delay.
+@export var death_duration: float = 1.2
+## Angular overlap (radians) between neighbouring slices, so no seam shows, and the progress at which a
+## fragment starts fading out.
+@export var slice_overlap: float = 0.05
+@export_range(0.0, 1.0) var fragment_fade_start: float = 0.55
+## Shapes the fragments morph into on their way out.
+@export var fragment_glyphs: String = "·,`"
+## Fragment glyph size as a fraction of the identity glyph size.
+@export_range(0.1, 1.0) var fragment_size_ratio: float = 0.7
+## The world dims to this brightness factor over death_dim_time.
 @export_range(0.0, 1.0) var death_world_dim: float = 0.4
 @export var death_dim_time: float = 0.8
-@export var spike_death_flash: float = 0.3
+## Spikes only: one soft brightening (brightness factor 1 + this), rising then decaying. No strobe.
+@export_range(0.0, 0.4) var spike_death_flash: float = 0.3
 @export var flash_rise: float = 0.15
 @export var flash_decay: float = 0.4
+## Run end cause that gets the spike brightening.
+@export var flash_cause: StringName = &"spikes"

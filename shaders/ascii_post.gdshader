@@ -48,12 +48,33 @@ uniform float emissive_weight[8];
 
 uniform float vignette_strength = 0.35;
 uniform float vignette_radius = 0.75;
+// Death presentation (set by AsciiPostProcess): the world dims and spikes add one soft brightening.
+uniform float world_dim = 1.0;
+uniform float flash = 0.0;
+
 uniform float mem_cap = 0.45;
 uniform float mem_mix = 0.15;
+// Structure look (task-026): per material id, the lowest ramp position a lit cell uses (walls stay
+// dense, the light only changes colour) and how strongly the palette offset t (static noise,
+// height, edges) moves the ramp position. t_mid is the t that moves nothing.
+uniform float density_floor[8];
+uniform float variation[8];
+uniform float t_mid = 0.15;
+// Remembered cells vary by a static per-cell hash of this amplitude (they carry no t of their own).
+uniform float mem_variation = 0.5;
 
 uniform float corrupt_warp_amp = 0.35;
 uniform float corrupt_period = 3.2;
 uniform float corrupt_hue_hz = 0.3;
+// Swirling corruption field: feature frequency per world unit, domain warp strength, flow speed
+// as a share of the warp period, and the ramp position of the darkest strands.
+uniform float swirl_scale = 0.9;
+uniform float swirl_warp = 2.0;
+uniform float swirl_flow = 0.4;
+uniform float swirl_floor = 0.1;
+// Static per-cell ramp jitter inside the swirl and the share of its bloom that spills into neighbours.
+uniform float swirl_jitter = 0.3;
+uniform float corrupt_bloom_share = 0.3;
 
 const int ID_VOID = 0;
 const int ID_WALL = 1;
@@ -100,10 +121,11 @@ vec3 glow_of(Cell c, vec2 to_px) {
 	if (w <= 0.0) {
 		return vec3(0.0);
 	}
-	float u = clamp(c.l + dec_t(c.state), 0.0, 1.0);
+	float u = clamp(c.l * (1.0 + dec_t(c.state)), 0.0, 1.0);
 	vec3 col = c.id == ID_CORRUPT ? mix(palette(ID_CORRUPT, u), palette(ROW_CORRUPT_ALT, u), 0.5) : palette(c.id, u);
 	float g = exp(-dot(to_px, to_px) / (2.0 * bloom_sigma_px * bloom_sigma_px));
-	return col * (c.l * w * g);
+	float share = c.id == ID_CORRUPT ? corrupt_bloom_share : 1.0;
+	return col * (c.l * w * g * share);
 }
 
 void fragment() {
@@ -139,24 +161,31 @@ void fragment() {
 	if (n >= 2) {
 		bool mem = dec_is_memory(me.state);
 		float m = mem ? dec_memory_left(me.state) : 0.0;
-		float t = mem ? 0.0 : dec_t(me.state);
+		float t = mem ? t_mid + (hash21(vec2(cell) * 0.731) - 0.5) * mem_variation : dec_t(me.state);
 		float l_eff = me.l * vig;
-		if (mem) {
-			l_eff = min(l_eff, mix(1.0, mem_cap, m));
-		}
 
 		vec2 wp = view_origin + frag * world_per_px;
-		float drive = l_eff;
+		float drive = clamp(density_floor[me.id] + (1.0 - density_floor[me.id]) * l_eff + variation[me.id] * (t - t_mid), 0.0, 1.0);
 		vec2 warp = vec2(0.0);
 		float hue = 0.0;
+		float strand = 1.0;
 		if (me.id == ID_CORRUPT) {
-			// Corruption breathes: slow flow noise warps the glyph and picks which glyph it blends toward.
+			// Corruption swirls: a slow flow field (domain-warped noise) makes dense violet strands and
+			// dark gaps, the glyph is pushed around by a small warp and the hue slides violet <-> magenta.
 			float period = max(corrupt_period, 0.1);
-			vec2 q = wp * 2.0 + vec2(TIME / period, TIME / (period * 1.37));
-			warp = (vec2(vnoise(q), vnoise(q + 17.31)) - 0.5) * corrupt_warp_amp;
-			float pick = vnoise(wp * 3.0 + vec2(-TIME / (period * 1.6), TIME / (period * 2.1)) + 5.0);
-			drive = l_eff * 0.35 + pick * 0.65 * smoothstep(0.0, 0.3, l_eff);
-			hue = 0.5 + 0.5 * sin(TAU * (corrupt_hue_hz * TIME + vnoise(wp * 0.7)));
+			float tt = TIME * swirl_flow / period;
+			vec2 p = wp * swirl_scale;
+			vec2 w = vec2(vnoise(p + vec2(tt, 0.0)), vnoise(p + vec2(5.2, 1.3 - tt)));
+			vec2 q = p + (w - 0.5) * swirl_warp;
+			float v = 0.55 * vnoise(q * 1.3 + vec2(0.0, tt)) + 0.3 * vnoise(q * 2.7 + w * 3.0) + 0.15 * vnoise(q * 5.1 - tt);
+			strand = smoothstep(0.28, 0.72, v);
+			vec2 q2 = wp * 2.0 + vec2(TIME / period, TIME / (period * 1.37));
+			warp = (vec2(vnoise(q2), vnoise(q2 + 17.31)) - 0.5) * corrupt_warp_amp;
+			drive = clamp(mix(swirl_floor, 1.0, strand) + (hash21(vec2(cell) * 1.37) - 0.5) * swirl_jitter, 0.0, 1.0) * smoothstep(0.0, 0.3, l_eff);
+			hue = 0.5 + 0.5 * sin(TAU * (corrupt_hue_hz * TIME + vnoise(wp * 0.7) * 1.5 + strand));
+		}
+		if (mem) {
+			drive *= mix(1.0, mem_cap, m);
 		}
 
 		// Ramp morph (stateless): any change of the drive value becomes a continuous shape blend.
@@ -171,10 +200,13 @@ void fragment() {
 		float cover = glyph_alpha(d, mix(edge_near, edge_far, dof));
 
 		// Colour from the palette gradient; remembered cells use the dim memory gradient.
-		float u = clamp(l_eff + t, 0.0, 1.0);
+		float u = clamp(l_eff * (1.0 + t), 0.0, 1.0);
+		if (me.id == ID_CORRUPT) {
+			u = clamp(0.1 + 0.9 * strand * min(l_eff * 1.4, 1.0), 0.0, 1.0);
+		}
 		vec3 gcol = me.id == ID_CORRUPT ? mix(palette(ID_CORRUPT, u), palette(ROW_CORRUPT_ALT, u), hue) : palette(me.id, u);
 		if (mem) {
-			vec3 dim = mix(palette(ROW_MEMORY, clamp(l_eff / max(mem_cap, 0.01), 0.0, 1.0)), palette(me.id, 0.5), mem_mix);
+			vec3 dim = mix(palette(ROW_MEMORY, clamp(0.5 + (t - t_mid), 0.0, 1.0)), palette(me.id, 0.5), mem_mix);
 			gcol = mix(gcol, dim, m);
 		}
 		gcol = mix(gcol, gcol * light_tint, light * light_tint_strength * (1.0 - m));
@@ -182,6 +214,9 @@ void fragment() {
 
 		// Halo: emissive types glow in full; walls only get a rim glow inside the player light.
 		float e = mem ? 0.0 : emissive_weight[me.id];
+		if (me.id == ID_CORRUPT) {
+			e *= strand;
+		}
 		if (me.id == ID_WALL && !mem) {
 			bool rim = nb_l.id != ID_WALL || nb_r.id != ID_WALL || nb_u.id != ID_WALL || nb_d.id != ID_WALL;
 			e = rim ? light * wall_rim : 0.0;
@@ -190,6 +225,7 @@ void fragment() {
 		col += gcol * (halo * glow_strength * e * vig);
 		col = mix(col, gcol, cover);
 	}
+	col *= world_dim * (1.0 + flash);
 	// Static screen-space dither (interleaved gradient noise, not per frame): hides 8-bit banding in the dark gradients.
 	float dither = (fract(52.9829189 * fract(dot(frag, vec2(0.06711056, 0.00583715)))) - 0.5) / 255.0;
 	COLOR = vec4(clamp(col + dither, vec3(0.0), vec3(1.0)), 1.0);

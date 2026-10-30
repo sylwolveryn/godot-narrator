@@ -23,7 +23,7 @@ const LUT_HEIGHT := 16
 ## Corruption slides between these two gradients (violet and magenta).
 @export var corrupt: Gradient = _gradient("#1C0630", "#9D3CFF", "#C46BFF")
 @export var corrupt_alt: Gradient = _gradient("#2A0638", "#E03CE6", "#FF4FD8")
-@export var memory: Gradient = _gradient("#0A0E1C", "#24345A", "#4A5F8F")
+@export var memory: Gradient = _gradient("#202C52", "#5775B8", "#94B4EE")
 @export var void_color: Color = Color("#000000")
 
 @export_group("Background")

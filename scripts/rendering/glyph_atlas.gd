@@ -21,19 +21,21 @@ var tile_px: Vector2i = Vector2i.ONE
 ## Tile size as a fraction of the whole atlas (the `atlas_tile_uv` shader uniform).
 var tile_uv: Vector2 = Vector2.ONE
 var ready: bool = false
+## Font size (atlas pixels) the glyphs were drawn at: overlay text at `font_px` is scaled by font_px / this.
+var font_px: float = 1.0
 ## Last supersampled raster (kept only for tools/dump_atlas.gd).
 var debug_raster: Image
 
 var _index: Dictionary[String, int] = {}
 var _chars: PackedStringArray = PackedStringArray()
+var _advances: PackedFloat32Array = PackedFloat32Array()
 
-
-## Every character the configuration needs, unique, blank first and circle last.
-static func characters_for(config: AsciiConfig) -> PackedStringArray:
+## Every character the configuration needs plus `extra` (overlay glyphs), unique, blank first, circle last.
+static func characters_for(config: AsciiConfig, extra: String = "") -> PackedStringArray:
 	var out := PackedStringArray()
 	var seen: Dictionary[String, bool] = {}
 	var text: String = BLANK + config.ramp_floor + config.ramp_wall + config.ramp_item \
-			+ config.ramp_spikes + config.ramp_corruption + config.abstract_glyphs + CIRCLE
+			+ config.ramp_spikes + config.ramp_corruption + config.abstract_glyphs + extra + CIRCLE
 	for i in text.length():
 		var ch: String = text[i]
 		if not seen.has(ch):
@@ -47,6 +49,19 @@ func index_of(ch: String) -> int:
 	return _index.get(ch, 0)
 
 
+## Horizontal advance of a baked character in atlas pixels at `font_px` (a typical glyph width when unknown).
+func advance_of(ch: String) -> float:
+	var i: int = _index.get(ch, -1)
+	if i < 0 or i >= _advances.size():
+		return font_px * 0.6
+	return _advances[i]
+
+
+## True when the character was baked into the atlas.
+func has_char(ch: String) -> bool:
+	return _index.has(ch)
+
+
 ## Sets the atlas uniforms on a ShaderMaterial that includes glyph_sdf.gdshaderinc.
 func apply_to(material: ShaderMaterial) -> void:
 	material.set_shader_parameter("glyph_atlas", texture)
@@ -55,8 +70,9 @@ func apply_to(material: ShaderMaterial) -> void:
 
 
 ## Bakes the atlas. `host` must be in the scene tree (it parents the temporary SubViewports).
-func bake(host: Node, config: AsciiConfig) -> void:
-	_chars = characters_for(config)
+## `extra` lists additional characters to bake (see characters_for).
+func bake(host: Node, config: AsciiConfig, extra: String = "") -> void:
+	_chars = characters_for(config, extra)
 	_index.clear()
 	for i in _chars.size():
 		_index[_chars[i]] = i
@@ -86,6 +102,10 @@ func bake(host: Node, config: AsciiConfig) -> void:
 	await RenderingServer.frame_post_draw
 	var raster: Image = raster_vp.get_texture().get_image()
 	debug_raster = raster
+	_advances = canvas.advances
+	for i in _advances.size():
+		_advances[i] /= float(ss)
+	font_px = float(tile_px.x) * config.atlas_font_scale
 	raster_vp.queue_free()
 	raster.convert(Image.FORMAT_RGBA8)
 
@@ -120,6 +140,8 @@ class _RasterCanvas extends Control:
 	var tile: Vector2i
 	## Kept as a member: a font freed at the end of _draw would leave the draw commands blank.
 	var font: SystemFont
+	## Advance of every character in raster pixels (filled while drawing).
+	var advances: PackedFloat32Array = PackedFloat32Array()
 
 	func _init() -> void:
 		font = SystemFont.new()
@@ -132,14 +154,25 @@ class _RasterCanvas extends Control:
 		var font_size: int = roundi(tile.x * config.atlas_font_scale)
 		var ascent: float = font.get_ascent(font_size)
 		var height: float = font.get_height(font_size)
+		advances.resize(chars.size())
 		for i in chars.size():
 			var ch: String = chars[i]
+			advances[i] = font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 			if ch == GlyphAtlas.BLANK:
 				continue
 			var origin := Vector2(i % columns, i / columns) * Vector2(tile)
 			if ch == GlyphAtlas.CIRCLE:
 				draw_circle(origin + Vector2(tile) * 0.5, tile.y * 0.28, Color.WHITE)
 				continue
-			var w: float = font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-			var pos := origin + Vector2((tile.x - w) * 0.5, (tile.y - height) * 0.5 + ascent)
-			draw_string(font, pos, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE)
+			# Wide glyphs (fallback fonts for exotic identity glyphs) shrink to fit the tile.
+			var size: int = font_size
+			var w: float = font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+			var fit: float = minf(config.atlas_fit_width * tile.x / maxf(w, 1.0), config.atlas_fit_width * tile.y / maxf(height, 1.0))
+			if fit < 1.0:
+				size = maxi(roundi(font_size * fit), 1)
+				w = font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+				advances[i] = font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+			var line_h: float = font.get_height(size)
+			var base: float = font.get_ascent(size)
+			var pos := origin + Vector2((tile.x - w) * 0.5, (tile.y - line_h) * 0.5 + base)
+			draw_string(font, pos, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color.WHITE)

@@ -6,4 +6,3 @@
 [resource]
 script = ExtResource("2_1tosk")
 identity_pool = ExtResource("1_fvfnr")
-font_names = PackedStringArray("Segoe UI Symbol", "Nirmala UI", "Segoe UI", "Consolas", "monospace")

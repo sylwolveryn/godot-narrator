@@ -187,6 +187,7 @@ func _clear() -> void:
 
 func _build_geometry(map: MapData) -> void:
 	var wall_mat: ShaderMaterial = _world_material(MaterialIds.WALL, world_config.wall_luminance)
+	_apply_structure_look(wall_mat)
 	var floor_mat: ShaderMaterial = _world_material(MaterialIds.FLOOR, world_config.floor_luminance)
 	var item_mat: ShaderMaterial = _world_material(MaterialIds.ITEM, -1.0, world_config.item_luminance)
 	var spike_mat: ShaderMaterial = _world_material(MaterialIds.SPIKES, -1.0, hazard_fx.spike_base_l,
@@ -251,6 +252,19 @@ func _world_material(id: int, lit_l: float, emissive_l: float = -1.0, pulse_amp:
 	mat.set_shader_parameter("pulse_hz", pulse_hz)
 	mat.set_shader_parameter("height_ref", world_config.wall_height)
 	return mat
+
+
+## Face shading, edges and detail noise for lit boxes (WorldConfig "Structure look").
+func _apply_structure_look(mat: ShaderMaterial) -> void:
+	mat.set_shader_parameter("shade_faces", true)
+	mat.set_shader_parameter("face_top", world_config.face_top)
+	mat.set_shader_parameter("face_side_lit", world_config.face_side_lit)
+	mat.set_shader_parameter("face_side_dark", world_config.face_side_dark)
+	mat.set_shader_parameter("foot_shade", world_config.foot_shade)
+	mat.set_shader_parameter("edge_width", world_config.edge_width)
+	mat.set_shader_parameter("edge_boost", world_config.edge_boost)
+	mat.set_shader_parameter("detail_scale", world_config.detail_scale)
+	mat.set_shader_parameter("detail_amp", world_config.detail_amp)
 
 
 func _box_mesh(box_size: Vector3, mat: Material) -> MeshInstance3D:

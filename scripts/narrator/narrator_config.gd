@@ -19,10 +19,13 @@ extends Resource
 @export var queue_ttl_seconds: float = 5.0
 ## Events whose queued beats never expire by TTL (they can only be replaced by a higher class, then they re-queue).
 @export var ttl_exempt_events: Array[StringName] = [NarrationEvents.RUN_STARTED]
+## Time budgets of the line morphing in and out. The overlay's letter staggers shrink when a long line
+## would not fit (the line is fully legible when the hold starts).
 @export var morph_in_seconds: float = 1.1
 @export var morph_out_seconds: float = 0.9
-## How long the current beat dissolves when a death beat preempts it.
+## How long the current beat dissolves when a death beat preempts it (share of it spent morphing a letter).
 @export var preempt_dissolve_seconds: float = 0.3
+@export_range(0.1, 1.0) var preempt_morph_share: float = 0.6
 
 @export_group("Priority")
 ## Event -> class priority (higher wins when triggers are simultaneous or compete for the queue).
@@ -50,23 +53,45 @@ extends Resource
 @export_group("Presentation")
 ## Canvas layer of the narration text (above the ASCII shader, and above the intro veil).
 @export var overlay_layer: int = 25
-@export var font_names: PackedStringArray = PackedStringArray(["Consolas", "Cascadia Mono", "Courier New", "monospace"])
+## Text size in reference pixels (scaled with the window height); letters are SDF quads from the shared atlas.
 @export var font_size: int = 60
 @export var text_color: Color = Color("#EAF2FF")
-@export var scramble_color: Color = Color("#8FA3D9")
+## Dark rim around the letters (SDF units, about 8 atlas pixels per unit) that keeps them legible over glyphs.
 @export var outline_color: Color = Color(0.012, 0.016, 0.035, 0.95)
-@export var outline_size: int = 16
+@export var outline_width: float = 0.25
+## Letter glow strength and SDF falloff, and the quad margin (share of the glyph size) for the halo.
+@export var glow_strength: float = 0.55
+@export var glow_radius: float = 0.35
+@export var glow_pad: float = 0.4
+## Glow tint per mood (docs/visual_direction.md section 2); an unknown mood glows in the text colour.
+@export var mood_tints: Dictionary[StringName, Color] = {
+	&"hum": Color("#FFC98A"),
+	&"chime": Color("#BFF6FF"),
+	&"static": Color("#E07BFF"),
+	&"low_drone": Color("#FF6A4D"),
+	&"pulse": Color("#7DFFB0"),
+}
 ## Vertical position of the text line as a fraction of the screen height (lower third).
 @export_range(0.0, 1.0) var vertical_anchor: float = 0.82
 ## Largest width of the text block in pixels at the reference resolution (scaled at runtime).
 @export var max_text_width: float = 1600.0
 ## Fraction of the screen width kept free on each side (applies when the window is narrower than max_text_width).
 @export_range(0.0, 0.4) var side_margin: float = 0.08
-@export var scramble_glyphs: String = "#%&@$?!/|<>=+*~^;:0123456789abcdefxyz"
-## Random glyph changes per second.
-@export var scramble_rate: float = 24.0
-## Width of the scrambling front, in characters, that sweeps across the line while morphing.
-@export var morph_front_chars: float = 4.0
+## Line height as a multiple of an atlas tile height.
+@export var line_spacing: float = 1.0
+
+@export_group("Letter morph")
+## Each letter starts as one of these abstract shapes (plus the circle SDF), morphs into the letter,
+## rises `letter_rise_px` (reference pixels) and starts `letter_stagger_in` after the previous one.
+@export var abstract_glyphs: String = "·-~°"
+@export var letter_morph_in: float = 0.35
+@export var letter_stagger_in: float = 0.03
+@export var letter_rise_px: float = 4.0
+## Morph out: letter -> abstract -> transparent, staggered left to right.
+@export var letter_morph_out: float = 0.5
+@export var letter_stagger_out: float = 0.02
+## Opacity of a letter at the start of its morph in (it grows to 1 over the first share of the morph).
+@export_range(0.0, 1.0) var abstract_alpha_share: float = 0.4
 
 @export_group("Audio")
 @export var sfx_volume_db: float = -14.0
