@@ -24,10 +24,10 @@ Playtest: the window is small and every overlay size was tuned only for 960x540.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The game starts fullscreen by default (value in project settings or a config resource, not code)
-- [ ] #2 ASCII cell size, player glyph, narration text, intro wave and death/erosion effects scale with the window so the composition matches at 1280x720, 1920x1080 and 2560x1440 (verified by captures)
-- [ ] #3 Ultrawide and 4:3 windows keep the player centred with no stretched glyphs
-- [ ] #4 A key toggles fullscreen/windowed through an InputMap action
+- [x] #1 The game starts fullscreen by default (value in project settings or a config resource, not code)
+- [x] #2 ASCII cell size, player glyph, narration text, intro wave and death/erosion effects scale with the window so the composition matches at 1280x720, 1920x1080 and 2560x1440 (verified by captures)
+- [x] #3 Ultrawide and 4:3 windows keep the player centred with no stretched glyphs
+- [x] #4 A key toggles fullscreen/windowed through an InputMap action
 <!-- AC:END -->
 
 ## Implementation Plan
