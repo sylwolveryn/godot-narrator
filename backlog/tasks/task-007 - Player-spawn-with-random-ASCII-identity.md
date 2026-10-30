@@ -1,11 +1,11 @@
 ---
 id: TASK-007
 title: Player spawn with random ASCII identity
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:22:00Z'
+updated_date: '2026-10-30T16:23:00Z'
 labels:
   - player
   - rendering
@@ -47,3 +47,9 @@ The player character is the core of the M1 experience and must appear as a rando
 <!-- SECTION:NOTES:BEGIN -->
 Implemented scripts/core/{persistent_progress,save_service}.gd, scripts/player/{player,player_config,identity_pool}.gd, scripts/rendering/glyph_overlay.gd, CameraRig.snap_to_target, SignalBus.player_spawned, resources identity_pool.tres/player_config.tres. Pool of 10 glyphs verified to render (no tofu) with SystemFont [Segoe UI Symbol, Nirmala UI, ...]; dropped wide/tiny ones. Evidence: test_intro_player PASS (player at spawn_position, identity from pool, stored in progress, reused on restart and when pre-stored); screenshots scratchpad/shots_010/f00000215.png (glyph crisp at screen centre, white with black outline) and shots_007/f00000199.png.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Player (CharacterBody3D) spawns on the map @ cell each run; its identity glyph is drawn crisp on the overlay layer at camera.unproject_position (decision-001), and the camera follows it. Identity comes from IdentityPool (10 glyphs, all render in the default fonts), chosen once and stored in PersistentProgress.identity_glyph, which is held in memory by SaveService (disk IO is task-013). Verified by tests and Movie Maker frames.
+<!-- SECTION:FINAL_SUMMARY:END -->
