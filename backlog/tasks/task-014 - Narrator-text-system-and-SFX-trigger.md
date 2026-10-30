@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T17:13:00Z'
+updated_date: '2026-10-30T17:17:00Z'
 labels:
   - narrator
   - audio
@@ -48,4 +48,6 @@ The narrator is the story's voice in M1 and must show morphing ASCII text with a
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented. Validation: boot zero ERROR lines; all tools/test_*.gd PASS incl. new test_narrator (eligibility, ladder, class priority, queue/TTL/replace, death preempt, TIME skipped after run end, persistence, save on quit). Visual: Movie Maker capture tools/capture_narrator.gd (wake_first morph, spikes_teeth reveal beat, death_spikes_down over shatter, run-2 start_came_back) legible; audio wav non-silent only at beat starts (peak ~0.25). FINDING: with spec TTL 5s a run-start beat after a death beat is dropped (death beat 5.5s + gap 4s > TTL); start beats are pinned max_run=min_run so are lost. Capture used queue_ttl 12 to show it. Needs design decision.
+
+Start-beat fix: new run cuts the post-beat gap; run_started beats exempt from queue TTL via NarratorConfig.ttl_exempt_events; displaced exempt beat is parked and re-queued. Tests added (death->restart->run-2 start with default TTL, gap cut, re-queue); all tests PASS, boot 0 errors. Re-capture with default TTL: start_came_back plays at frame 644 in run 2 (scratchpad/sheet_default_ttl.png). docs/narration_m1.md Display cap updated.
 <!-- SECTION:NOTES:END -->
