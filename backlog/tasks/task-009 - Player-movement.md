@@ -1,11 +1,11 @@
 ---
 id: TASK-009
 title: Player movement
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:39:00Z'
+updated_date: '2026-10-30T16:40:00Z'
 labels:
   - player
   - input
@@ -48,3 +48,9 @@ Once the input is discovered, the character must move in the world in a way that
 <!-- SECTION:NOTES:BEGIN -->
 Implemented: Player._physics_process, FLOATING CharacterBody3D, move_toward accel/friction from PlayerConfig (max_speed, acceleration, friction, pointer_*), gated on PLAYING + discovered scheme; mouse scheme projects cursor onto y=0 plane. MapLoader adds Bounds node (void-edge boxes + 4 outer slabs). Evidence: tools/test_input_movement.gd PASS: no move before discovery, first press moves, stops on release, wall collision at z=15-radius, void and map-edge bounds hold, scheme survives restart. Visual: C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/shots_011b.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Player moves on the XZ plane with move_and_slide only after discovery and only while PLAYING; first press moves immediately; stops on release; walls and void/map-edge bounds block it; mouse scheme walks toward the cursor without overshoot. All values in PlayerConfig. tools/test_input_movement.gd PASS.
+<!-- SECTION:FINAL_SUMMARY:END -->
