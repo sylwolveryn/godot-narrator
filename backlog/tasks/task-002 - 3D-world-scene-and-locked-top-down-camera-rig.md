@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:29:00Z'
-updated_date: '2026-10-30T15:50:00Z'
+updated_date: '2026-10-30T15:58:00Z'
 labels:
   - rendering
   - world
@@ -32,3 +32,9 @@ The world must be a real 3D scene, but the camera must start locked to a 2D top-
 - [ ] #3 Camera view parameters (position, angle, follow behavior) are exported vars or `.tres` values.
 - [ ] #4 The camera rig can be swapped to a tilted view without changing the world scene (verified by configuration, not by unlocking it in M1).
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. CameraViewConfig + CameraRig scripts, WorldConfig. 2. tools/build_resources.gd for top-down and tilted profiles. 3. Extend build_main_scene.gd with World (floor, 2 walls, light), CameraRig, RunManager. 4. Test tool for profile swap.
+<!-- SECTION:PLAN:END -->
