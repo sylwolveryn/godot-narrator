@@ -1,11 +1,11 @@
 ---
 id: TASK-008
 title: Adaptive input discovery
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:39:00Z'
+updated_date: '2026-10-30T16:40:00Z'
 labels:
   - input
   - player
@@ -47,3 +47,9 @@ Movement is discovered, not explained. The game must register whichever input de
 <!-- SECTION:NOTES:BEGIN -->
 Implemented: InputScheme consts, InputDiscovery node (classifies by event device type + InputMap action match, emits SignalBus.input_scheme_discovered; switches on a different device), RunManager stores scheme in RunState (carried across restarts), InputMap actions via tools/build_input_map.gd (legacy 'transform' removed). Evidence: tools/test_input_movement.gd PASS (unsupported keys/right-click/pad A/right stick/sub-deadzone change nothing; KB, gamepad, mouse discovered; no re-emit for same scheme). No raw keycodes in scripts/ (grep clean). Boot has 0 ERROR lines; all tools/test_*.gd PASS.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+InputMap actions move_left/right/up/down (WASD, arrows, left stick, d-pad) and move_pointer (left mouse) are written by tools/build_input_map.gd; the legacy transform action is removed. InputDiscovery picks the scheme from the first supported input, emits SignalBus.input_scheme_discovered, re-emits on device switch, and ignores unsupported input; the scheme is stored in RunState and carried across restarts. tools/test_input_movement.gd PASS.
+<!-- SECTION:FINAL_SUMMARY:END -->
