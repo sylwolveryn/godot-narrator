@@ -1,9 +1,11 @@
 ---
 id: TASK-002
 title: 3D world scene and locked top-down camera rig
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T15:29:00Z'
+updated_date: '2026-10-30T15:50:00Z'
 labels:
   - rendering
   - world
