@@ -1,11 +1,11 @@
 ---
 id: TASK-020.01
 title: 'god: game process control (new game / continue)'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T17:51:00Z'
+updated_date: '2026-10-30T17:52:00Z'
 labels:
   - tools
 milestone: m-2
@@ -44,3 +44,9 @@ The core of the launcher: one click to start fresh or continue, without stray pr
 <!-- SECTION:NOTES:BEGIN -->
 Implemented god/core.py (GameController, is_game, ui_state) and god/god.py. 27 unittests pass (python -m unittest discover -s god/tests). Real run: continue started game, 2nd click warned, 3rd restarted, new_game deleted save and started, close_game left other godot (editor) processes alone.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Implemented in god/ (core.py logic + god.py tkinter GUI); verified by 27 unittest cases, tools/test_dev_reveal_map.gd PASS, a GUI smoke run and a real start/warn/restart/close cycle (user save backed up and restored, md5 identical). See task notes for evidence.
+<!-- SECTION:FINAL_SUMMARY:END -->
