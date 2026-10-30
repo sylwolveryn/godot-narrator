@@ -26,10 +26,10 @@ The current renderer flattens everything to grey-blue glyphs on black; the moodb
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Walls, floor, items, hazards, memory cells, player and narration use the palette from docs/visual_direction.md
-- [ ] #2 Bright glyphs glow (bloom or equivalent) without blurring glyph shapes into unreadable blobs
-- [ ] #3 Captures before/after are compared side by side in the task notes
-- [ ] #4 Frame rate stays at 60 FPS at 1920x1080 on the dev machine
+- [x] #1 Walls, floor, items, hazards, memory cells, player and narration use the palette from docs/visual_direction.md
+- [x] #2 Bright glyphs glow (bloom or equivalent) without blurring glyph shapes into unreadable blobs
+- [x] #3 Captures before/after are compared side by side in the task notes
+- [x] #4 Frame rate stays at 60 FPS at 1920x1080 on the dev machine
 <!-- AC:END -->
 
 ## Implementation Plan
