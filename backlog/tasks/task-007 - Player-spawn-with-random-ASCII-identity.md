@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:08:00Z'
+updated_date: '2026-10-30T16:21:00Z'
 labels:
   - player
   - rendering
@@ -35,3 +35,15 @@ The player character is the core of the M1 experience and must appear as a rando
 - [ ] #4 The identity is chosen randomly only on the very first run; later runs reuse the saved identity
 - [ ] #5 Identity is stored as persistent data (read by the save task), not per-run state
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. PersistentProgress + SaveService (memory only, load/save seams for task-013). 2. IdentityPool + PlayerConfig resources. 3. Player CharacterBody3D placed at MapLoader.spawn_position on run_started, picks/reuses identity via SaveService. 4. GlyphOverlay CanvasLayer (layer 10) draws the glyph at camera.unproject_position. 5. CameraRig follows player, snaps on SignalBus.player_spawned. 6. Test + Movie Maker.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented scripts/core/{persistent_progress,save_service}.gd, scripts/player/{player,player_config,identity_pool}.gd, scripts/rendering/glyph_overlay.gd, CameraRig.snap_to_target, SignalBus.player_spawned, resources identity_pool.tres/player_config.tres. Pool of 10 glyphs verified to render (no tofu) with SystemFont [Segoe UI Symbol, Nirmala UI, ...]; dropped wide/tiny ones. Evidence: test_intro_player PASS (player at spawn_position, identity from pool, stored in progress, reused on restart and when pre-stored); screenshots scratchpad/shots_010/f00000215.png (glyph crisp at screen centre, white with black outline) and shots_007/f00000199.png.
+<!-- SECTION:NOTES:END -->
