@@ -1,10 +1,11 @@
 ---
 id: TASK-007
 title: Player spawn with random ASCII identity
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T15:42:00Z'
+updated_date: '2026-10-30T16:08:00Z'
 labels:
   - player
   - rendering
