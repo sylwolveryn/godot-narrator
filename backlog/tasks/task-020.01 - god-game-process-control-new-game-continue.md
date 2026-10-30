@@ -1,9 +1,11 @@
 ---
 id: TASK-020.01
 title: 'god: game process control (new game / continue)'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T17:45:00Z'
+updated_date: '2026-10-30T17:46:00Z'
 labels:
   - tools
 milestone: m-2
