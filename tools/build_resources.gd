@@ -11,7 +11,27 @@ func _init() -> void:
 	ok = _save(WorldConfig.new(), "world_config.tres") and ok
 	ok = _save(AsciiConfig.new(), "ascii_config.tres") and ok
 
-	ok = _save(MapLegend.new(), "map_legend.tres") and ok
+	var spikes := HazardDefinition.new()
+	spikes.kind = MapLegend.SPIKES
+	spikes.end_cause = &"spikes"
+	spikes.lethal_on_touch = true
+	spikes.tint = Color(1.0, 0.3, 0.25)
+	ok = _save(spikes, "hazard_spikes.tres") and ok
+	var corrupting := HazardDefinition.new()
+	corrupting.kind = MapLegend.CORRUPT
+	corrupting.end_cause = &"corruption"
+	corrupting.erosion_rate = 1.0
+	corrupting.erosion_threshold = 2.5
+	corrupting.recovery_rate = 0.8
+	corrupting.tint = Color(0.85, 0.25, 0.95)
+	ok = _save(corrupting, "hazard_corrupting.tres") and ok
+
+	var legend := MapLegend.new()
+	legend.hazards[MapLegend.SPIKES] = load(DIR + "hazard_spikes.tres") as HazardDefinition
+	legend.hazards[MapLegend.CORRUPT] = load(DIR + "hazard_corrupting.tres") as HazardDefinition
+	ok = _save(legend, "map_legend.tres") and ok
+	ok = _save(SaveConfig.new(), "save_config.tres") and ok
+	ok = _save(GlyphFxConfig.new(), "glyph_fx_config.tres") and ok
 	ok = _save(IntroConfig.new(), "intro_config.tres") and ok
 	ok = _save(RevealConfig.new(), "reveal_config.tres") and ok
 

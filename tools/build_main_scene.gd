@@ -38,6 +38,7 @@ func _build() -> void:
 
 	var save: Node = load("res://scripts/core/save_service.gd").new()
 	save.name = "SaveService"
+	save.set("config", load(CFG + "save_config.tres"))
 	_add(root, save)
 
 	var rig: Node3D = load("res://scripts/rendering/camera_rig.gd").new()
@@ -101,6 +102,7 @@ func _build() -> void:
 	overlay.set("camera_rig", rig)
 	overlay.set("player", player)
 	overlay.set("player_config", player_cfg)
+	overlay.set("fx_config", load(CFG + "glyph_fx_config.tres"))
 	_add(root, overlay)
 
 	# Layer 20: intro veil + wave, above everything.
@@ -123,6 +125,13 @@ func _build() -> void:
 	runs.set("config", load(CFG + "run_config.tres"))
 	_add(root, runs)
 	player.set("run_manager", runs)
+
+	var hazards: Node = load("res://scripts/world/hazard_monitor.gd").new()
+	hazards.name = "HazardMonitor"
+	hazards.set("map_loader", loader)
+	hazards.set("player", player)
+	hazards.set("run_manager", runs)
+	_add(root, hazards)
 
 	var packed := PackedScene.new()
 	var pack_err := packed.pack(root)

@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="GlyphFxConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/glyph_fx_config.gd" id="1_sgfnu"]
+
+[resource]
+script = ExtResource("1_sgfnu")

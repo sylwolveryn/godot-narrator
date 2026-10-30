@@ -6,6 +6,7 @@ extends SceneTree
 
 const PHASE_INTRO := 0
 const PHASE_PLAYING := 1
+const Support := preload("res://tools/test_support.gd")
 var _failures: PackedStringArray = []
 
 
@@ -29,14 +30,16 @@ func _fast_intro() -> IntroConfig:
 
 func _make_main(intro_on_restart: bool, saved_glyph: String = "") -> Node:
 	var main: Node = (load("res://main.tscn") as PackedScene).instantiate()
+	var save_path: String = Support.isolate_save(main, "intro_player")
 	main.get_node("IntroSequence").set("config", _fast_intro())
 	var run_cfg: RunConfig = main.get_node("RunManager").get("config").duplicate()
 	run_cfg.restart_delay = 0.0
 	run_cfg.intro_on_restart = intro_on_restart
 	main.get_node("RunManager").set("config", run_cfg)
 	if saved_glyph != "":
-		var progress: PersistentProgress = main.get_node("SaveService").get("progress")
-		progress.identity_glyph = saved_glyph
+		var seeded := PersistentProgress.new()
+		seeded.identity_glyph = saved_glyph
+		ResourceSaver.save(seeded, save_path)
 	return main
 
 
@@ -114,6 +117,7 @@ func _run() -> void:
 	_check(runs3.get("phase") == PHASE_PLAYING and runs3.get("run_count") == 2, "lite intro should hand off to run 2")
 	main3.queue_free()
 
+	Support.remove_file("user://test_progress_intro_player.tres")
 	if _failures.is_empty():
 		print("PASS test_intro_player")
 		quit(0)

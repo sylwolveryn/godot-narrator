@@ -18,3 +18,7 @@ signal player_spawned(world_position: Vector3)
 signal input_scheme_discovered(scheme: StringName)
 ## Emitted by MapReveal for cells seen for the first time ever on a map (never persisted before).
 signal cells_revealed(map_id: StringName, cells: PackedVector2Array)
+## Emitted by HazardMonitor while the player erodes: `amount` is 0..1 of the threshold, `tint` the hazard's colour.
+signal erosion_changed(amount: float, tint: Color)
+## Emitted by HazardMonitor just before it requests the run end, so presentation can colour the death.
+signal hazard_lethal(cause: StringName, tint: Color)

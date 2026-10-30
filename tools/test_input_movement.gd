@@ -4,6 +4,7 @@ extends SceneTree
 ## Usage: godot --headless --path . -s tools/test_input_movement.gd
 
 const PHASE_PLAYING := 1
+const Support := preload("res://tools/test_support.gd")
 var _failures: PackedStringArray = []
 var _discovered: Array[StringName] = []
 
@@ -28,6 +29,7 @@ func _fast_intro() -> IntroConfig:
 
 func _make_main() -> Node:
 	var main: Node = (load("res://main.tscn") as PackedScene).instantiate()
+	Support.isolate_save(main, "input_movement")
 	main.get_node("IntroSequence").set("config", _fast_intro())
 	var run_cfg: RunConfig = main.get_node("RunManager").get("config").duplicate()
 	run_cfg.restart_delay = 0.0
@@ -218,6 +220,7 @@ func _run() -> void:
 
 	main.queue_free()
 	await process_frame
+	Support.remove_file("user://test_progress_input_movement.tres")
 	if _failures.is_empty():
 		print("PASS test_input_movement")
 		quit(0)

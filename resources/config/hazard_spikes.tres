@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="HazardDefinition" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/hazard_definition.gd" id="1_msabd"]
+
+[resource]
+script = ExtResource("1_msabd")
+kind = &"spikes"
+end_cause = &"spikes"
+lethal_on_touch = true

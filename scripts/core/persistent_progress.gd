@@ -9,3 +9,7 @@ extends Resource
 @export var run_count: int = 0
 ## Map memory: map id (StringName) -> PackedVector2Array of revealed cell coordinates (x, y as floats).
 @export var revealed_cells: Dictionary = {}
+## Number of runs that ended in death across all launches.
+@export var death_count: int = 0
+## Ids of narration beats already heard (filled by the narrator, task-014).
+@export var heard_beats: PackedStringArray = PackedStringArray()

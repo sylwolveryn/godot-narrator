@@ -1,6 +1,13 @@
 [gd_resource type="Resource" script_class="MapLegend" format=3]
 
-[ext_resource type="Script" path="res://scripts/world/map_legend.gd" id="1_3827t"]
+[ext_resource type="Script" path="res://scripts/world/hazard_definition.gd" id="1_jx182"]
+[ext_resource type="Resource" path="res://resources/config/hazard_spikes.tres" id="2_krhl1"]
+[ext_resource type="Resource" path="res://resources/config/hazard_corrupting.tres" id="3_rhfsb"]
+[ext_resource type="Script" path="res://scripts/world/map_legend.gd" id="4_efd0b"]
 
 [resource]
-script = ExtResource("1_3827t")
+script = ExtResource("4_efd0b")
+hazards = Dictionary[StringName, ExtResource("1_jx182")]({
+&"corrupt": ExtResource("3_rhfsb"),
+&"spikes": ExtResource("2_krhl1")
+})

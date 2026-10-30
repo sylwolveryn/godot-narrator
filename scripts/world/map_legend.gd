@@ -20,6 +20,8 @@ const CORRUPT: StringName = &"corrupt"
 	"^": SPIKES,
 	"%": CORRUPT,
 }
+## Hazard cell type -> its data-driven definition (see HazardDefinition). Types missing here are harmless.
+@export var hazards: Dictionary[StringName, HazardDefinition] = {}
 ## Cell type used for characters not in `entries` (a warning is logged).
 @export var unknown_type: StringName = FLOOR
 

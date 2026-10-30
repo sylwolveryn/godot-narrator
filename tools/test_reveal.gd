@@ -5,6 +5,7 @@ extends SceneTree
 ## Usage: godot --headless --path . -s tools/test_reveal.gd
 
 const PHASE_PLAYING := 1
+const Support := preload("res://tools/test_support.gd")
 const MAP_ID := &"m1_awakening"
 var _failures: PackedStringArray = []
 var _signal_cells: Array[Vector2i] = []
@@ -30,6 +31,7 @@ func _fast_intro() -> IntroConfig:
 
 func _make_main() -> Node:
 	var main: Node = (load("res://main.tscn") as PackedScene).instantiate()
+	Support.isolate_save(main, "reveal")
 	main.get_node("IntroSequence").set("config", _fast_intro())
 	var run_cfg: RunConfig = main.get_node("RunManager").get("config").duplicate()
 	run_cfg.restart_delay = 0.0
@@ -221,6 +223,7 @@ func _run() -> void:
 
 	main.queue_free()
 	await process_frame
+	Support.remove_file("user://test_progress_reveal.tres")
 	if _failures.is_empty():
 		print("PASS test_reveal")
 		quit(0)

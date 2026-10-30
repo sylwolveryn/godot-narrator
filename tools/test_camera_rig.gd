@@ -4,12 +4,16 @@ extends SceneTree
 ## Usage: godot --headless --path . -s tools/test_camera_rig.gd
 
 
+const Support := preload("res://tools/test_support.gd")
+
+
 func _init() -> void:
 	process_frame.connect(_run, CONNECT_ONE_SHOT)
 
 
 func _run() -> void:
 	var main: Node = (load("res://main.tscn") as PackedScene).instantiate()
+	Support.isolate_save(main, "camera_rig")
 	root.add_child(main)
 	await process_frame
 	var rig: Node3D = main.get_node("CameraRig")
@@ -29,5 +33,6 @@ func _run() -> void:
 	ok = ok and not tilted.is_equal_approx(Vector3.DOWN) and tilted.y < 0.0
 	ok = ok and main.get_node("World").get_child_count() == world_before
 
+	Support.remove_file("user://test_progress_camera_rig.tres")
 	print("PASS test_camera_rig" if ok else "FAIL test_camera_rig")
 	quit(0 if ok else 1)

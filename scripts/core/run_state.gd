@@ -8,3 +8,5 @@ var elapsed: float = 0.0
 var end_cause: StringName = &""
 ## The input scheme in use for this run (an InputScheme constant); NONE until discovered.
 var input_scheme: StringName = InputScheme.NONE
+## Accumulated corruption erosion this run (in the active hazard's erosion units). Written by HazardMonitor.
+var erosion: float = 0.0
