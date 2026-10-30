@@ -1,11 +1,11 @@
 ---
 id: TASK-031
 title: Isometric glyph-material world for the full M1 map
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T22:45:00Z'
-updated_date: '2026-10-30T23:07:00Z'
+updated_date: '2026-10-30T23:10:00Z'
 labels:
   - rendering
   - world
@@ -48,3 +48,9 @@ IMPLEMENTED. Files: shaders/glyph_surface.gdshader, scripts/world/world_mesh_bui
 
 MEASURED (GTX 1060, --max-fps 30, 300 frames): 1366x768 opening: draws 4.2, prims 3338, GPU mean 0.42ms, 30.0 FPS; worst (radius 8 reveal, hazards): draws 3.9, prims 3313, GPU 0.58ms, 30.0 FPS. 1920x1061 (window clipped from 1080): opening GPU 1.02ms, worst 1.87ms (p99 3.56), 30.0 FPS. Raw: scratchpad/t031_perf.txt. Contact sheets: scratchpad/t031_contact_{world,reveal,hazards}_{1366,1920}.png. Tests: all tools/test_*.gd PASS headless except test_input_movement (same mouse-overshoot failure as before, identical numbers on stashed baseline: unchanged) and test_encoding (SKIP, needs GPU).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The game world is now the Spike A approach: MapLoader builds the whole M1 map as one merged mesh with one glyph-surface material (shaders/glyph_surface.gdshader, atlas in resources/glyphs/), lit by the player light plus up to 7 revealed static lights; isometric orthographic camera (camera_isometric.tres) follows the player; surfaces between camera and player are cut away with a dithered edge. AsciiPostProcess is out of the main scene (files remain for task-035). Reveal works through the shader mask. ~4 draw calls, GPU 0.4-0.6 ms at 1366x768 and 1.0-1.9 ms at 1080p on a GTX 1060, 30 FPS. godot-validator PASS. Follow-ups: camera-relative keys (task-038), mouse overshoot (task-029), reveal polish (task-032), halos/player look (task-033), look pass incl. light occlusion and cut-away edge (task-036).
+<!-- SECTION:FINAL_SUMMARY:END -->
