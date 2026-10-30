@@ -28,12 +28,12 @@ The M1 run must end through a hazard, which is the first real loss condition. De
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Hazard definitions (type, damage or effect, visuals) are data-driven.
-- [ ] #2 Death emits a run-end signal through `SignalBus`.
-- [ ] #3 Death does not pause the game, and the next run starts without a menu.
-- [ ] #4 Spike tiles end the run when touched
-- [ ] #5 Corrupting glyph areas erode the character over time while inside them and end the run when erosion completes; erosion rate and threshold come from a resource
-- [ ] #6 Hazard types for M1 are exactly spikes and corrupting glyphs
+- [x] #1 Hazard definitions (type, damage or effect, visuals) are data-driven.
+- [x] #2 Death emits a run-end signal through `SignalBus`.
+- [x] #3 Death does not pause the game, and the next run starts without a menu.
+- [x] #4 Spike tiles end the run when touched
+- [x] #5 Corrupting glyph areas erode the character over time while inside them and end the run when erosion completes; erosion rate and threshold come from a resource
+- [x] #6 Hazard types for M1 are exactly spikes and corrupting glyphs
 <!-- AC:END -->
 
 ## Implementation Plan
