@@ -25,9 +25,9 @@ Since task-031 the camera is isometric (yaw 45), but keyboard/gamepad movement s
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Up/down/left/right on keyboard and the d-pad move the player up/down/left/right on screen; the left stick maps to screen directions too
-- [ ] #2 The mapping derives from the active camera view config, not hardcoded angles
-- [ ] #3 tools/test_input_movement.gd asserts screen-relative directions (alongside the task-029 overshoot fix)
+- [x] #1 Up/down/left/right on keyboard and the d-pad move the player up/down/left/right on screen; the left stick maps to screen directions too
+- [x] #2 The mapping derives from the active camera view config, not hardcoded angles
+- [x] #3 tools/test_input_movement.gd asserts screen-relative directions (alongside the task-029 overshoot fix)
 <!-- AC:END -->
 
 ## Implementation Plan
