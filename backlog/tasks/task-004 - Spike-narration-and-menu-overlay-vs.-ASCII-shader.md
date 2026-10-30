@@ -1,9 +1,11 @@
 ---
 id: TASK-004
 title: 'Spike: narration and menu overlay vs. ASCII shader'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T15:30:00Z'
+updated_date: '2026-10-30T16:04:00Z'
 labels:
   - rendering
   - narrator
@@ -32,3 +34,9 @@ A full-screen shader will scramble narration text and in-world menus if they are
 - [ ] #3 The decision states how the character identity from the shader cell size question is affected, or lists it as an open item.
 - [ ] #4 Open items are added to `docs/game_design.md` Open Questions.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Throwaway prototype tools/spike_overlay.gd: runs main scene + CanvasLayer(layer 10) with Label and a glyph at camera.unproject_position of a 3D point. 2. Movie Maker capture, view. 3. Record decision. 4. Update game_design.md risks.
+<!-- SECTION:PLAN:END -->
