@@ -1,9 +1,11 @@
 ---
 id: TASK-028
 title: 'Spike B: glyph-object morph moments'
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T21:53:00Z'
+updated_date: '2026-10-30T21:57:00Z'
 labels:
   - rendering
   - player
