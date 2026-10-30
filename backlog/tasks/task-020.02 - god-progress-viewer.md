@@ -35,3 +35,9 @@ Playtesting needs a quick look at what the save contains without opening files b
 <!-- SECTION:PLAN:BEGIN -->
 1. core.py pure logic (paths, process matching, controller, ui_state, .tres parser) + god.py tkinter GUI with 3s after() poll; 2. tools/dev_reveal_map.gd + test; 3. unittest suite; 4. README, manual real run.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+parse_progress/read_progress in core.py (read-only, hides revealed_cells+script, generic fields). Unit tests cover missing/malformed/binary and unchanged bytes+mtime after read. GUI polls file signature each 3s. Real save parsed OK; GUI smoke-run (auto-close) exits 0.
+<!-- SECTION:NOTES:END -->
