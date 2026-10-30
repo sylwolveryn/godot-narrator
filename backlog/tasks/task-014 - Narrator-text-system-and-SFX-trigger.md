@@ -1,10 +1,11 @@
 ---
 id: TASK-014
 title: Narrator text system and SFX trigger
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T15:42:00Z'
+updated_date: '2026-10-30T17:00:00Z'
 labels:
   - narrator
   - audio
