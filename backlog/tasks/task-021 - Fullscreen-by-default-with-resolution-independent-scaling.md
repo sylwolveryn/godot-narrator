@@ -1,11 +1,11 @@
 ---
 id: TASK-021
 title: Fullscreen by default with resolution-independent scaling
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T17:45:00Z'
-updated_date: '2026-10-30T17:58:00Z'
+updated_date: '2026-10-30T18:01:00Z'
 labels:
   - rendering
   - ux
@@ -41,3 +41,9 @@ Playtest: the window is small and every overlay size was tuned only for 960x540.
 <!-- SECTION:NOTES:BEGIN -->
 Implemented. Files: scripts/rendering/display_config.gd (+resources/config/display_config.tres), ascii_post_process.gd, glyph_overlay.gd, narration_overlay.gd, intro_sequence.gd, scripts/ui/fullscreen_toggle.gd, tools/build_project_settings.gd (display/window/size/mode=3, viewport 1920x1080, stretch disabled), build_input_map.gd (toggle_fullscreen), build_main_scene.gd, tools/capture_at_size.sh. Config pixel values doubled to the 1080p reference (cell 20x36, atlas font 32, player font 88, narration 60/outline 16, jitter 14, shard 180, intro cell 20x36); narration width capped by max_text_width. Camera ortho size is vertical (KEEP_HEIGHT) so framing is unchanged; wider aspects show more horizontally. Movie Maker finding: it ignores --resolution/--windowed/window resize and records at the project viewport size (display/window/size/viewport_*; earlier 1152x648 = old default). Working command: tools/capture_at_size.sh WxH <dir> <frames> tools/capture_narrator.gd (writes temporary override.cfg with windowed viewport WxH, deletes after). Evidence: shots in scratchpad shots_021_{1280x720,1920x1080,2560x1440,2560x1080,1024x768}; contact sheets scratchpad/contact_021.png and contact_021_text.png - compositions match, player centred, no stretched glyphs. Boot headless 0 errors; all test_*.gd PASS.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Fullscreen by default (display/window/size/mode via tools/build_project_settings.gd), 1920x1080 reference with scale = viewport height / reference height (DisplayConfig). ASCII cells + atlas, player glyph, narration, intro and death/erosion effects scale and rebuild on size_changed; camera framing is vertical so wider aspects show more and the player stays centred. toggle_fullscreen = F11 / Alt+Enter. Captures at 1280x720, 1920x1080, 2560x1440, 2560x1080, 1024x768 match. Movie Maker records at the project viewport size, so tools/capture_at_size.sh writes a temporary override.cfg. godot-validator PASS. Not verified live: the F11 toggle on a real monitor.
+<!-- SECTION:FINAL_SUMMARY:END -->
