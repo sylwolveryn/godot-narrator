@@ -1,11 +1,11 @@
 ---
 id: TASK-006
 title: 'Intro sequence: black screen and abstract wave'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:22:00Z'
+updated_date: '2026-10-30T16:23:00Z'
 labels:
   - ux
   - rendering
@@ -44,3 +44,9 @@ The first moment of the game sets the mood and shows the ASCII identity before t
 <!-- SECTION:NOTES:BEGIN -->
 Implemented scripts/ui/{intro_config,intro_sequence}.gd, shaders/intro_wave.gdshader, SignalBus intro_requested/intro_finished, RunManager hand-off, resources/config/intro_config.tres. Evidence: tools/test_intro_player.gd PASS (spams key+mouse events during intro; intro still hands off to exactly one run; default restart emits no intro_requested; intro_on_restart=true plays lite intro then run 2). Screenshots scratchpad/shots_010/f00000012.png (black), f00000055/090 (wave), f00000120/140 (dissolve into world). Wave layer is above the ASCII layer so it stays crisp.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+IntroSequence: black veil at layer 20 with a halftone wave shader (shaders/intro_wave.gdshader) that dissolves into the ASCII world; emits SignalBus.intro_finished → RunManager.start_run(). Input during the intro is ignored. Timings in IntroConfig; RunConfig.intro_on_restart (default false) replays a faster intro on restart. Verified by tools/test_intro_player.gd and Movie Maker frames.
+<!-- SECTION:FINAL_SUMMARY:END -->
