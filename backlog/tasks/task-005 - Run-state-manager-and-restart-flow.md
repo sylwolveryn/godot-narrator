@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T15:50:00Z'
+updated_date: '2026-10-30T15:58:00Z'
 labels:
   - core
 milestone: m-0
@@ -31,3 +31,9 @@ Every run needs a single owner of its lifecycle: starting, ending, and starting 
 - [ ] #3 Restart produces a clean run state with no leftover values from the previous run (verified by a forced run end in a test scene).
 - [ ] #4 No game state is stored in an autoload.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. RunConfig, RunState, RunManager (Node under Main). 2. SignalBus signals. 3. tools/test_run_manager.gd forced run end test.
+<!-- SECTION:PLAN:END -->
