@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T17:00:00Z'
+updated_date: '2026-10-30T17:13:00Z'
 labels:
   - narrator
   - audio
@@ -37,3 +37,9 @@ The narrator is the story's voice in M1 and must show morphing ASCII text with a
 - [ ] #5 Beats can be gated by run count so tone can shift from cryptic to clearer over runs
 - [ ] #6 M1 beats hint at contradicting origins (e.g. hero vs villain, alien, AI, demonic, angelic) and never state one answer
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. NarrationBeat/NarratorConfig/NarrationMood resources; beats built from data/narration/m1_beats.json by tools/build_narration.gd. 2. Narrator (logic, signals up), NarrationOverlay (layer 25 morph text), NarrationSfx (procedural moods). 3. Events via SignalBus.narration_event from Player/MapReveal/HazardMonitor; run/death derived by narrator. 4. SaveService: beat_heard persistence + save on quit. 5. tools/test_narrator.gd + capture_narrator.gd visual/audio check.
+<!-- SECTION:PLAN:END -->
