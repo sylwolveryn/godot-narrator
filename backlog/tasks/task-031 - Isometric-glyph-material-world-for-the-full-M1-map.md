@@ -1,9 +1,11 @@
 ---
 id: TASK-031
 title: Isometric glyph-material world for the full M1 map
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T22:45:00Z'
+updated_date: '2026-10-30T22:46:00Z'
 labels:
   - rendering
   - world
