@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T22:45:00Z'
-updated_date: '2026-10-30T22:46:00Z'
+updated_date: '2026-10-30T23:07:00Z'
 labels:
   - rendering
   - world
@@ -34,3 +34,9 @@ The user chose Spike A (scenes/spikes/glyph_world) as the direction. The real ga
 - [ ] #4 Walls never hide the player: walls between camera and player are cut away or faded
 - [ ] #5 Draw calls, GPU time and FPS at 1366x768 and 1920x1080 with --max-fps 30 are recorded in the notes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Port Spike A shader to shaders/glyph_surface.gdshader (reveal mask, cut-away, camera-derived axes). 2. WorldMeshBuilder + MapLoader: one merged mesh. 3. GlyphWorldConfig/GlyphWorldView: lights + cut-away uniforms. 4. Isometric CameraViewConfig profile; remove AsciiPostProcess from main. 5. MapReveal via mask only. 6. Update tests, measure, capture, docs.
+<!-- SECTION:PLAN:END -->
