@@ -1,11 +1,11 @@
 ---
 id: TASK-011
 title: Reveal of walls, items and hazards
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:30:00Z'
-updated_date: '2026-10-30T16:39:00Z'
+updated_date: '2026-10-30T16:40:00Z'
 labels:
   - world
   - ux
@@ -49,3 +49,9 @@ The world must be discovered through play, so walls, items and hazards are hidde
 <!-- SECTION:NOTES:BEGIN -->
 Implemented: RevealConfig (radius 2.0 cells, reveal_floor=false default, memory_desaturation/brightness), MapLoader per-cell visuals (visuals_at), MapReveal node (hides all at run start, memory style for remembered cells, reveal around player, emits SignalBus.cells_revealed), SaveService merges into PersistentProgress.revealed_cells[map_id] (PackedVector2Array) and exposes get_revealed_cells for task-013. Evidence: tools/test_reveal.gd PASS (hidden at start, radius exactness, sticks, persists into run 2 as dimmer/desaturated memory, re-seen becomes normal, no duplicate announcements). Visual check via tools/capture_reveal.gd (debug autopilot, not in boot path): C:/Users/SYLWOL~1/AppData/Local/Temp/claude/E--git-godot-narrator/9bf6ff4a-2b4c-4f5c-8bbc-2621e15c92c1/scratchpad/shots_011b f00000110 (opening: only glyph), f00000240 (walked), f00000300 and f00000360 (run 2 memory).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+MapReveal hides unseen cells and reveals those within RevealConfig.reveal_radius (2 cells, floor hidden by default so the opening reads as "plain nothing"). Revealed cells persist in PersistentProgress.revealed_cells[map_id] via SignalBus.cells_revealed → SaveService (in memory; disk is task-013); remembered cells show dimmed/desaturated until re-seen. Verified by tools/test_reveal.gd and Movie Maker frames using the optional tools/capture_reveal.gd autopilot.
+<!-- SECTION:FINAL_SUMMARY:END -->
