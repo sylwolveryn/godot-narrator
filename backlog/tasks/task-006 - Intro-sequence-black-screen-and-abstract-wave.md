@@ -30,7 +30,7 @@ The first moment of the game sets the mood and shows the ASCII identity before t
 - [x] #1 On launch the screen is black, then an abstract wave effect plays.
 - [x] #2 The intro ends automatically and hands off to the spawn step without a pause or menu.
 - [x] #3 Intro timings are exported vars or `.tres` values.
-- [ ] #4 Input during the intro does not break the sequence.
+- [x] #4 Input during the intro does not break the sequence.
 <!-- AC:END -->
 
 ## Implementation Plan
