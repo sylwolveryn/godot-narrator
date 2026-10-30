@@ -23,8 +23,8 @@ Resetting or continuing playtests currently needs shell commands that fail when 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 god/ contains a runnable Python GUI with a README describing how to launch it
-- [ ] #2 Godot ignores the god/ folder
+- [x] #1 god/ contains a runnable Python GUI with a README describing how to launch it
+- [x] #2 Godot ignores the god/ folder
 - [ ] #3 All subtasks are Done
 <!-- AC:END -->
 
