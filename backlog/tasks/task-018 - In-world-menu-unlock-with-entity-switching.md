@@ -1,11 +1,11 @@
 ---
 id: TASK-018
 title: In-world menu unlock with entity switching
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:42:00Z'
-updated_date: '2026-10-31T12:20:00Z'
+updated_date: '2026-10-31T12:23:00Z'
 labels:
   - ux
   - player
@@ -43,3 +43,9 @@ After three deaths the player gains an in-world menu built by morphing the surro
 <!-- SECTION:NOTES:BEGIN -->
 IMPLEMENTED (not committed). New: scripts/core/{menu_config,menu_item_def,menu_controller}.gd, scripts/rendering/menu_glyph_view.gd, shaders/glyph_menu.gdshader, resources/config/menu_config.tres + menu_items/*.tres (tools/build_menu.gd), tools/test_menu.gd, capture_menu.gd, contact_sheet.py. Changed: persistent_progress/save_service (menu_unlocked, sanitized), signal_bus, entity_progression (applies switch_form), player (stands still while open), glyph_surface.gdshader (lift_zone dim), build_input_map (menu_toggle/up/down/confirm), build_main_scene, measure_glyph_world (-- menu), test_save allow-list, docs. EVIDENCE: all tools/test_*.gd PASS (incl. test_menu: locked before 3 deaths, unlock persisted, toggle without pause + physics running + hazards tick, player still while open, nav/confirm switch changes form + entity_form_changed(animate), switch item omitted without entity); boot 0 ERROR. Sheets scratchpad t018_{form,switch,close}_1366.png, t018_{form,switch}_1920.png: formation from surroundings, held with glow, form morph, glyphs returning. PERF GTX1060 30fps menu open: 6.2 draws (+1), GPU 1366x768 0.59ms opening / 0.49 worst; 1920x1061 1.22 / 0.91. Decisions: switch item omitted when entity locked; switching closes the menu; menu closes on run end; mouse hover/click via view->menu_item_pointed signal.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+MenuController unlocks the in-world menu at menu_unlock_deaths (3), persisted as menu_unlocked (sanitized on load). menu_toggle (Tab / Start / right mouse) opens it during a run; nothing pauses, the player stands still while it is open, and movement keys navigate (menu_up/down/confirm, left click on items; Alt+Enter left to fullscreen). MenuGlyphView lifts nearby floor/wall glyphs into a framed list (one MultiMesh, vertex-shader flight like Spike B) and returns them on close. Data-driven items: become many/one (only when the entity is unlocked; applied by EntityProgression via signals) and return. +1 draw call, 30 FPS. Validator PASS; new tools/test_menu.gd. Open: the lift-off source glyphs are subtle at the start; reopening mid-return restarts the animation.
+<!-- SECTION:FINAL_SUMMARY:END -->
