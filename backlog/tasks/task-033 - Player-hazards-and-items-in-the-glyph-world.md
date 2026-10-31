@@ -1,9 +1,11 @@
 ---
 id: TASK-033
 title: Player, hazards and items in the glyph world
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T22:45:00Z'
+updated_date: '2026-10-31T08:29:00Z'
 labels:
   - rendering
   - player
@@ -29,3 +31,9 @@ The player identity glyph, items, spikes and corrupting areas need their glyph-w
 - [ ] #3 Erosion and death stay clearly readable on the player, within the flicker limits
 - [ ] #4 tools/test_hazards.gd and tools/test_intro_player.gd pass
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Player glyph: runtime glyph texture atlas (font-rendered) + billboard quad MultiMesh-less node in world with additive halo. 2. Halo MultiMesh/batched mesh for items/spikes/corruption, reveal-aware, breathing. 3. Erosion shader params on in-world glyph; death fragments quad pool. 4. Remove overlay player glyph. 5. Retune glyph_world_config readability. 6. Tests, captures, perf, docs.
+<!-- SECTION:PLAN:END -->
