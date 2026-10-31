@@ -55,6 +55,12 @@ uniform float ambient_level = 0.30;
 uniform float tint_mix = 0.75;
 uniform float memory_dim = 0.35;
 uniform float memory_saturation = 0.25;
+uniform vec3 memory_tint = vec3(0.62, 0.8, 1.15);   // colour multiplier of remembered cells (cool)
+uniform float memory_density = 0.6;      // remembered cells use this fraction of their light for the glyph density (sparser)
+uniform float memory_dropout = 0.35;     // share of glyphs missing on remembered cells
+uniform float memory_floor = 0.3;        // brightness every remembered glyph cell has at least (keeps memory readable in the dark)
+uniform float memory_emit = 0.25;        // share of the self-lit glow kept on remembered cells
+uniform float reveal_spread = 0.8;       // how far apart (in reveal progress) the glyphs of a cell materialise, 0 = all at once
 uniform vec3 glint_color = vec3(0.2, 0.8, 1.0);
 uniform vec4 cut_center = vec4(0.0, 0.5, 0.0, 1.1);   // xyz view-ray point (the player), w radius
 uniform vec2 cut_params = vec2(0.6, 0.15);            // x soft edge width, y margin towards the camera
@@ -241,10 +247,14 @@ void fragment() {
 		}
 	}
 
+	// Memory (g = 0 remembered, 1 seen): sparser, dimmer glyphs; reveal (r < 1): glyphs materialise one by one.
+	float seen = m.g;
+	float mem = 1.0 - seen;
 	float pulse = 0.04 * sin(TIME * 0.55 + h * 6.2832);
-	float b = max(lit.r, max(lit.g, lit.b)) * stone + emit[t] * (0.8 + 1.5 * pulse) + (h - 0.5) * 0.10 + pulse;
+	float b = max(lit.r, max(lit.g, lit.b)) * stone + emit[t] * mix(memory_emit, 1.0, seen) * (0.8 + 1.5 * pulse) + (h - 0.5) * 0.10 + pulse;
 	b += edge * edge_gain * (lum_l + edge_ambient);
-	b *= min(vis, 1.0) * mix(cut_edge_dim, 1.0, cut_keep);
+	b *= min(vis, 1.0) * mix(cut_edge_dim, 1.0, cut_keep) * mix(1.0, memory_density, mem);
+	b = max(b, memory_floor * mem * (t == T_FLOOR ? 0.8 : 1.0));
 	float s = clamp(b, 0.0, 0.999);
 	float idx = min(1.0 + floor(pow(s, 0.65) * (ATLAS_COLS - 1.0)), ATLAS_COLS - 1.0);
 
@@ -252,6 +262,9 @@ void fragment() {
 	vec2 sc = vec2(glyph_crop / ATLAS_COLS, 0.94 / ATLAS_ROWS);
 	float cov = textureGrad(glyph_atlas, auv, dFdx(uv) * sc, dFdy(uv) * sc).r;
 	cov = clamp((cov - 0.08) * 1.5, 0.0, 1.0);
+	float hg = hash12(cell * 1.37 + vec2(float(t) * 5.13, 11.9));
+	float grow = clamp(min(vis, 1.0) * (1.0 + reveal_spread) - hg * reveal_spread, 0.0, 1.0);
+	cov *= grow * step(memory_dropout * mem, hg);
 
 	vec3 pal = mix(pal_dark[t].rgb, pal_bright[t].rgb, smoothstep(0.08, 0.85, s));
 	if (t == T_CORRUPT) {
@@ -260,14 +273,13 @@ void fragment() {
 	}
 	vec3 hue = lit / (max(lit.r, max(lit.g, lit.b)) + 0.001);
 	float inten = mix(0.42, 1.0, smoothstep(0.0, 0.75, s));
-	vec3 col = pal * mix(vec3(1.0), hue, t >= 2 ? 0.0 : tint_mix) * inten * cov;
-	vec3 fill = pal_dark[t].rgb * (0.05 + 0.10 * s) * (top ? 1.0 : 0.8);
+	vec3 col = pal * mix(vec3(1.0), hue, t >= 2 ? 0.0 : tint_mix * m.g) * inten * cov;
+	vec3 fill = pal_dark[t].rgb * (0.05 + 0.10 * s) * (top ? 1.0 : 0.8) * grow;
 	vec3 c = col + fill;
 
 	// Memory: remembered cells (g = 0) are dim and desaturated, they turn live as g grows.
-	float seen = m.g;
 	float grey = dot(c, vec3(0.3, 0.59, 0.11));
-	c = mix(vec3(grey), c, mix(memory_saturation, 1.0, seen)) * mix(memory_dim, 1.0, seen);
+	c = mix(vec3(grey), c, mix(memory_saturation, 1.0, seen)) * mix(memory_dim, 1.0, seen) * mix(memory_tint, vec3(1.0), seen);
 	c += glint_color * m.b * cov;
 	// Depth fog: the far (upper) part of the screen sinks into the dark.
 	float screen_top = 1.0 - FRAGCOORD.y / VIEWPORT_SIZE.y;

@@ -57,6 +57,7 @@ Visual identity is central. The world is real 3D geometry shown in an isometric 
 ### Reveal and discovery
 - The world is hidden at start and reveals walls, items and hazards as the character reaches them.
 - Discovery is the main source of information. No tutorial overlays are planned.
+- Reveal radius is 2.75 cells (smaller than the player light, so the opening is a plain disc of floor); revealed cells materialise glyph by glyph over about a second. Cells remembered from earlier runs show dim, cool, desaturated and sparse, without glow, and turn live again smoothly when re-seen.
 
 ### Hazards and death
 - M1 hazards:

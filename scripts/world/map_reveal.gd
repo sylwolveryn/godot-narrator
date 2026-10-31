@@ -15,6 +15,9 @@ extends Node
 ##   a = 1 when the floor of the cell may be shown (RevealConfig.reveal_floor), else 0.
 ## The world is one merged mesh, so nothing is shown or hidden per node: a cell with r = 0 draws nothing.
 
+## Emitted when cells were seen for the first time this run (the presentation re-picks its static lights).
+signal cells_seen
+
 enum CellState { HIDDEN, MEMORY, SEEN }
 
 ## Largest brightness the mask can hold (r is stored divided by this).
@@ -48,6 +51,8 @@ var _dirty: bool = false
 var _clock: float = 0.0
 ## Running cell animations: cell -> [start time, from_memory (bool)].
 var _animations: Dictionary[Vector2i, Array] = {}
+## Scratch list of the animations that finished in this step (reused, no per-frame allocation).
+var _finished: Array[Vector2i] = []
 
 
 func _ready() -> void:
@@ -136,6 +141,7 @@ func reveal_around(world_position: Vector3) -> void:
 	var centre: Vector2i = map_loader.world_to_cell(world_position)
 	var span: int = ceili(config.reveal_radius) + 1
 	var fresh := PackedVector2Array()
+	var any_seen: bool = false
 	for dy in range(-span, span + 1):
 		for dx in range(-span, span + 1):
 			var cell := centre + Vector2i(dx, dy)
@@ -147,11 +153,14 @@ func reveal_around(world_position: Vector3) -> void:
 				continue
 			var from_memory: bool = _remembered.has(cell)
 			seen_this_run[cell] = true
+			any_seen = true
 			_start_animation(cell, from_memory, distance / size)
 			_announce_kind(cell)
 			if not from_memory:
 				_remembered[cell] = true
 				fresh.append(Vector2(cell))
+	if any_seen:
+		cells_seen.emit()
 	if not fresh.is_empty():
 		SignalBus.cells_revealed.emit(map_loader.map_id, fresh)
 
@@ -239,7 +248,7 @@ func _start_animation(cell: Vector2i, from_memory: bool, distance_cells: float) 
 
 
 func _step_animations() -> void:
-	var finished: Array[Vector2i] = []
+	_finished.clear()
 	for cell: Vector2i in _animations:
 		var entry: Array = _animations[cell]
 		var start: float = entry[0]
@@ -250,14 +259,14 @@ func _step_animations() -> void:
 			continue
 		if p >= 1.0:
 			_set_look(cell, 1.0, 1.0, 0.0)
-			finished.append(cell)
+			_finished.append(cell)
 			continue
 		if from_memory:
 			_set_look(cell, 1.0, smoothstep(0.0, 1.0, p), 0.0)
 		else:
-			var grow: float = 1.0 - pow(1.0 - p, 4.0)
+			var grow: float = smoothstep(0.0, 1.0, p)
 			var overshoot: float = 1.0 + (config.reveal_overshoot - 1.0) * sin(PI * p)
 			var glint: float = exp(-pow((p - config.reveal_glint_at) / GLINT_WIDTH, 2.0))
 			_set_look(cell, grow * overshoot, 1.0, glint)
-	for cell in finished:
+	for cell in _finished:
 		_animations.erase(cell)

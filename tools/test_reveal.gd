@@ -211,10 +211,18 @@ func _run() -> void:
 	_check(reveal.call("is_animating", edge), "a cell seen for the first time should animate")
 	_check((reveal.call("cell_look", edge) as Vector3).x == 0.0, "a freshly seen cell should start dark")
 	var peak: float = 0.0
+	var last_b: float = 0.0
+	var dips: int = 0
 	var started: int = Time.get_ticks_msec()
 	while (Time.get_ticks_msec() - started) / 1000.0 < small.reveal_duration + 0.4:
 		await process_frame
-		peak = maxf(peak, (reveal.call("cell_look", edge) as Vector3).x)
+		var bright: float = (reveal.call("cell_look", edge) as Vector3).x
+		# The fade grows calmly: brightness never drops until it has passed its peak (no flicker).
+		if bright < last_b - 0.0001 and peak < 1.0:
+			dips += 1
+		last_b = bright
+		peak = maxf(peak, bright)
+	_check(dips == 0, "the reveal fade dipped %d times before its peak (flicker)" % dips)
 	_check(peak > 1.0 and peak <= small.reveal_overshoot + 0.01, "reveal brightness peaked at %f, expected within (1, %f]" % [peak, small.reveal_overshoot])
 	_check(not reveal.call("is_animating", edge), "reveal animation should have finished")
 	_check((reveal.call("cell_look", edge) as Vector3).is_equal_approx(Vector3(1.0, 1.0, 0.0)), "reveal should settle at full look")
@@ -222,6 +230,43 @@ func _run() -> void:
 	_check(_all_hidden(loader, s + Vector2i(3, 0)), "floor at distance 3.0 should be hidden")
 	_check(_normal(loader, s + Vector2i(1, -1)), "wall at distance 1.41 should be revealed")
 	_check(_all_hidden(loader, s + Vector2i(2, -1)), "wall at distance 2.24 should be hidden")
+	# --- cells_seen: emitted when cells are seen, and the world view re-picks its lights (dirty flag). ---
+	var seen_signals: Array[int] = [0]
+	reveal.connect("cells_seen", func() -> void: seen_signals[0] += 1)
+	var view: Node = main.get_node("GlyphWorldView")
+	reveal.call("begin_run")
+	view.set("_dirty", false)
+	reveal.call("reveal_around", loader.spawn_position)
+	_check(seen_signals[0] == 1, "cells_seen emitted %d times for new cells, expected 1" % seen_signals[0])
+	_check(view.get("_dirty") == true, "GlyphWorldView must re-pick its lights after cells_seen")
+	reveal.call("reveal_around", loader.spawn_position)
+	_check(seen_signals[0] == 1, "cells_seen must not fire when nothing new was seen")
+
+	# --- Memory transition: a remembered cell that is seen again turns live smoothly (no dark flash, no jump). ---
+	reveal.call("begin_run")
+	_check(_memory(loader, edge), "a cell seen in the previous run should be remembered after begin_run")
+	reveal.call("reveal_around", loader.spawn_position)
+	_check(reveal.call("is_animating", edge), "a re-seen remembered cell should animate to the live look")
+	var last_seen: float = -1.0
+	var mid_seen: bool = false
+	var backwards: int = 0
+	var dark: int = 0
+	started = Time.get_ticks_msec()
+	while (Time.get_ticks_msec() - started) / 1000.0 < small.memory_to_seen_duration + 0.4:
+		await process_frame
+		var look: Vector3 = reveal.call("cell_look", edge)
+		if look.y < last_seen - 0.0001:
+			backwards += 1
+		if look.x < 0.999:
+			dark += 1
+		if look.y > 0.05 and look.y < 0.95:
+			mid_seen = true
+		last_seen = look.y
+	_check(backwards == 0, "memory-to-live transition went backwards %d times" % backwards)
+	_check(dark == 0, "a re-seen remembered cell went dark during the transition")
+	_check(mid_seen, "the memory-to-live transition showed no intermediate frames (it popped)")
+	_check(_normal(loader, edge) and not reveal.call("is_animating", edge), "re-seen cell should settle at the live look")
+	_check((reveal.call("mask_at", edge) as Color).g == 1.0, "re-seen cell must end with seen fraction 1 in the mask")
 	small.reveal_radius = 2.0
 	small.reveal_floor = false
 	reveal.call("begin_run")

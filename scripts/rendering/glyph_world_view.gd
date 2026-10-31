@@ -42,6 +42,8 @@ func _ready() -> void:
 	_light_pos.resize(MAX_LIGHTS)
 	_light_col.resize(MAX_LIGHTS)
 	SignalBus.player_spawned.connect(_on_player_spawned)
+	if map_reveal != null:
+		map_reveal.cells_seen.connect(_on_cells_seen)
 	if map_loader != null:
 		map_loader.map_built.connect(_on_map_built)
 		if not map_loader.data.is_empty():
@@ -88,6 +90,12 @@ func apply_static() -> void:
 	material.set_shader_parameter(&"tint_mix", config.tint_mix)
 	material.set_shader_parameter(&"memory_dim", config.memory_dim)
 	material.set_shader_parameter(&"memory_saturation", config.memory_saturation)
+	material.set_shader_parameter(&"memory_tint", _rgb(config.memory_tint))
+	material.set_shader_parameter(&"memory_density", config.memory_density)
+	material.set_shader_parameter(&"memory_dropout", config.memory_dropout)
+	material.set_shader_parameter(&"memory_emit", config.memory_emit)
+	material.set_shader_parameter(&"memory_floor", config.memory_floor)
+	material.set_shader_parameter(&"reveal_spread", config.reveal_spread)
 	material.set_shader_parameter(&"cut_params", Vector2(config.cutaway_soft, config.cutaway_margin))
 	material.set_shader_parameter(&"cut_edge_dim", config.cutaway_edge_dim)
 	material.set_shader_parameter(&"light_falloff_sharp", config.light_falloff_sharp)
@@ -156,6 +164,11 @@ func _on_map_built(map: MapData) -> void:
 
 
 func _on_player_spawned(_world_position: Vector3) -> void:
+	_dirty = true
+
+
+## Cells were seen: the set of known static lights may have changed.
+func _on_cells_seen() -> void:
 	_dirty = true
 
 
@@ -262,11 +275,12 @@ func _apply_visibility_params() -> void:
 			1.0 if config.occlusion_enabled else 0.0))
 
 
+## A static light shines only once one of its cells has been seen in this run; remembered cells stay dark.
 func _is_known(src: GlyphLightSource) -> bool:
 	if map_reveal == null:
 		return true
 	for c in src.cells:
-		if map_reveal.state_of(c) != MapReveal.CellState.HIDDEN:
+		if map_reveal.state_of(c) == MapReveal.CellState.SEEN:
 			return true
 	return false
 

@@ -32,9 +32,23 @@ extends Resource
 
 @export_group("Memory")
 ## Remembered (not currently seen) cells are drawn at this fraction of their brightness.
-@export_range(0.0, 1.0) var memory_dim: float = 0.45
+@export_range(0.0, 1.0) var memory_dim: float = 0.8
 ## Saturation kept by remembered cells (0 = grey).
-@export_range(0.0, 1.0) var memory_saturation: float = 0.25
+@export_range(0.0, 1.0) var memory_saturation: float = 0.1
+## Colour multiplier of remembered cells (cool: less red, more blue).
+@export var memory_tint: Color = Color(0.62, 0.8, 1.15)
+## Share of its light a remembered cell uses to pick its glyph (1 = as dense as a live cell, lower = sparser glyphs).
+@export_range(0.0, 1.0) var memory_density: float = 0.7
+## Least brightness (glyph density) a remembered cell has, so it stays readable outside the light.
+@export_range(0.0, 1.0) var memory_floor: float = 0.3
+## Share of the glyphs that are missing on remembered cells (they come back when the cell is seen again).
+@export_range(0.0, 1.0) var memory_dropout: float = 0.3
+## Share of the self-lit glow of items and hazards kept on remembered cells.
+@export_range(0.0, 1.0) var memory_emit: float = 0.25
+
+@export_group("Reveal")
+## How far apart (in reveal progress, 0..1) the glyphs of one cell materialise: 0 = all together, 1 = one after the other.
+@export_range(0.0, 2.0) var reveal_spread: float = 0.8
 
 @export_group("Player light")
 @export var player_light_color: Color = Color(1.0, 0.82, 0.5)
