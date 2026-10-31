@@ -1,11 +1,11 @@
 ---
 id: TASK-032
 title: Reveal and memory on glyph surfaces
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T22:45:00Z'
-updated_date: '2026-10-31T09:21:00Z'
+updated_date: '2026-10-31T09:23:00Z'
 labels:
   - rendering
   - world
@@ -43,3 +43,9 @@ IMPLEMENTED (not committed). Files: shaders/glyph_surface.gdshader (reveal_sprea
 
 FIX after validator: MapReveal.reveal_around never set any_seen (my indented replace silently missed), so cells_seen never fired; now set where a cell becomes seen. tools/test_reveal.gd now asserts cells_seen fires once for new cells, not again when nothing is new, and GlyphWorldView._dirty is set. Re-ran tools/build_glyph_material.gd: material .tres now lists memory_tint/density/dropout/floor/emit and reveal_spread as null placeholders; expected, GlyphWorldView sets them at runtime. All tests PASS, boot 0 ERROR, progress.tres md5 unchanged.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Reveal: cells materialise glyph by glyph (reveal_spread) with a smoothstep fade (0.9 s, stagger 0.07, overshoot 1.06); reveal radius 2.0 -> 2.75 cells keeps the "plain nothing" opening. Memory: cool, desaturated, sparser glyphs with a minimum density so remembered areas stay readable; remembered items/hazards have no light or halo; re-seen cells transition smoothly to the live look. New MapReveal.cells_seen signal drives the static-light re-pick (a never-set flag was caught by the validator and fixed, now covered by test_reveal). Validator PASS; GPU <=1.06 ms at 1080p on a GTX 1060. Open: remembered cells appear instantly at run start (no fade-in).
+<!-- SECTION:FINAL_SUMMARY:END -->
