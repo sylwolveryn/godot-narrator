@@ -71,7 +71,7 @@ func _run() -> void:
 		if prop["usage"] & PROPERTY_USAGE_STORAGE and prop["name"] != "script" and not String(prop["name"]).begins_with("resource_"):
 			stored_props.append(prop["name"])
 	stored_props.sort()
-	_check(stored_props == PackedStringArray(["death_count", "entity_form", "entity_grow_played", "entity_unlocked", "heard_beats", "identity_glyph", "revealed_cells", "run_count"]), "unexpected persistent fields: %s" % [stored_props])
+	_check(stored_props == PackedStringArray(["death_count", "entity_form", "entity_grow_played", "entity_unlocked", "heard_beats", "identity_glyph", "menu_unlocked", "revealed_cells", "run_count"]), "unexpected persistent fields: %s" % [stored_props])
 	svc.load_progress()
 	var p: PersistentProgress = svc.get("progress")
 	_check(p.identity_glyph == "Q" and p.run_count == 3 and p.death_count == 5, "scalar fields did not round trip")

@@ -17,6 +17,7 @@ func _ready() -> void:
 		return
 	save_service.progress_changed.connect(_check_unlock)
 	SignalBus.run_started.connect(_on_run_started)
+	SignalBus.menu_action_requested.connect(_on_menu_action)
 	_check_unlock()
 
 
@@ -50,6 +51,13 @@ func _check_unlock() -> void:
 	if save_service.progress.death_count >= config.growth_unlock_deaths:
 		save_service.unlock_entity()
 		SignalBus.entity_unlocked.emit()
+
+
+## The in-world menu (task-018) asks for the other form; presentation only requested it.
+func _on_menu_action(action: StringName) -> void:
+	if action != MenuItemDef.ACTION_SWITCH_FORM:
+		return
+	set_form(EntityForm.SINGLE if current_form() == EntityForm.GROWN else EntityForm.GROWN)
 
 
 func _on_run_started(_run_index: int) -> void:

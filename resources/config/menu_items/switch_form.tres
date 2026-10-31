@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MenuItemDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/menu_item_def.gd" id="1_khsqu"]
+
+[resource]
+script = ExtResource("1_khsqu")
+id = &"switch_form"
+action = &"switch_form"
+label = "become many"
+alt_label = "become one"
+alt_form = &"grown"
+requires_entity = true

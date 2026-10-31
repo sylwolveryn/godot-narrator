@@ -35,3 +35,16 @@ signal entity_grown
 ## Emitted by EntityProgression when the active form is set (grown after unlock, restored on every run start, or switched).
 ## `animate` is true when the change should be played as a morph, false when the form should simply appear.
 signal entity_form_changed(form: StringName, animate: bool)
+## Emitted by MenuController the moment the in-world menu unlocks (the death that reaches MenuConfig.menu_unlock_deaths).
+signal menu_unlocked
+## Emitted by MenuController when the menu opens: the labels of the offered items (in order) and the selected index.
+## The world keeps running; presentation builds the menu from the surroundings.
+signal menu_opened(labels: PackedStringArray, selected: int)
+## Emitted by MenuController when the menu closes (toggle, an item that closes it, or the run ending).
+signal menu_closed
+## Emitted by MenuController when the selection moves to item `index`.
+signal menu_selection_changed(index: int)
+## Emitted by the menu presentation when the pointer hovers (activate = false) or clicks (activate = true) item `index`.
+signal menu_item_pointed(index: int, activate: bool)
+## Emitted by MenuController when an item was confirmed: `action` is a MenuItemDef action (e.g. switch_form); the data layer applies it.
+signal menu_action_requested(action: StringName)

@@ -19,3 +19,5 @@ extends Resource
 @export var entity_form: String = "single"
 ## True once the grow moment has played, so it plays exactly once even if the game is closed in between.
 @export var entity_grow_played: bool = false
+## True once the in-world menu has been unlocked (death_count reached MenuConfig.menu_unlock_deaths, task-018). Never reverts.
+@export var menu_unlocked: bool = false

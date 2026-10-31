@@ -21,6 +21,7 @@ var identity_glyph: String = ""
 var _ground: Plane = Plane(Vector3.UP, 0.0)
 var _moving: bool = false
 var _moved_this_run: bool = false
+var _menu_open: bool = false
 ## Ground offset from the player to the cursor while the pointer is held, else null.
 var _pointer_offset: Variant = null
 
@@ -33,6 +34,8 @@ func _ready() -> void:
 	# Top-down: no floor or gravity, the body slides on the XZ plane.
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 	SignalBus.run_started.connect(_on_run_started)
+	SignalBus.menu_opened.connect(_on_menu_opened)
+	SignalBus.menu_closed.connect(_on_menu_closed)
 
 
 func _physics_process(delta: float) -> void:
@@ -48,6 +51,15 @@ func _physics_process(delta: float) -> void:
 
 func _on_run_started(_run_index: int) -> void:
 	spawn()
+
+
+## While the in-world menu is open the movement input drives the menu and the player stands still (the world keeps running).
+func _on_menu_opened(_labels: PackedStringArray, _selected: int) -> void:
+	_menu_open = true
+
+
+func _on_menu_closed() -> void:
+	_menu_open = false
 
 
 ## Pointer scheme: never travel further than the cursor within one physics step, so arrival
@@ -83,6 +95,8 @@ func _wanted_velocity() -> Vector3:
 	if run_manager == null or run_manager.phase != RunManager.Phase.PLAYING:
 		return Vector3.ZERO
 	_pointer_offset = null
+	if _menu_open:
+		return Vector3.ZERO
 	match run_manager.state.input_scheme:
 		InputScheme.KEYBOARD, InputScheme.GAMEPAD:
 			var pad: Vector2 = Input.get_vector(config.action_left, config.action_right, config.action_up, config.action_down)

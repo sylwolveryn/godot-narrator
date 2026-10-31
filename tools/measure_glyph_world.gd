@@ -9,6 +9,8 @@ extends SceneTree
 const Support := preload("res://tools/test_support.gd")
 const SAVE_TAG := "measure_glyph_world"
 const WARMUP := 150
+## Frame at which "-- menu" opens the in-world menu (after the intro; the opening glyph flight ends well before WARMUP).
+const MENU_FRAME := 60
 const SAMPLES := 300
 const WIDE_RADIUS := 8.0
 const WORST_CELL := Vector2i(25, 3)
@@ -31,7 +33,18 @@ func _init() -> void:
 func _start() -> void:
 	_main = (load("res://main.tscn") as PackedScene).instantiate()
 	var save_path: String = Support.isolate_save(_main, SAVE_TAG)
-	if OS.get_cmdline_user_args().has("grown"):
+	if OS.get_cmdline_user_args().has("menu"):
+		# Measure with the in-world menu open (task-018): menu unlocked, entity unlocked, Tab pressed once the run runs.
+		var menu_seed := PersistentProgress.new()
+		menu_seed.identity_glyph = "Q"
+		menu_seed.run_count = 3
+		menu_seed.death_count = 3
+		menu_seed.menu_unlocked = true
+		menu_seed.entity_unlocked = true
+		menu_seed.entity_grow_played = true
+		menu_seed.entity_form = String(EntityForm.GROWN)
+		ResourceSaver.save(menu_seed, save_path)
+	elif OS.get_cmdline_user_args().has("grown"):
 		# Measure with the grown multi-glyph entity (task-017): a temporary save with the entity unlocked and active.
 		var seeded := PersistentProgress.new()
 		seeded.identity_glyph = "Q"
@@ -54,6 +67,12 @@ func _start() -> void:
 
 func _tick() -> void:
 	_frame += 1
+	if _frame == MENU_FRAME and OS.get_cmdline_user_args().has("menu"):
+		for pressed in [true, false]:
+			var tab := InputEventKey.new()
+			tab.physical_keycode = KEY_TAB
+			tab.pressed = pressed
+			Input.parse_input_event(tab)
 	var local: int = _frame - _phase_start
 	var now: int = Time.get_ticks_usec()
 	if local > WARMUP and local <= WARMUP + SAMPLES:

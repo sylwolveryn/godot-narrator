@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MenuConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/menu_item_def.gd" id="1_hiljs"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/switch_form.tres" id="2_h74dy"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/close.tres" id="3_m1lex"]
+[ext_resource type="Script" path="res://scripts/core/menu_config.gd" id="4_rd1ul"]
+
+[resource]
+script = ExtResource("4_rd1ul")
+items = Array[ExtResource("1_hiljs")]([ExtResource("2_h74dy"), ExtResource("3_m1lex")])
+font_names = PackedStringArray("Consolas", "Lucida Console", "Courier New", "monospace")

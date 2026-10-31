@@ -84,6 +84,7 @@ uniform float depth_far = 9.0;
 uniform float depth_ambient_min = 0.35;     // ambient kept at depth_far and beyond
 uniform float fog_strength = 0.35;          // darkening towards the top of the screen
 uniform float fog_start = 0.3;              // fraction of the screen height (from the bottom) where the fog begins
+uniform vec4 lift_zone = vec4(0.0, 0.0, 1.0, 0.0);   // in-world menu (task-018): xz centre, radius, dim amount while its glyphs are away
 
 varying flat vec3 w_nrm;
 varying flat float v_type;
@@ -255,6 +256,9 @@ void fragment() {
 	b += edge * edge_gain * (lum_l + edge_ambient);
 	b *= min(vis, 1.0) * mix(cut_edge_dim, 1.0, cut_keep) * mix(1.0, memory_density, mem);
 	b = max(b, memory_floor * mem * (t == T_FLOOR ? 0.8 : 1.0));
+	if (lift_zone.w > 0.0) {
+		b *= 1.0 - lift_zone.w * (1.0 - smoothstep(lift_zone.z * 0.4, lift_zone.z, distance(w_pos.xz, lift_zone.xy)));
+	}
 	float s = clamp(b, 0.0, 0.999);
 	float idx = min(1.0 + floor(pow(s, 0.65) * (ATLAS_COLS - 1.0)), ATLAS_COLS - 1.0);
 

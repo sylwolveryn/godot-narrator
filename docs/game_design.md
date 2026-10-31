@@ -39,6 +39,8 @@ Visual identity is central. The world is real 3D geometry shown in an isometric 
 - The menu is not a pause. It is built from the surroundings: glyph objects lift off the scene and rearrange into menu elements.
 - Early on the menu is hard to read. As the player uses it, it gradually simplifies into a more user-friendly form.
 - The menu offers a switch between the single-glyph and multi-glyph forms of the character (see Character Identity).
+- Decided (task-018): it unlocks when the saved death count reaches `menu_unlock_deaths` (default 3, `resources/config/menu_config.tres`; persisted like the entity unlock). Tab / gamepad Start / right mouse button opens and closes it; W/S or arrows (D-pad, stick) move the selection, Enter / Space / gamepad A confirm, hover and left click work on items. It never pauses: hazards, erosion and narration keep running; only movement input is taken over and the player stands still. It only opens during a run and closes when the run ends.
+- Look: glyphs of the floor and walls within about 3 cells lift off (flip, spin, eased flight with overshoot, Spike B style) into a framed, glowing list above the player; the floor around the player dims while they are away; on close they fly back. Items are data (`MenuItemDef` resources): "become many" / "become one" (the form switch, only offered when the entity is unlocked; it closes the menu so the morph is seen) and "return".
 - Exact unlock mechanics are open (see Open Questions).
 
 ### Later runs

@@ -1,5 +1,5 @@
 extends SceneTree
-## Writes the movement and toggle_fullscreen InputMap actions into project.godot ([input]) and removes the legacy
+## Writes the movement, menu and toggle_fullscreen InputMap actions into project.godot ([input]) and removes the legacy
 ## prototype `transform` action. Idempotent.
 ## Usage: godot --headless --path . -s tools/build_input_map.gd
 
@@ -17,6 +17,14 @@ func _init() -> void:
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	_set_action("move_pointer", [click])
+	# In-world menu (task-018): open/close, move the selection (same keys as moving), confirm. The pointer clicks items
+	# through the menu view, so left click is not bound here.
+	var right_click := InputEventMouseButton.new()
+	right_click.button_index = MOUSE_BUTTON_RIGHT
+	_set_action("menu_toggle", [_key(KEY_TAB), _button(JOY_BUTTON_START), right_click])
+	_set_action("menu_up", [_key(KEY_W), _key(KEY_UP), _axis(JOY_AXIS_LEFT_Y, -1.0), _button(JOY_BUTTON_DPAD_UP)])
+	_set_action("menu_down", [_key(KEY_S), _key(KEY_DOWN), _axis(JOY_AXIS_LEFT_Y, 1.0), _button(JOY_BUTTON_DPAD_DOWN)])
+	_set_action("menu_confirm", [_key(KEY_ENTER), _key(KEY_KP_ENTER), _key(KEY_SPACE), _button(JOY_BUTTON_A)])
 	var alt_enter := _key(KEY_ENTER)
 	alt_enter.alt_pressed = true
 	_set_action("toggle_fullscreen", [_key(KEY_F11), alt_enter])

@@ -50,6 +50,16 @@ func _build() -> void:
 	progression.set("save_service", save)
 	_add(root, progression)
 
+	# In-world menu (task-018): logic node right after EntityProgression (reads the form it switches). The run manager
+	# is wired after it exists (see below).
+	var menu_cfg: MenuConfig = load(CFG + "menu_config.tres")
+	var menu: Node = load("res://scripts/core/menu_controller.gd").new()
+	menu.name = "MenuController"
+	menu.set("config", menu_cfg)
+	menu.set("save_service", save)
+	menu.set("entity", progression)
+	_add(root, menu)
+
 	var narrator_cfg: NarratorConfig = load(NARRATION_DIR + "narrator_config.tres")
 	var narrator: Node = load("res://scripts/narrator/narrator.gd").new()
 	narrator.name = "Narrator"
@@ -122,6 +132,18 @@ func _build() -> void:
 	player_glyph.set("entity_config", entity_cfg)
 	_add(root, player_glyph)
 
+	# The in-world menu: glyphs of the surroundings fly into a framed list (one MultiMesh, hidden while closed).
+	var menu_view: Node3D = load("res://scripts/rendering/menu_glyph_view.gd").new()
+	menu_view.name = "MenuGlyphView"
+	menu_view.set("config", menu_cfg)
+	menu_view.set("fx_config", load(CFG + "glyph_fx_config.tres"))
+	menu_view.set("player", player)
+	menu_view.set("player_config", player_cfg)
+	menu_view.set("map_loader", loader)
+	menu_view.set("world", load(CFG + "world_config.tres"))
+	menu_view.set("surface_material", load(GLYPH_MATERIAL))
+	_add(root, menu_view)
+
 	# Soft halos over items, spikes and corruption: one MultiMesh, reveal-aware in the shader.
 	var halos: Node3D = load("res://scripts/rendering/glyph_halo_field.gd").new()
 	halos.name = "GlyphHaloField"
@@ -170,6 +192,7 @@ func _build() -> void:
 	runs.set("config", load(CFG + "run_config.tres"))
 	_add(root, runs)
 	player.set("run_manager", runs)
+	menu.set("run_manager", runs)
 
 	var hazards: Node = load("res://scripts/world/hazard_monitor.gd").new()
 	hazards.name = "HazardMonitor"
