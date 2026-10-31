@@ -27,9 +27,9 @@ The identity persists and evolves: after the third run the single-glyph characte
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 After the configured run count (from a resource) the multi-glyph entity becomes available
-- [ ] #2 The entity derives from the saved identity and stays readable under the ASCII shader
-- [ ] #3 The unlock persists across sessions
+- [x] #1 After the configured run count (from a resource) the multi-glyph entity becomes available
+- [x] #2 The entity derives from the saved identity and stays readable under the ASCII shader
+- [x] #3 The unlock persists across sessions
 <!-- AC:END -->
 
 ## Implementation Plan
