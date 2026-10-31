@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T22:45:00Z'
-updated_date: '2026-10-31T08:25:00Z'
+updated_date: '2026-10-31T08:26:00Z'
 labels:
   - rendering
 milestone: m-5
@@ -25,10 +25,10 @@ Spike A weak spots: surfaces read as glowing wireframe blocks rather than carved
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Wall faces read as carved stone, with brighter edges and denser glyphs near light
-- [ ] #2 Distance or depth darkening gives the scene depth without hurting readability
-- [ ] #3 Light does not visibly leak through walls (cheap approximation is fine)
-- [ ] #4 Before/after captures and FPS at 1366x768 with --max-fps 30 are in the notes
+- [x] #1 Wall faces read as carved stone, with brighter edges and denser glyphs near light
+- [x] #2 Distance or depth darkening gives the scene depth without hurting readability
+- [x] #3 Light does not visibly leak through walls (cheap approximation is fine)
+- [x] #4 Before/after captures and FPS at 1366x768 with --max-fps 30 are in the notes
 <!-- AC:END -->
 
 ## Implementation Plan
