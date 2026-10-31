@@ -1,11 +1,11 @@
 ---
 id: TASK-033
 title: Player, hazards and items in the glyph world
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T22:45:00Z'
-updated_date: '2026-10-31T09:02:00Z'
+updated_date: '2026-10-31T09:05:00Z'
 labels:
   - rendering
   - player
@@ -43,3 +43,9 @@ The player identity glyph, items, spikes and corrupting areas need their glyph-w
 <!-- SECTION:NOTES:BEGIN -->
 IMPLEMENTED (not committed). New: scripts/rendering/{player_glyph_view,glyph_halo_field}.gd, shaders/{glyph_actor.gdshader,glyph_halo.gdshader,glyph_halo.gdshaderinc}, tools/test_player_glyph.gd. Changed: glyph_fx_config, glyph_world_config (halo group + readability retune: ambient 0.30->0.46, memory_dim .35->.45, edge_gain 1.8->2.2, edge_ambient .12->.24, wall_base_dark .6->.78, seam_dim .45->.62, falloff_sharp .5->.3, depth_ambient_min .5->.72, fog .25->.15), player_config (overlay font_size/outline removed), main.tscn via build_main_scene, capture_hazards/capture_glyph_world schedules, docs/architecture.md. Removed GlyphOverlay. EVIDENCE: sheets C:/s33 (= scratchpad) t033_readability_{1366,1920}.png (before/after), t033_player_1366.png, t033_hazards_1920.png, t033_haz_a.png. PERF GTX1060 --max-fps 30: 1366x768 opening draws 4.2 prims 3453 GPU 0.46ms, worst draws 4.0 GPU 1.03ms; 1920x1061 opening GPU 0.57, worst 0.60; 30 FPS. Tests: all tools/test_*.gd PASS incl. new test_player_glyph; boot 0 ERROR; progress.tres hash unchanged. Unresolved: tuned by eye, not run on real low-end HW; unused task-025 fields (erosion_tint, death_world_dim, death_dim_time, spike_death_flash) remain in GlyphFxConfig.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Player identity glyph now lives in the iso world (PlayerGlyphView: one MultiMesh of camera-facing quads, runtime glyph atlas redrawn only on identity change, warm halo, depth-correct with cut-away). Items/spikes/corruption glow via one batched additive halo MultiMesh (GlyphHaloField) with slow breathing and reveal-mask awareness. Erosion crossfades the glyph toward substitutes with a violet ghost and shedding; death bursts into 10 fragments; no strobing. Readability retuned in GlyphWorldConfig (ambient 0.30->0.46 etc.). GlyphOverlay removed. ~4 draw calls, 30 FPS, GPU <=1.03 ms at 1366x768 on a GTX 1060. Validator PASS; new tools/test_player_glyph.gd. Open: narration still uses the old character-scramble (task-034); some unused GlyphFxConfig fields from task-025 remain.
+<!-- SECTION:FINAL_SUMMARY:END -->
