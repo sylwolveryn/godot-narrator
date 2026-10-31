@@ -4,7 +4,7 @@ extends SceneTree
 ## radius next to spikes, items and corruption: the most revealed, most lit surface on screen).
 ##   printf '[display]\nwindow/size/viewport_width=1920\nwindow/size/viewport_height=1080\nwindow/size/mode=0\n' > override.cfg
 ##   godot --path . --max-fps 30 -s tools/measure_glyph_world.gd; rm override.cfg
-## Prints "PERF <case> ..." lines.
+## Pass "-- grown" to measure with the grown entity (task-017). Prints "PERF <case> ..." lines.
 
 const Support := preload("res://tools/test_support.gd")
 const SAVE_TAG := "measure_glyph_world"
@@ -30,7 +30,17 @@ func _init() -> void:
 
 func _start() -> void:
 	_main = (load("res://main.tscn") as PackedScene).instantiate()
-	Support.isolate_save(_main, SAVE_TAG)
+	var save_path: String = Support.isolate_save(_main, SAVE_TAG)
+	if OS.get_cmdline_user_args().has("grown"):
+		# Measure with the grown multi-glyph entity (task-017): a temporary save with the entity unlocked and active.
+		var seeded := PersistentProgress.new()
+		seeded.identity_glyph = "Q"
+		seeded.run_count = 3
+		seeded.death_count = 3
+		seeded.entity_unlocked = true
+		seeded.entity_grow_played = true
+		seeded.entity_form = String(EntityForm.GROWN)
+		ResourceSaver.save(seeded, save_path)
 	var intro := IntroConfig.new()
 	intro.black_hold = 0.1
 	intro.wave_fade_in = 0.1

@@ -28,3 +28,10 @@ signal narration_event(event: StringName)
 signal player_motion_changed(moving: bool)
 ## Emitted by the narrator when a beat starts displaying; SaveService records it as heard.
 signal beat_heard(beat_id: String)
+## Emitted by EntityProgression the moment the multi-glyph entity unlocks (the run that ends at the unlock threshold).
+signal entity_unlocked
+## Emitted by EntityProgression when the grow moment starts: the single glyph is about to grow into the entity (a hook for the narrator).
+signal entity_grown
+## Emitted by EntityProgression when the active form is set (grown after unlock, restored on every run start, or switched).
+## `animate` is true when the change should be played as a morph, false when the form should simply appear.
+signal entity_form_changed(form: StringName, animate: bool)

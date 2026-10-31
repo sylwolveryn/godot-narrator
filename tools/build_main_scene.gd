@@ -41,6 +41,15 @@ func _build() -> void:
 
 	# Narrator sits right after SaveService and before Player/MapReveal: signal handlers run in tree
 	# order, so counters are updated and run_started is seen before the first reveal events.
+	# Entity growth (task-017): unlocks and owns the active form; sits right after SaveService so its unlock
+	# check follows the death count update.
+	var entity_cfg: EntityGrowthConfig = load(CFG + "entity_growth_config.tres")
+	var progression: Node = load("res://scripts/core/entity_progression.gd").new()
+	progression.name = "EntityProgression"
+	progression.set("config", entity_cfg)
+	progression.set("save_service", save)
+	_add(root, progression)
+
 	var narrator_cfg: NarratorConfig = load(NARRATION_DIR + "narrator_config.tres")
 	var narrator: Node = load("res://scripts/narrator/narrator.gd").new()
 	narrator.name = "Narrator"
@@ -110,6 +119,7 @@ func _build() -> void:
 	player_glyph.set("fx_config", load(CFG + "glyph_fx_config.tres"))
 	player_glyph.set("world_config", load(CFG + "glyph_world_config.tres"))
 	player_glyph.set("world", load(CFG + "world_config.tres"))
+	player_glyph.set("entity_config", entity_cfg)
 	_add(root, player_glyph)
 
 	# Soft halos over items, spikes and corruption: one MultiMesh, reveal-aware in the shader.

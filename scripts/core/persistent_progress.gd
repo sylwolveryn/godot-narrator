@@ -13,3 +13,9 @@ extends Resource
 @export var death_count: int = 0
 ## Ids of narration beats already heard (filled by the narrator, task-014).
 @export var heard_beats: PackedStringArray = PackedStringArray()
+## True once the multi-glyph entity has been unlocked (death_count reached EntityGrowthConfig.growth_unlock_deaths). Never reverts.
+@export var entity_unlocked: bool = false
+## The active form after the unlock: EntityForm.SINGLE or EntityForm.GROWN (task-018 lets the player switch).
+@export var entity_form: String = "single"
+## True once the grow moment has played, so it plays exactly once even if the game is closed in between.
+@export var entity_grow_played: bool = false

@@ -83,6 +83,7 @@ Visual identity is central. The world is real 3D geometry shown in an isometric 
 - Identity is chosen at random on the first run and stays the same across runs.
 - Identity changes over time as runs accumulate.
 - After the third run, the character extends into a multi-character entity that is larger and made of multiple glyphs.
+- Trigger (decided, task-017): the entity unlocks when the saved death count reaches `growth_unlock_deaths` (default 3, `resources/config/entity_growth_config.tres`). In M1 every run ends in a death, so this is "after the third run". The unlock is saved and survives restarts. At the start of the first run after it, the single identity glyph gathers glyphs from around it into a creature silhouette (about 25-37 glyphs, the identity glyph is its heart), then the grown entity is the active form by default. The silhouette is one of a few text-pattern formations picked by the identity, so an identity always grows the same body. Switching back is the M2 menu (task-018).
 - A menu option lets the player switch between the original single-glyph form and the multi-glyph entity.
 - The multi-glyph entity has abilities the single-glyph form lacks, for example moving small objects. These are not possible during the first three runs.
 - The growth into the multi-glyph entity is tied to the M2 menu unlock. It is shown as a glyph-object morph (see Morphing).

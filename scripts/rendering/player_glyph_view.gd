@@ -27,6 +27,8 @@ const QUAD_EXTENT: float = 2.0
 @export var world_config: GlyphWorldConfig
 ## Cell size for fragment distances.
 @export var world: WorldConfig
+## The grown multi-glyph entity (task-017): its body is a second MultiMesh (EntityGlyphView), the heart stays instance 0.
+@export var entity_config: EntityGrowthConfig
 
 var _rng := RandomNumberGenerator.new()
 var _viewport: SubViewport
@@ -54,6 +56,9 @@ var _morph: float = 0.0
 var _morphing: bool = false
 var _retarget_in: float = 0.0
 var _shed_in: float = 0.0
+
+var _entity: EntityGlyphView
+var _form: StringName = EntityForm.SINGLE
 
 var _frag_age: PackedFloat32Array = PackedFloat32Array()
 var _frag_life: PackedFloat32Array = PackedFloat32Array()
@@ -108,12 +113,14 @@ func _ready() -> void:
 	_half_size = fx_config.glyph_size / fx_config.glyph_fill * 0.5
 	_build_atlas()
 	_build_multimesh()
+	_build_entity()
 	_slot_b = _random_slot()
 	_slot_c = _slot_b
 	SignalBus.erosion_changed.connect(_on_erosion_changed)
 	SignalBus.hazard_lethal.connect(_on_hazard_lethal)
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.run_started.connect(_on_run_started)
+	SignalBus.entity_form_changed.connect(set_form)
 	if player != null:
 		player.identity_changed.connect(_on_identity_changed)
 		if player.identity_glyph != "":
@@ -130,6 +137,26 @@ func _process(delta: float) -> void:
 	_step_death(delta)
 	_write_player(level)
 	_write_fragments(delta)
+	_entity.present(delta, _glyph_centre(), level, _tint, _identity != "")
+
+
+## Shows the single glyph or the grown entity. animate = play the grow / fold morph, otherwise it just appears.
+## Connected to SignalBus.entity_form_changed; the in-world menu (task-018) switches form through EntityProgression.
+func set_form(form: StringName, animate: bool = true) -> void:
+	if not EntityForm.is_valid(form):
+		return
+	_form = form
+	_entity.set_form(form, animate)
+
+
+## The form currently shown (EntityForm.SINGLE / GROWN).
+func form() -> StringName:
+	return _form
+
+
+## The entity body view (glyph count, grow state) for presentation checks and tools.
+func entity_body() -> EntityGlyphView:
+	return _entity
 
 
 ## The currently shown erosion as the shader's 0..1 level (0 below scramble_start).
@@ -154,6 +181,15 @@ func is_glyph_visible() -> bool:
 ## The identity glyph currently shown.
 func identity_text() -> String:
 	return _identity
+
+
+func _build_entity() -> void:
+	_entity = EntityGlyphView.new()
+	_entity.name = "EntityBody"
+	_entity.config = entity_config if entity_config != null else EntityGrowthConfig.new()
+	_entity.fx_config = fx_config
+	_entity.player_config = player_config
+	add_child(_entity)
 
 
 func _build_atlas() -> void:
@@ -292,7 +328,7 @@ func _write_player(level: float) -> void:
 		_multimesh.set_instance_color(PLAYER_INSTANCE, _clear_color)
 		return
 	var pos: Vector3 = player.global_position + Vector3.UP * player_config.glyph_height
-	_multimesh.set_instance_transform(PLAYER_INSTANCE, Transform3D(Basis.from_scale(Vector3.ONE * _half_size), pos))
+	_multimesh.set_instance_transform(PLAYER_INSTANCE, Transform3D(Basis.from_scale(Vector3.ONE * _half_size * _entity.heart_scale()), pos))
 	var col: Color = player_config.glyph_color.lerp(_tint, level * fx_config.tint_strength)
 	col.a = lerpf(1.0, fx_config.fade_min_alpha, level)
 	_multimesh.set_instance_color(PLAYER_INSTANCE, col)
@@ -337,6 +373,7 @@ func _burst() -> void:
 	var n: int = maxi(fx_config.death_fragments, 1)
 	var centre: Vector3 = _glyph_centre()
 	var col: Color = player_config.glyph_color.lerp(_death_tint, fx_config.tint_strength)
+	_entity.burst(life)
 	for i in n:
 		var angle: float = TAU * (float(i) + _rng.randf()) / float(n)
 		var dist: float = fx_config.death_spread_cells * _cell_size() * (1.0 - _rng.randf() * fx_config.shard_distance_spread)
@@ -389,6 +426,7 @@ func _on_identity_changed(glyph: String) -> void:
 		return
 	_identity = glyph
 	_rebuild_atlas()
+	_entity.use_identity(glyph)
 
 
 func _on_erosion_changed(amount: float, tint: Color) -> void:
@@ -417,6 +455,7 @@ func _on_run_started(_run_index: int) -> void:
 	for i in range(1, _frag_age.size()):
 		_multimesh.set_instance_color(i, _clear_color)
 	_player_visible = _identity != ""
+	_entity.reset_run()
 
 
 func _on_run_ended(_cause: StringName) -> void:

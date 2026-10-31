@@ -94,6 +94,36 @@ func get_revealed_cells(map_id: StringName) -> PackedVector2Array:
 	return progress.revealed_cells.get(map_id, PackedVector2Array())
 
 
+## Records that the multi-glyph entity is unlocked (stays unlocked) and saves at once.
+func unlock_entity() -> void:
+	if progress.entity_unlocked:
+		return
+	progress.entity_unlocked = true
+	_dirty = true
+	progress_changed.emit()
+	save_progress()
+
+
+## Stores the active entity form (EntityForm names). Ignored for an unknown form or before the unlock.
+func set_entity_form(form: StringName) -> void:
+	if not progress.entity_unlocked or not EntityForm.is_valid(form) or progress.entity_form == String(form):
+		return
+	progress.entity_form = String(form)
+	_dirty = true
+	progress_changed.emit()
+	save_progress()
+
+
+## Records that the grow moment has played.
+func mark_entity_grow_played() -> void:
+	if progress.entity_grow_played:
+		return
+	progress.entity_grow_played = true
+	_dirty = true
+	progress_changed.emit()
+	save_progress()
+
+
 func _on_cells_revealed(map_id: StringName, cells: PackedVector2Array) -> void:
 	var known: PackedVector2Array = get_revealed_cells(map_id)
 	known.append_array(cells)
@@ -152,6 +182,9 @@ func _sanitized(loaded: PersistentProgress) -> PersistentProgress:
 	clean.run_count = maxi(0, loaded.run_count)
 	clean.death_count = maxi(0, loaded.death_count)
 	clean.heard_beats = loaded.heard_beats
+	clean.entity_unlocked = loaded.entity_unlocked
+	clean.entity_form = loaded.entity_form if EntityForm.is_valid(StringName(loaded.entity_form)) else String(EntityForm.SINGLE)
+	clean.entity_grow_played = loaded.entity_grow_played and loaded.entity_unlocked
 	for key: Variant in loaded.revealed_cells:
 		var cells: Variant = loaded.revealed_cells[key]
 		if (key is StringName or key is String) and cells is PackedVector2Array:

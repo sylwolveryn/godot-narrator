@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EntityGrowthConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/entity_formation.gd" id="1_822a4"]
+[ext_resource type="Resource" path="res://resources/config/formations/winged.tres" id="2_5jlm3"]
+[ext_resource type="Resource" path="res://resources/config/formations/beetle.tres" id="3_556ri"]
+[ext_resource type="Resource" path="res://resources/config/formations/sprite.tres" id="4_h8m4t"]
+[ext_resource type="Script" path="res://scripts/core/entity_growth_config.gd" id="5_akrro"]
+
+[resource]
+script = ExtResource("5_akrro")
+formations = Array[ExtResource("1_822a4")]([ExtResource("2_5jlm3"), ExtResource("3_556ri"), ExtResource("4_h8m4t")])
