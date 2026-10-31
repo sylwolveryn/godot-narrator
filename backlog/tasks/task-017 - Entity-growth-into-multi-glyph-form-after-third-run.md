@@ -1,9 +1,11 @@
 ---
 id: TASK-017
 title: Entity growth into multi-glyph form after third run
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T15:42:00Z'
+updated_date: '2026-10-31T09:24:00Z'
 labels:
   - player
   - rendering
