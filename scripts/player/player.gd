@@ -12,12 +12,17 @@ signal identity_changed(glyph: String)
 @export var save_service: SaveService
 ## Read-only source of the run phase and the discovered input scheme.
 @export var run_manager: RunManager
+## Source of the active camera view; keyboard and gamepad input is rotated by its yaw so
+## "up" means up on screen.
+@export var camera_rig: CameraRig
 
 var identity_glyph: String = ""
 
 var _ground: Plane = Plane(Vector3.UP, 0.0)
 var _moving: bool = false
 var _moved_this_run: bool = false
+## Ground offset from the player to the cursor while the pointer is held, else null.
+var _pointer_offset: Variant = null
 
 
 func _ready() -> void:
@@ -35,6 +40,7 @@ func _physics_process(delta: float) -> void:
 	var rate: float = config.acceleration if wanted != Vector3.ZERO else config.friction
 	velocity = velocity.move_toward(wanted, rate * delta)
 	velocity.y = 0.0
+	_limit_to_cursor(delta)
 	move_and_slide()
 	global_position.y = 0.0
 	_announce_motion()
@@ -42,6 +48,19 @@ func _physics_process(delta: float) -> void:
 
 func _on_run_started(_run_index: int) -> void:
 	spawn()
+
+
+## Pointer scheme: never travel further than the cursor within one physics step, so arrival
+## does not depend on the frame rate or on how much speed is left when the stop radius is reached.
+func _limit_to_cursor(delta: float) -> void:
+	if _pointer_offset == null:
+		return
+	var offset := _pointer_offset as Vector3
+	var step: float = velocity.length() * delta
+	var remaining: float = offset.length()
+	if step <= remaining or step <= 0.0 or velocity.dot(offset) <= 0.0:
+		return
+	velocity = velocity * (remaining / step)
 
 
 ## Puts the player on the map spawn and (re)applies the persistent identity.
@@ -63,13 +82,23 @@ func spawn() -> void:
 func _wanted_velocity() -> Vector3:
 	if run_manager == null or run_manager.phase != RunManager.Phase.PLAYING:
 		return Vector3.ZERO
-	var direction := Vector2.ZERO
+	_pointer_offset = null
 	match run_manager.state.input_scheme:
 		InputScheme.KEYBOARD, InputScheme.GAMEPAD:
-			direction = Input.get_vector(config.action_left, config.action_right, config.action_up, config.action_down)
+			var pad: Vector2 = Input.get_vector(config.action_left, config.action_right, config.action_up, config.action_down)
+			return _screen_to_world(pad) * config.max_speed
 		InputScheme.MOUSE:
-			direction = _pointer_direction()
-	return Vector3(direction.x, 0.0, direction.y) * config.max_speed
+			var pull: Vector2 = _pointer_direction()
+			return Vector3(pull.x, 0.0, pull.y) * config.max_speed
+	return Vector3.ZERO
+
+
+## Rotates a screen-space input vector (x right, y down) onto the ground by the camera view's yaw.
+func _screen_to_world(screen: Vector2) -> Vector3:
+	var yaw: float = 0.0
+	if camera_rig != null and camera_rig.view_config != null:
+		yaw = deg_to_rad(camera_rig.view_config.yaw_degrees)
+	return Vector3(screen.x, 0.0, screen.y).rotated(Vector3.UP, yaw)
 
 
 ## Direction (length 0..1) toward the cursor while the pointer action is held.
@@ -84,6 +113,7 @@ func _pointer_direction() -> Vector2:
 	if target == null:
 		return Vector2.ZERO
 	var offset := Vector2((target as Vector3).x - global_position.x, (target as Vector3).z - global_position.z)
+	_pointer_offset = Vector3(offset.x, 0.0, offset.y)
 	var distance: float = offset.length()
 	if distance <= config.pointer_stop_distance:
 		return Vector2.ZERO

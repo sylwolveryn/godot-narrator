@@ -78,6 +78,7 @@ func _build() -> void:
 	player.add_child(body)
 	_add(root, player)
 	rig.set("follow_target", player)
+	player.set("camera_rig", rig)
 
 	# Reveal comes after the player so run-start handlers run in spawn-then-reveal order.
 	var reveal: Node = load("res://scripts/world/map_reveal.gd").new()
