@@ -39,7 +39,7 @@ This spec answers the playtest complaint ("dull colours, glyphs change instead o
   1. Draw the glyphs into a SubViewport (monospace bold, 32 px per glyph).
   2. Run one brute-force SDF pass (spread 4 px).
   3. Store the result as an `ImageTexture`.
-- **The overlay (player, narration, death fragments) uses the same SDF atlas** through a `glyph_morph` canvas shader on per-glyph quads. It does not use `Label`, so overlay text can morph too.
+- **The overlay (player, narration, death fragments) uses the same SDF atlas** through a glyph-morph canvas shader (removed in task-035, spec only) on per-glyph quads. It does not use `Label`, so overlay text can morph too.
 
 ### 2. Palette (default set "Midnight Neon")
 
@@ -59,7 +59,7 @@ Colour = `LUT[type](u)`, where `u = L + noise(world_cell * 0.08) * hue_noise_amp
 | Player identity glyph | core `#FFF6E6` | | glow `#FFB347` | Overlay layer |
 | Narration base | `#EAF2FF` | | | Glow tint by mood: hum `#FFC98A`, chime `#BFF6FF`, static `#E07BFF`, low_drone `#FF6A4D`, pulse `#7DFFB0` |
 
-**Optional palette sets:** `PaletteConfig` resources can be swapped per run or region. Candidates: "Neon Dusk" (violet background gradient `#1A0B2E`→`#3A1550`, saturated green walls `#39FF7A`) and "Ember Cavern" (slate walls, all-amber highlights). M1 ships the default only, with a `palette_by_run` array left empty.
+**Optional palette sets:** palette resources (the removed PaletteConfig) can be swapped per run or region. Candidates: "Neon Dusk" (violet background gradient `#1A0B2E`→`#3A1550`, saturated green walls `#39FF7A`) and "Ember Cavern" (slate walls, all-amber highlights). M1 ships the default only, with a `palette_by_run` array left empty.
 
 ### 3. Light and depth
 
@@ -110,7 +110,7 @@ The glyph ramp is per type, ordered sparse to dense, so the type is readable fro
 - Ambient animation (corruption, spikes) may cover at most 15% of screen cells at once.
 - No full-screen brightness change above 0.4 per event. No flash repeats above 1 Hz.
 - No per-frame random in any shader. All variation comes from `time` plus static world noise.
-- Hysteresis: L changes from deterministic sources are already smooth. An optional per-cell L smoothing (`l_smoothing_tau`) is listed for a later stateful buffer.
+- Hysteresis: L changes from deterministic sources are already smooth. An optional per-cell L smoothing (l_smoothing_tau, removed in task-035) is listed for a later stateful buffer.
 
 **Corruption breathes, it does not strobe.**
 - The glyph UV is domain-warped by slow flow noise (amplitude 0.35 cell, period 3.2 s).
@@ -127,6 +127,8 @@ The glyph ramp is per type, ordered sparse to dense, so the type is readable fro
 | Reveal | Cells grow from darkness through `.` up to their ramp level (see §5) with a cyan glint at 60% progress |
 
 ### 7. Tunables (defaults)
+
+Note (task-035): the AsciiConfig, PaletteConfig, LightConfig and HazardFxConfig rows and the morph / flicker-limit rows of GlyphFxConfig describe resources and fields of the removed post-process pipeline. They are kept as design history only; the live tunables are GlyphWorldConfig, RevealConfig and the erosion / death rows of GlyphFxConfig.
 
 | Resource | Field | Default |
 |---|---|---|

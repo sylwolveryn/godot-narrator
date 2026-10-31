@@ -1,6 +1,0 @@
-[gd_resource type="Resource" script_class="LightConfig" format=3]
-
-[ext_resource type="Script" path="res://scripts/rendering/light_config.gd" id="1_cmpp5"]
-
-[resource]
-script = ExtResource("1_cmpp5")

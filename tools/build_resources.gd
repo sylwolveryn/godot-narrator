@@ -9,11 +9,7 @@ func _init() -> void:
 	var ok := true
 	ok = _save(RunConfig.new(), "run_config.tres") and ok
 	ok = _save(WorldConfig.new(), "world_config.tres") and ok
-	ok = _save(AsciiConfig.new(), "ascii_config.tres") and ok
 	ok = _save(DisplayConfig.new(), "display_config.tres") and ok
-	ok = _save(PaletteConfig.new(), "palette_config.tres") and ok
-	ok = _save(LightConfig.new(), "light_config.tres") and ok
-	ok = _save(HazardFxConfig.new(), "hazard_fx_config.tres") and ok
 
 	var spikes := HazardDefinition.new()
 	spikes.kind = MapLegend.SPIKES
@@ -44,9 +40,6 @@ func _init() -> void:
 	var player_cfg := PlayerConfig.new()
 	player_cfg.identity_pool = load(DIR + "identity_pool.tres") as IdentityPool
 	ok = _save(player_cfg, "player_config.tres") and ok
-
-	var top_down := CameraViewConfig.new()
-	ok = _save(top_down, "camera_top_down.tres") and ok
 
 	var iso := CameraViewConfig.new()
 	iso.orthographic = true

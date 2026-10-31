@@ -22,7 +22,6 @@ const MASK_BRIGHTNESS_MAX := 1.25
 ## Width of the glint bump, as a fraction of the reveal.
 const GLINT_WIDTH := 0.12
 const MASK_PARAM := &"reveal_mask"
-const MAP_PARAMS := &"map_params"
 
 @export var config: RevealConfig
 @export var map_loader: MapLoader
@@ -200,7 +199,6 @@ func _resize_mask(size: Vector2i) -> void:
 		_mask = Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
 		_mask_texture = ImageTexture.create_from_image(_mask)
 		RenderingServer.global_shader_parameter_set(MASK_PARAM, _mask_texture)
-		RenderingServer.global_shader_parameter_set(MAP_PARAMS, Vector4(map_loader.world_config.cell_size, 0.0, 0.0, 0.0))
 	var count: int = size.x * size.y
 	_brightness.resize(count)
 	_seen.resize(count)

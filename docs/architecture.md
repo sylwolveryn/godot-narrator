@@ -12,7 +12,7 @@ All folders and files use snake_case.
 - `scripts/core/`: `signal_bus.gd`, `run_manager.gd`, `save_service.gd`, config resource classes.
 - `scripts/world/`: map loader, map data, reveal, hazards.
 - `scripts/player/`: player body, identity, input discovery.
-- `scripts/rendering/`: camera rig, glyph world view and config, glyph overlay (legacy: ascii post-process controller).
+- `scripts/rendering/`: camera rig, glyph world view and config, glyph overlay.
 - `resources/glyphs/`: the glyph atlas PNG and the glyph-surface material (`tools/build_glyph_atlas.gd`, `tools/build_glyph_material.gd`).
 - `scripts/narrator/`: narrator system, beat resource.
 - `scripts/ui/`: intro sequence, overlay presentation.
@@ -43,41 +43,34 @@ All folders and files use snake_case.
 - The world is real 3D. The gameplay plane is XZ (y up).
 - One map cell = 1 world unit. The cell size lives in `WorldConfig`.
 - Camera (task-031, decision-002): isometric orthographic from the first frame, no 2D start.
-  - `CameraRig` (Node3D + Camera3D) is driven only by a `CameraViewConfig` (`resources/config/camera_isometric.tres`: ortho size 12.6, pitch -35.264, yaw 45, look height, near/far, follow smoothing). The camera sits at +x,+z looking toward -x,-z; the rig follows the player on the XZ plane. `camera_top_down.tres` / `camera_tilted.tres` remain as alternative profiles.
+  - `CameraRig` (Node3D + Camera3D) is driven only by a `CameraViewConfig` (`resources/config/camera_isometric.tres`: ortho size 12.6, pitch -35.264, yaw 45, look height, near/far, follow smoothing). The camera sits at +x,+z looking toward -x,-z; the rig follows the player on the XZ plane. `camera_tilted.tres` is a perspective profile used by `tools/test_camera_rig.gd` to prove views can be swapped.
   - Because the camera always sits at +x,+z, `WorldMeshBuilder` only emits tops, +x faces and +z faces. Changing the yaw means changing that too.
 - Walls: StaticBody3D collision (one per horizontal run); the visible walls, floor, items, spikes and corruption are one merged mesh (see Rendering).
 - Items, hazards: `MapCell` Area3D (collision/trigger only, no mesh of their own).
 
 ## Rendering
 
-### Direction change (decision-002, 2026-10-30)
-- The full-screen ASCII post-process pipeline further below is legacy and no longer in the main scene (task-031); its files stay until task-035.
-- Target pipeline:
-  - Surfaces (walls, floor, objects): glyph-atlas materials on isometric 3D geometry. Lighting picks the glyph and its brightness (reference: Illuminascii).
-  - Actors, effects, menu and narration: MultiMesh glyph objects (batched glyph quads) that fly, rotate and reassemble. A morph is a shape of many glyph objects, not one glyph blending into another.
-  - Glow: cheap additive halo sprites. No full-screen bloom.
+### Direction (decision-002)
+- Surfaces (walls, floor, objects) are glyph-atlas materials on isometric 3D geometry; lighting picks the glyph and its brightness. There is no full-screen post-process pass.
+- Planned (task-033/034): actors, effects, menu and narration as MultiMesh glyph objects (batched glyph quads) that fly, rotate and reassemble; glow as cheap additive halo sprites, no full-screen bloom.
 - Potato budget: stable 30+ FPS on integrated OpenGL 3.3 GPUs (Intel HD 2500/4000 class), Compatibility renderer only. Per-pass millisecond budgets are not set yet.
-- Status: Spike A (glyph-material isometric world) and Spike B (glyph-object morph moments) are throwaway. The user picked Spike A; its approach is now the live world pipeline (task-031, below). Spike B (glyph objects) is still pending (task-033/034). Unfinished SDF overlay work (task-025/026) is parked on branch `parked/sdf-overlay` and archived.
+- History: the earlier full-screen ASCII post-process pipeline was superseded by decision-002 and removed in task-035. Spikes under `scenes/spikes/` are kept as reference only.
 
-### Glyph-surface world (task-031, the live pipeline)
+### Glyph-surface world (task-031)
 - `MapLoader` builds the WHOLE map as ONE `ArrayMesh` (`WorldMeshBuilder`, one surface, one draw call, ~5k triangles for M1) with ONE `ShaderMaterial` (`resources/glyphs/glyph_surface_material.tres`, shader `shaders/glyph_surface.gdshader`). Per vertex: `COLOR.r` = `GlyphSurfaceType` id / 8 (wall, floor, spikes, corruption, item), `UV` = the map cell, `NORMAL` = face normal. Every non-void cell has a floor quad; walls are boxes (top + +x/+z faces); items are pillars, spikes pyramids, corruption columns.
 - The shader draws glyphs ON the faces: a glyph grid per face from world space (axes derived from `INV_VIEW_MATRIX`), light evaluated once per glyph cell from <= 8 analytic point lights (no shadows, no screen texture), brightness picks the glyph column from the type's atlas row (`resources/glyphs/glyph_atlas.png`, layout `GlyphAtlasSpec`, baked by `tools/build_glyph_atlas.gd`), palette per type from `GlyphWorldConfig`.
 - `GlyphWorldView` (node in Main) feeds the material: static look from `GlyphWorldConfig` (`resources/config/glyph_world_config.tres`), light slot 0 = player light, slots 1..7 = the nearest static lights (`GlyphLightSource`: items, spike and corruption patches) whose cells were seen or remembered, and the cut-away uniform.
 - Wall cut-away: fragments of non-floor surfaces closer to the camera than the player and within `cutaway_radius` of the view ray through the player are discarded with a dithered edge, so walls never hide the player.
 - Reveal: `MapReveal` still owns the `reveal_mask` global texture (one texel per cell, r brightness, g seen fraction, b glint, a floor flag); the shader reads it per cell (`UV`): r = 0 draws nothing, g = 0 draws the dim, desaturated memory look. Fades and memory polish are task-032.
-- No `AsciiPostProcess`, no full-screen pass, no `WorldEnvironment` glow. The camera's `Environment` only sets the background colour.
-- Status of the legacy pipeline below: `AsciiPostProcess`, `shaders/ascii_post.gdshader`, `world_encode.gdshader`, `AsciiConfig`/`PaletteConfig`/`LightConfig`/`MaterialIds` are UNUSED by the game now and stay only until task-035 deletes them.
+- No full-screen pass, no `WorldEnvironment` glow. The camera's `Environment` only sets the background colour.
 
-### ASCII Post-Process (LEGACY, unused since task-031, deleted by task-035)
-- The 3D world renders **data, not colour**. `MapLoader` gives every cell type a `ShaderMaterial` on `shaders/world_encode.gdshader` (unshaded). Each pixel: R = material id (`MaterialIds`), G = luminance (player light, reveal fade and hazard pulse already applied), B = state (visible: palette offset from world noise/height/glint; remembered: memory amount). The encoding lives in `shaders/world_encoding.gdshaderinc` and keeps every channel at 0.2 or above, because the compat renderer returns values below about 0.2 too low (see test pattern `tools/test_encoding.gd`).
-- Global shader params (registered in `project.godot` by `tools/build_project_settings.gd`): `player_pos`, `light_params`, `look_params`, `map_params` (set by `AsciiPostProcess`) and the `reveal_mask` texture (one texel per map cell, owned by `MapReveal`: brightness with reveal overshoot and stagger, seen fraction for memory to seen, glint).
-- A `CanvasLayer` (layer 0) holds a full-rect `ColorRect` with `shaders/ascii_post.gdshader`. Per glyph cell it reads the cell centre (`texelFetch`), picks ramp and palette row by id, blends two ramp glyphs as an SDF (`d = mix(sdfA, sdfB, smoothstep(band))`, so any brightness change is a morph, never a swap), colours from the palette LUT and adds own-cell halo, 4-neighbour bloom, wall rim glow, depth of field, vignette and a static dither. Corruption breathes: slow flow-noise warp, noise-picked glyph blend, violet/magenta hue slide.
-- `GlyphAtlas` (`scripts/rendering/glyph_atlas.gd`) bakes the shared SDF atlas on the GPU at boot (SubViewport raster at 2x, then `glyph_sdf_bake.gdshader`). It is resolution independent (no rebuild on resize). `shaders/glyph_morph.gdshader` is the reusable canvas shader for overlay glyph quads (task-025).
-- Tunables are Resources: `AsciiConfig`, `PaletteConfig` (gradients, baked to a 256x16 LUT), `LightConfig`, `HazardFxConfig`, `RevealConfig`, `GlyphFxConfig`. Pixel sizes scale with `DisplayConfig` (cell 10x14 at 1080p).
-- Render settings: no MSAA/FXAA/debanding, no 3D glow, default linear tonemap. `AsciiConfig.enabled = false` shows the raw encoded buffer (debug only).
+### Tunables and render settings
+- Tunables are Resources: `GlyphWorldConfig`, `RevealConfig`, `GlyphFxConfig`, `CameraViewConfig`, `DisplayConfig`. Pixel sizes scale with `DisplayConfig` (cell 10x14 at 1080p).
+- Global shader parameter: `reveal_mask` (registered in `project.godot` by `tools/build_project_settings.gd`, set by `MapReveal`).
+- Render settings: no MSAA/FXAA/debanding, no 3D glow, default linear tonemap.
 
 ### Glyph Overlay
-- A higher `CanvasLayer` (layer 10+) draws over the 3D world (it was never touched by the legacy post shader).
+- A higher `CanvasLayer` (layer 10+) draws over the 3D world (unaffected by the world shader).
 - Crisp text glyphs live here:
   - The player's identity glyph(s), positioned each frame by `camera.unproject_position` of the player's position raised by `PlayerConfig.glyph_height`.
   - Narration text.

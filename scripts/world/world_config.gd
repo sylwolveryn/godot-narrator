@@ -16,7 +16,7 @@ extends Resource
 @export_range(0.0, 1.0) var wall_luminance: float = 0.75
 @export_range(0.0, 1.0) var floor_luminance: float = 0.55
 ## Emissive items keep a fixed luminance whatever the light. Spikes and corruption pulse around
-## the values in HazardFxConfig.
+## around their base luminance.
 @export_range(0.0, 1.0) var item_luminance: float = 0.85
 
 @export_group("Items and hazards")

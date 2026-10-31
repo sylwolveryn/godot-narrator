@@ -1,6 +1,6 @@
 extends SceneTree
 ## Debug autopilot for the look review (task-026, NOT part of the normal boot path). Like
-## capture_idle but with a wide reveal radius (a "full view" of structures, light, memory and
+## a plain idle capture but with a wide reveal radius (a "full view" of structures, light, memory and
 ## hazards, much wider than the in-game 2 cells) and a second stop so the first area is remembered.
 ## Uses a temporary save file. Capture with Movie Maker, e.g.
 ##   tools/capture_at_size.sh 1920x1080 <dir> 420 tools/capture_showcase.gd
