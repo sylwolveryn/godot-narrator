@@ -4,14 +4,12 @@ title: Remove the legacy post-process rendering pipeline
 status: To Do
 assignee: []
 created_date: '2026-10-30T22:45:00Z'
+updated_date: '2026-10-31T07:40:00Z'
 labels:
   - rendering
 milestone: m-5
 dependencies:
   - TASK-031
-  - TASK-032
-  - TASK-033
-  - TASK-034
 priority: medium
 type: chore
 ordinal: 36000
