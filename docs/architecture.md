@@ -52,7 +52,7 @@ All folders and files use snake_case.
 
 ### Direction (decision-002)
 - Surfaces (walls, floor, objects) are glyph-atlas materials on isometric 3D geometry; lighting picks the glyph and its brightness. There is no full-screen post-process pass.
-- Planned (task-033/034): actors, effects, menu and narration as MultiMesh glyph objects (batched glyph quads) that fly, rotate and reassemble; glow as cheap additive halo sprites, no full-screen bloom.
+- Actors and effects are batched billboards: the player glyph and its fragments (task-033, `PlayerGlyphView`), glow as cheap additive halo sprites (`GlyphHaloField`), no full-screen bloom. Narration, menu and the intro stay on the overlay (task-034).
 - Potato budget: stable 30+ FPS on integrated OpenGL 3.3 GPUs (Intel HD 2500/4000 class), Compatibility renderer only. Per-pass millisecond budgets are not set yet.
 - History: the earlier full-screen ASCII post-process pipeline was superseded by decision-002 and removed in task-035. Spikes under `scenes/spikes/` are kept as reference only.
 
@@ -72,13 +72,12 @@ All folders and files use snake_case.
 - Global shader parameter: `reveal_mask` (registered in `project.godot` by `tools/build_project_settings.gd`, set by `MapReveal`).
 - Render settings: no MSAA/FXAA/debanding, no 3D glow, default linear tonemap.
 
-### Glyph Overlay
-- A higher `CanvasLayer` (layer 10+) draws over the 3D world (unaffected by the world shader).
-- Crisp text glyphs live here:
-  - The player's identity glyph(s), positioned each frame by `camera.unproject_position` of the player's position raised by `PlayerConfig.glyph_height`.
-  - Narration text.
-  - Future in-world menus.
-- This is the answer to the task-004 risk (overlay bypass). task-004 records it as a Backlog decision and proves it.
+### Player, halos and overlay (task-033)
+- `PlayerGlyphView` (Node3D in Main): the identity glyph stands IN the world. One MultiMesh of camera-facing quads (`shaders/glyph_actor.gdshader`, ONE draw call): instance 0 is the player glyph plus its warm halo (premultiplied alpha: glyph and dark backing blend, the halo adds), the other instances are fragments. The glyph pictures come from a runtime atlas: a `SubViewport` rasterises the identity glyph and the substitute glyphs (`GlyphFxConfig.scramble_glyphs`) with `PlayerConfig.font_names` once, and again only when the identity changes (UPDATE_ONCE). Quads are lifted towards the camera and depth-tested, so walls in front hide the glyph unless the cut-away removes them.
+- Erosion (`erosion_changed` signal): the glyph blends continuously into a substitute glyph (retargeted at most every `erosion_retarget_min`, always as a crossfade), warps in slow waves, grows a violet ghost, takes the hazard tint and fades; above `erosion_shed_threshold` it sheds a fragment every `erosion_shed_interval`. Death (`run_ended`): a short fully-eroded flash, then `death_fragments` fragments fly outward over `death_duration` and fade. Everything is driven by `TIME` and CPU timers, no per-frame random in shaders; fragments live in a preallocated pool, no per-frame allocations.
+- `GlyphHaloField` (Node3D): one MultiMesh, one quad per item, spike and corruption cell (`shaders/glyph_halo.gdshader`, additive). The vertex shader reads the reveal mask: hidden cells collapse the quad, remembered cells keep `GlyphWorldConfig.halo_memory` (0 = none). Slow breathing per kind (corruption slides between its two hues); depth-tested, so walls in front hide a halo. No per-frame CPU work. Shared glow shape in `shaders/glyph_halo.gdshaderinc`.
+- A `CanvasLayer` overlay is still used for narration text and the intro (task-034); the old player overlay glyph (`GlyphOverlay`) was removed.
+- Draw calls of the whole frame: about 4 (world mesh, halos, actors, narration/intro canvas).
 
 ## Map Format (`data/maps/*.txt`)
 

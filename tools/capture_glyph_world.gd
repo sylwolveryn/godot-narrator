@@ -1,8 +1,8 @@
 ﻿extends SceneTree
 ## Debug autopilot for the glyph-world look review (task-031/036, NOT part of the normal boot path). Opening view,
 ## wall cut-away on and off at the same spot (a wall between camera and player), then a wide reveal radius and
-## a tour over the whole M1 map. Uses a temporary save file (never the real progress). Movie Maker capture:
-##   tools/capture_at_size.sh 1920x1080 <dir> 560 tools/capture_glyph_world.gd
+## a tour of the room types (wall corner, wall between, open centre, spikes, items, east room). Uses a temporary save file (never the real progress). Movie Maker capture:
+##   tools/capture_at_size.sh 1920x1080 <dir> 460 tools/capture_glyph_world.gd
 ## Prints "CAPTURE <label> frame <n>" lines.
 
 const Support := preload("res://tools/test_support.gd")
@@ -19,29 +19,24 @@ var _view: Node
 var _schedule: Dictionary = {
 	110: "mark:opening",
 	205: "mark:spawn",
-	212: "tp:16,12",
-	250: "mark:cutaway_on",
-	251: "cut:off",
-	260: "mark:cutaway_off",
-	261: "cut:on",
-	262: "wide",
-	263: "tp:25,3",
-	305: "mark:north_room",
-	306: "tp:5,17",
-	350: "mark:southwest_room",
-	351: "tp:20,19",
-	395: "mark:south_spikes",
-	396: "tp:33,8",
-	440: "mark:east_room",
-	441: "tp:20,8",
-	485: "mark:centre",
-	486: "tp:4,3",
-	530: "mark:northwest_room",
-	531: "tp:6,5",
-	575: "mark:wall_corner",
-	576: "tp:14,14",
-	620: "mark:wall_between",
-	621: "quit",
+	206: "wide",
+	207: "tp:6,5",
+	240: "mark:wall_corner",
+	241: "tp:14,14",
+	274: "mark:wall_between",
+	275: "tp:20,8",
+	308: "mark:centre",
+	309: "tp:20,19",
+	342: "mark:south_spikes",
+	343: "tp:25,3",
+	376: "mark:north_room",
+	377: "tp:33,8",
+	410: "mark:east_room",
+	411: "tp:16,12",
+	444: "mark:cutaway_on",
+	445: "cut:off",
+	455: "mark:cutaway_off",
+	456: "quit",
 }
 
 

@@ -1,6 +1,6 @@
 extends SceneTree
 ## Rebuilds res://main.tscn: map loader (glyph-surface world), player, isometric camera rig, glyph world
-## view, overlays, run manager. Run tools/build_resources.gd and tools/build_glyph_material.gd first. Idempotent.
+## view, player glyph and halos, narration overlay, run manager. Run tools/build_resources.gd and tools/build_glyph_material.gd first. Idempotent.
 ## Usage: godot --headless --path . -s tools/build_main_scene.gd
 
 const SCENE_PATH := "res://main.tscn"
@@ -9,7 +9,6 @@ const DISPLAY_CONFIG := "res://resources/config/display_config.tres"
 const GLYPH_MATERIAL := "res://resources/glyphs/glyph_surface_material.tres"
 const NARRATION_DIR := "res://resources/narration/"
 const MAP_PATH := "res://data/maps/m1_awakening.txt"
-const OVERLAY_LAYER := 10
 const INTRO_LAYER := 20
 
 
@@ -103,16 +102,22 @@ func _build() -> void:
 	glyph_view.set("map_reveal", reveal)
 	_add(root, glyph_view)
 
-	# Layer 10 overlay: the player's crisp glyph, above the 3D world (decision-001).
-	var overlay: CanvasLayer = load("res://scripts/rendering/glyph_overlay.gd").new()
-	overlay.name = "GlyphOverlay"
-	overlay.layer = OVERLAY_LAYER
-	overlay.set("camera_rig", rig)
-	overlay.set("player", player)
-	overlay.set("player_config", player_cfg)
-	overlay.set("fx_config", load(CFG + "glyph_fx_config.tres"))
-	overlay.set("display_config", load(DISPLAY_CONFIG))
-	_add(root, overlay)
+	# The player's glyph stands in the world: one MultiMesh of billboards (glyph + halo + fragments).
+	var player_glyph: Node3D = load("res://scripts/rendering/player_glyph_view.gd").new()
+	player_glyph.name = "PlayerGlyphView"
+	player_glyph.set("player", player)
+	player_glyph.set("player_config", player_cfg)
+	player_glyph.set("fx_config", load(CFG + "glyph_fx_config.tres"))
+	player_glyph.set("world_config", load(CFG + "glyph_world_config.tres"))
+	player_glyph.set("world", load(CFG + "world_config.tres"))
+	_add(root, player_glyph)
+
+	# Soft halos over items, spikes and corruption: one MultiMesh, reveal-aware in the shader.
+	var halos: Node3D = load("res://scripts/rendering/glyph_halo_field.gd").new()
+	halos.name = "GlyphHaloField"
+	halos.set("config", load(CFG + "glyph_world_config.tres"))
+	halos.set("map_loader", loader)
+	_add(root, halos)
 
 	# Narration text: above the world and above the intro veil (decision-001).
 	var narration: CanvasLayer = load("res://scripts/narrator/narration_overlay.gd").new()

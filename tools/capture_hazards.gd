@@ -1,12 +1,14 @@
 extends SceneTree
-## Debug autopilot for the hazard visual check (NOT part of the normal boot path). Teleports the
-## player into a corrupting patch (erosion scrambles the glyph), walks it out, then onto spikes
-## (death presentation) and lets the automatic restart play. Uses a temporary save file.
-##   godot --path . --resolution 960x540 --fixed-fps 30 --quit-after 300 --write-movie <dir>/f.png -s tools/capture_hazards.gd
+## Debug autopilot for the hazard visual check (NOT part of the normal boot path). Reveals a wide area
+## (items, spikes and corruption glow), teleports the player into the corrupting patch (erosion distorts the
+## glyph until it breaks), lets the automatic restart play, then drops it onto spikes (death fragments).
+## Uses a temporary save file (never the real progress). Movie Maker capture:
+##   tools/capture_at_size.sh 1366x768 <dir> 370 tools/capture_hazards.gd
 ## Prints "CAPTURE <label> frame <n>" lines so the matching PNGs can be picked.
 
 const Support := preload("res://tools/test_support.gd")
 const SAVE_TAG := "capture_hazards"
+const WIDE_RADIUS := 8.0
 
 var _frame: int = 0
 var _main: Node
@@ -14,23 +16,31 @@ var _player: CharacterBody3D
 var _loader: MapLoader
 var _held: Key = KEY_NONE
 
-## Frame -> action. "press:<key>", "release", "tp:<x>,<y>", "mark:<label>", "quit".
+## Frame -> action. "press:<key>", "release", "tp:<x>,<y>", "wide", "mark:<label>", "quit".
+## Cells (M1): spikes (23,3) (24,3), corruption (26..28, 3..4), item (27,2): all three glow within one view.
 var _schedule: Dictionary = {
 	110: "mark:opening",
-	118: "press:D",
-	119: "release",
-	120: "tp:27,4",
-	135: "mark:erosion_early",
-	150: "mark:erosion_mid",
-	168: "mark:erosion_late",
-	170: "press:A",
-	190: "release",
-	195: "mark:recovering",
-	196: "tp:21,3",
-	197: "press:D",
-	240: "release",
-	280: "mark:after_restart",
-	290: "quit",
+	115: "wide",
+	116: "tp:25,4",
+	150: "mark:glow_all",
+	151: "tp:27,4",
+	166: "mark:erosion_a",
+	186: "mark:erosion_b",
+	201: "mark:erosion_c",
+	216: "mark:erosion_d",
+	226: "mark:erosion_e",
+	230: "mark:death_flash",
+	233: "mark:death_burst_a",
+	240: "mark:death_burst_b",
+	250: "mark:death_burst_c",
+	262: "mark:death_faded",
+	300: "mark:after_restart",
+	301: "tp:24,3",
+	306: "mark:spike_flash",
+	309: "mark:spike_burst_a",
+	318: "mark:spike_burst_b",
+	360: "mark:memory_after_restart",
+	365: "quit",
 }
 
 
@@ -70,6 +80,11 @@ func _tick() -> void:
 		var xy: PackedStringArray = action.get_slice(":", 1).split(",")
 		_player.velocity = Vector3.ZERO
 		_player.global_position = _loader.cell_to_world(Vector2i(int(xy[0]), int(xy[1])))
+	elif action == "wide":
+		var reveal: Node = _main.get_node("MapReveal")
+		var cfg: RevealConfig = (reveal.get("config") as RevealConfig).duplicate()
+		cfg.reveal_radius = WIDE_RADIUS
+		reveal.set("config", cfg)
 	elif action.begins_with("mark:"):
 		print("CAPTURE %s frame %d cell %s" % [action.get_slice(":", 1), _frame, _loader.world_to_cell(_player.global_position)])
 	elif action == "quit":

@@ -1,6 +1,6 @@
 class_name PlayerConfig
 extends Resource
-## Tunables for the player body, its movement, its input actions and how its identity glyph is drawn.
+## Tunables for the player body, its movement, its input actions and how its identity glyph is drawn (PlayerGlyphView).
 
 @export var identity_pool: IdentityPool
 ## Collision capsule.
@@ -30,11 +30,9 @@ extends Resource
 ## Mouse scheme: while held, move toward the cursor.
 @export var action_pointer: StringName = &"move_pointer"
 
-@export_group("Overlay glyph")
+@export_group("In-world glyph")
+## Fonts the identity glyph is rasterised with (first available, then the system fallbacks).
 @export var font_names: PackedStringArray = PackedStringArray(["Segoe UI Symbol", "Nirmala UI", "Segoe UI", "Consolas", "monospace"])
-@export var font_size: int = 88
 @export var glyph_color: Color = Color("#FFF6E6")
-@export var outline_color: Color = Color(1.0, 0.7, 0.28, 0.4)
-@export var outline_size: int = 12
-## Height above the player's feet where the overlay glyph is centred (world units).
+## Height above the player's feet where the in-world glyph is centred (world units).
 @export var glyph_height: float = 0.55

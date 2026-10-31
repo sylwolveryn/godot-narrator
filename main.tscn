@@ -1,45 +1,46 @@
 [gd_scene format=3 uid="uid://cd1bjpboqyi2w"]
 
-[ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="1_qsp4k"]
-[ext_resource type="Resource" path="res://resources/config/map_legend.tres" id="2_kq58d"]
-[ext_resource type="Resource" path="res://resources/config/world_config.tres" id="3_seu75"]
-[ext_resource type="Material" path="res://resources/glyphs/glyph_surface_material.tres" id="4_htxhm"]
-[ext_resource type="Script" path="res://scripts/core/save_service.gd" id="5_jq2sk"]
-[ext_resource type="Resource" path="res://resources/config/save_config.tres" id="6_4k2k6"]
-[ext_resource type="Script" path="res://scripts/narrator/narrator.gd" id="7_0rl1p"]
-[ext_resource type="Resource" path="res://resources/narration/narrator_config.tres" id="8_ok6jj"]
-[ext_resource type="Script" path="res://scripts/rendering/camera_rig.gd" id="9_facbu"]
-[ext_resource type="Resource" path="res://resources/config/camera_isometric.tres" id="10_b1qrp"]
-[ext_resource type="Script" path="res://scripts/player/player.gd" id="11_come4"]
-[ext_resource type="Resource" path="res://resources/config/player_config.tres" id="12_h8e4i"]
-[ext_resource type="Script" path="res://scripts/world/map_reveal.gd" id="13_4lmeg"]
-[ext_resource type="Resource" path="res://resources/config/reveal_config.tres" id="14_0cp0l"]
-[ext_resource type="Script" path="res://scripts/player/input_discovery.gd" id="15_d2t1y"]
-[ext_resource type="Script" path="res://scripts/rendering/glyph_world_view.gd" id="16_gngh3"]
-[ext_resource type="Resource" path="res://resources/config/glyph_world_config.tres" id="17_0n3wm"]
-[ext_resource type="Script" path="res://scripts/rendering/glyph_overlay.gd" id="18_qnost"]
-[ext_resource type="Resource" path="res://resources/config/glyph_fx_config.tres" id="19_wnkbs"]
-[ext_resource type="Resource" path="res://resources/config/display_config.tres" id="20_f6a44"]
-[ext_resource type="Script" path="res://scripts/narrator/narration_overlay.gd" id="21_0cbny"]
-[ext_resource type="Script" path="res://scripts/narrator/narration_sfx.gd" id="22_hrvbo"]
-[ext_resource type="Script" path="res://scripts/ui/intro_sequence.gd" id="23_uypp3"]
-[ext_resource type="Resource" path="res://resources/config/intro_config.tres" id="24_blkrb"]
-[ext_resource type="Shader" path="res://shaders/intro_wave.gdshader" id="25_abqjc"]
-[ext_resource type="Script" path="res://scripts/ui/fullscreen_toggle.gd" id="26_6iyjs"]
-[ext_resource type="Script" path="res://scripts/core/run_manager.gd" id="27_4w656"]
-[ext_resource type="Resource" path="res://resources/config/run_config.tres" id="28_e71vb"]
-[ext_resource type="Script" path="res://scripts/world/hazard_monitor.gd" id="29_rnkwl"]
+[ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="1_kq58d"]
+[ext_resource type="Resource" path="res://resources/config/map_legend.tres" id="2_seu75"]
+[ext_resource type="Resource" path="res://resources/config/world_config.tres" id="3_htxhm"]
+[ext_resource type="Material" path="res://resources/glyphs/glyph_surface_material.tres" id="4_jq2sk"]
+[ext_resource type="Script" path="res://scripts/core/save_service.gd" id="5_4k2k6"]
+[ext_resource type="Resource" path="res://resources/config/save_config.tres" id="6_0rl1p"]
+[ext_resource type="Script" path="res://scripts/narrator/narrator.gd" id="7_ok6jj"]
+[ext_resource type="Resource" path="res://resources/narration/narrator_config.tres" id="8_facbu"]
+[ext_resource type="Script" path="res://scripts/rendering/camera_rig.gd" id="9_b1qrp"]
+[ext_resource type="Resource" path="res://resources/config/camera_isometric.tres" id="10_come4"]
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="11_h8e4i"]
+[ext_resource type="Resource" path="res://resources/config/player_config.tres" id="12_4lmeg"]
+[ext_resource type="Script" path="res://scripts/world/map_reveal.gd" id="13_0cp0l"]
+[ext_resource type="Resource" path="res://resources/config/reveal_config.tres" id="14_d2t1y"]
+[ext_resource type="Script" path="res://scripts/player/input_discovery.gd" id="15_gngh3"]
+[ext_resource type="Script" path="res://scripts/rendering/glyph_world_view.gd" id="16_0n3wm"]
+[ext_resource type="Resource" path="res://resources/config/glyph_world_config.tres" id="17_qnost"]
+[ext_resource type="Script" path="res://scripts/rendering/player_glyph_view.gd" id="18_wnkbs"]
+[ext_resource type="Resource" path="res://resources/config/glyph_fx_config.tres" id="19_f6a44"]
+[ext_resource type="Script" path="res://scripts/rendering/glyph_halo_field.gd" id="20_0cbny"]
+[ext_resource type="Script" path="res://scripts/narrator/narration_overlay.gd" id="21_hrvbo"]
+[ext_resource type="Resource" path="res://resources/config/display_config.tres" id="22_uypp3"]
+[ext_resource type="Script" path="res://scripts/narrator/narration_sfx.gd" id="23_blkrb"]
+[ext_resource type="Script" path="res://scripts/ui/intro_sequence.gd" id="24_abqjc"]
+[ext_resource type="Resource" path="res://resources/config/intro_config.tres" id="25_6iyjs"]
+[ext_resource type="Shader" path="res://shaders/intro_wave.gdshader" id="26_4w656"]
+[ext_resource type="Script" path="res://scripts/ui/fullscreen_toggle.gd" id="27_e71vb"]
+[ext_resource type="Script" path="res://scripts/core/run_manager.gd" id="28_rnkwl"]
+[ext_resource type="Resource" path="res://resources/config/run_config.tres" id="29_vke2r"]
+[ext_resource type="Script" path="res://scripts/world/hazard_monitor.gd" id="30_uit24"]
 
-[sub_resource type="Environment" id="Environment_vke2r"]
+[sub_resource type="Environment" id="Environment_ruth0"]
 background_mode = 1
 background_color = Color(0.008, 0.01, 0.018, 1)
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_uit24"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_rm4vd"]
 radius = 0.35
 height = 0.9
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ruth0"]
-shader = ExtResource("25_abqjc")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pjyto"]
+shader = ExtResource("26_4w656")
 shader_parameter/veil = null
 shader_parameter/envelope = null
 shader_parameter/time = null
@@ -52,108 +53,112 @@ shader_parameter/line_spacing = null
 shader_parameter/thickness = null
 shader_parameter/cell_px = null
 
-[node name="Main" type="Node3D" unique_id=713559147]
+[node name="Main" type="Node3D" unique_id=1486474071]
 
-[node name="World" type="Node3D" parent="." unique_id=64726481]
+[node name="World" type="Node3D" parent="." unique_id=669476277]
 
-[node name="MapLoader" type="Node3D" parent="World" unique_id=1288934885]
-script = ExtResource("1_qsp4k")
-legend = ExtResource("2_kq58d")
-world_config = ExtResource("3_seu75")
-surface_material = ExtResource("4_htxhm")
+[node name="MapLoader" type="Node3D" parent="World" unique_id=2026048850]
+script = ExtResource("1_kq58d")
+legend = ExtResource("2_seu75")
+world_config = ExtResource("3_htxhm")
+surface_material = ExtResource("4_jq2sk")
 map_path = "res://data/maps/m1_awakening.txt"
 
-[node name="SaveService" type="Node" parent="." unique_id=1457700745]
-script = ExtResource("5_jq2sk")
-config = ExtResource("6_4k2k6")
+[node name="SaveService" type="Node" parent="." unique_id=829626044]
+script = ExtResource("5_4k2k6")
+config = ExtResource("6_0rl1p")
 
-[node name="Narrator" type="Node" parent="." unique_id=1415279112 node_paths=PackedStringArray("save_service")]
-script = ExtResource("7_0rl1p")
-config = ExtResource("8_ok6jj")
+[node name="Narrator" type="Node" parent="." unique_id=1749216379 node_paths=PackedStringArray("save_service")]
+script = ExtResource("7_ok6jj")
+config = ExtResource("8_facbu")
 save_service = NodePath("../SaveService")
 
-[node name="CameraRig" type="Node3D" parent="." unique_id=664972496 node_paths=PackedStringArray("follow_target")]
-script = ExtResource("9_facbu")
-view_config = ExtResource("10_b1qrp")
+[node name="CameraRig" type="Node3D" parent="." unique_id=1038655361 node_paths=PackedStringArray("follow_target")]
+script = ExtResource("9_b1qrp")
+view_config = ExtResource("10_come4")
 follow_target = NodePath("../Player")
 
-[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=743475475]
-environment = SubResource("Environment_vke2r")
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=880304592]
+environment = SubResource("Environment_ruth0")
 
-[node name="Player" type="CharacterBody3D" parent="." unique_id=851322335 node_paths=PackedStringArray("map_loader", "save_service", "run_manager", "camera_rig")]
-script = ExtResource("11_come4")
-config = ExtResource("12_h8e4i")
+[node name="Player" type="CharacterBody3D" parent="." unique_id=1809762970 node_paths=PackedStringArray("map_loader", "save_service", "run_manager", "camera_rig")]
+script = ExtResource("11_h8e4i")
+config = ExtResource("12_4lmeg")
 map_loader = NodePath("../World/MapLoader")
 save_service = NodePath("../SaveService")
 run_manager = NodePath("../RunManager")
 camera_rig = NodePath("../CameraRig")
 
-[node name="Collision" type="CollisionShape3D" parent="Player" unique_id=1735136284]
+[node name="Collision" type="CollisionShape3D" parent="Player" unique_id=1671073864]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
-shape = SubResource("CapsuleShape3D_uit24")
+shape = SubResource("CapsuleShape3D_rm4vd")
 
-[node name="MapReveal" type="Node" parent="." unique_id=1856529910 node_paths=PackedStringArray("map_loader", "player", "save_service")]
-script = ExtResource("13_4lmeg")
-config = ExtResource("14_0cp0l")
+[node name="MapReveal" type="Node" parent="." unique_id=448427463 node_paths=PackedStringArray("map_loader", "player", "save_service")]
+script = ExtResource("13_0cp0l")
+config = ExtResource("14_d2t1y")
 map_loader = NodePath("../World/MapLoader")
 player = NodePath("../Player")
 save_service = NodePath("../SaveService")
 
-[node name="InputDiscovery" type="Node" parent="." unique_id=1976816658]
-script = ExtResource("15_d2t1y")
-config = ExtResource("12_h8e4i")
+[node name="InputDiscovery" type="Node" parent="." unique_id=1073459423]
+script = ExtResource("15_gngh3")
+config = ExtResource("12_4lmeg")
 
-[node name="GlyphWorldView" type="Node" parent="." unique_id=1773479830 node_paths=PackedStringArray("map_loader", "player", "map_reveal")]
-script = ExtResource("16_gngh3")
-config = ExtResource("17_0n3wm")
+[node name="GlyphWorldView" type="Node" parent="." unique_id=67272355 node_paths=PackedStringArray("map_loader", "player", "map_reveal")]
+script = ExtResource("16_0n3wm")
+config = ExtResource("17_qnost")
 map_loader = NodePath("../World/MapLoader")
 player = NodePath("../Player")
 map_reveal = NodePath("../MapReveal")
 
-[node name="GlyphOverlay" type="CanvasLayer" parent="." unique_id=841379484 node_paths=PackedStringArray("camera_rig", "player")]
-layer = 10
-script = ExtResource("18_qnost")
-camera_rig = NodePath("../CameraRig")
+[node name="PlayerGlyphView" type="Node3D" parent="." unique_id=782466336 node_paths=PackedStringArray("player")]
+script = ExtResource("18_wnkbs")
 player = NodePath("../Player")
-player_config = ExtResource("12_h8e4i")
-fx_config = ExtResource("19_wnkbs")
-display_config = ExtResource("20_f6a44")
+player_config = ExtResource("12_4lmeg")
+fx_config = ExtResource("19_f6a44")
+world_config = ExtResource("17_qnost")
+world = ExtResource("3_htxhm")
 
-[node name="NarrationOverlay" type="CanvasLayer" parent="." unique_id=398023129 node_paths=PackedStringArray("narrator")]
+[node name="GlyphHaloField" type="Node3D" parent="." unique_id=449762509 node_paths=PackedStringArray("map_loader")]
+script = ExtResource("20_0cbny")
+config = ExtResource("17_qnost")
+map_loader = NodePath("../World/MapLoader")
+
+[node name="NarrationOverlay" type="CanvasLayer" parent="." unique_id=1956814279 node_paths=PackedStringArray("narrator")]
 layer = 25
-script = ExtResource("21_0cbny")
+script = ExtResource("21_hrvbo")
 narrator = NodePath("../Narrator")
-config = ExtResource("8_ok6jj")
-display_config = ExtResource("20_f6a44")
+config = ExtResource("8_facbu")
+display_config = ExtResource("22_uypp3")
 
-[node name="NarrationSfx" type="Node" parent="." unique_id=2103317301 node_paths=PackedStringArray("narrator")]
-script = ExtResource("22_hrvbo")
+[node name="NarrationSfx" type="Node" parent="." unique_id=987384110 node_paths=PackedStringArray("narrator")]
+script = ExtResource("23_blkrb")
 narrator = NodePath("../Narrator")
-config = ExtResource("8_ok6jj")
+config = ExtResource("8_facbu")
 
-[node name="IntroSequence" type="CanvasLayer" parent="." unique_id=8602988]
+[node name="IntroSequence" type="CanvasLayer" parent="." unique_id=1262998677]
 layer = 20
-script = ExtResource("23_uypp3")
-config = ExtResource("24_blkrb")
-display_config = ExtResource("20_f6a44")
+script = ExtResource("24_abqjc")
+config = ExtResource("25_6iyjs")
+display_config = ExtResource("22_uypp3")
 
-[node name="Veil" type="ColorRect" parent="IntroSequence" unique_id=927184772]
-material = SubResource("ShaderMaterial_ruth0")
+[node name="Veil" type="ColorRect" parent="IntroSequence" unique_id=2050276271]
+material = SubResource("ShaderMaterial_pjyto")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="FullscreenToggle" type="Node" parent="." unique_id=1150594889]
-script = ExtResource("26_6iyjs")
-config = ExtResource("20_f6a44")
+[node name="FullscreenToggle" type="Node" parent="." unique_id=261493184]
+script = ExtResource("27_e71vb")
+config = ExtResource("22_uypp3")
 
-[node name="RunManager" type="Node" parent="." unique_id=1727738878]
-script = ExtResource("27_4w656")
-config = ExtResource("28_e71vb")
+[node name="RunManager" type="Node" parent="." unique_id=1909676426]
+script = ExtResource("28_rnkwl")
+config = ExtResource("29_vke2r")
 
-[node name="HazardMonitor" type="Node" parent="." unique_id=1183783449 node_paths=PackedStringArray("map_loader", "player", "run_manager")]
-script = ExtResource("29_rnkwl")
+[node name="HazardMonitor" type="Node" parent="." unique_id=331927498 node_paths=PackedStringArray("map_loader", "player", "run_manager")]
+script = ExtResource("30_uit24")
 map_loader = NodePath("../World/MapLoader")
 player = NodePath("../Player")
 run_manager = NodePath("../RunManager")
