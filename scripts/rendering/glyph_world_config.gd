@@ -38,7 +38,7 @@ extends Resource
 
 @export_group("Player light")
 @export var player_light_color: Color = Color(1.0, 0.82, 0.5)
-@export var player_light_intensity: float = 1.4
+@export var player_light_intensity: float = 1.7
 @export var player_light_radius: float = 7.5
 ## Height of the light above the floor.
 @export var player_light_height: float = 1.1
@@ -61,13 +61,62 @@ extends Resource
 ## A patch of hazard cells (4-connected) gets one light, with the radius widened by this per cell of extent.
 @export var patch_radius_per_cell: float = 0.35
 
+@export_group("Carved stone")
+## Wall masonry: block width and course height in world units (courses are offset by half a block).
+@export var wall_block_size: Vector2 = Vector2(0.66, 0.5)
+## Floor flagstone size in world units.
+@export var floor_tile_size: float = 0.5
+## Width of block seams (world units; a seam is resolved per glyph cell, so about one glyph wide).
+@export var seam_width: float = 0.07
+## Brightness kept on a seam.
+@export_range(0.0, 1.0) var seam_dim: float = 0.45
+## Static brightness variation per block (+- this fraction).
+@export_range(0.0, 1.0) var block_variation: float = 0.3
+## Width of the rim on free edges of wall tops, world units (rims on side faces are one glyph wide).
+@export var edge_width: float = 0.11
+## Rim cells gain this fraction of the light they catch (so rims shine near light only).
+@export var edge_gain: float = 1.8
+## Light every rim catches even in the dark (keeps the outline of walls faintly readable).
+@export var edge_ambient: float = 0.12
+## Brightness kept at the foot of a wall, fading to full over wall_ao_height.
+@export_range(0.0, 1.0) var wall_base_dark: float = 0.6
+@export var wall_ao_height: float = 0.7
+## Ambient on wall tops relative to the floor: the tops are dark stone, the rims carry the outline.
+@export_range(0.0, 1.0) var wall_top_ambient: float = 0.95
+## 0 = linear light falloff, 1 = quadratic: the light concentrates near its source, glyphs get denser close to it.
+@export_range(0.0, 1.0) var light_falloff_sharp: float = 0.5
+
+@export_group("Depth")
+## Ambient light fades from full to depth_ambient_min between these distances from the player light (world units).
+@export var depth_near: float = 3.0
+@export var depth_far: float = 9.0
+@export_range(0.0, 1.0) var depth_ambient_min: float = 0.5
+## Darkening towards the top of the screen (far side of the map), starting at fog_start (fraction of the screen height from the bottom).
+@export_range(0.0, 1.0) var fog_strength: float = 0.25
+@export_range(0.0, 1.0) var fog_start: float = 0.3
+
+@export_group("Light occlusion")
+## Off draws every light through walls (for comparison).
+@export var occlusion_enabled: bool = true
+## Sideways offset (in cells) of the two extra rays per cell; gives soft shadow edges.
+@export_range(0.0, 0.5) var occlusion_penumbra: float = 0.35
+## Seconds the player light takes to adapt its shadows after the player changes cell.
+@export var occlusion_blend_time: float = 0.18
+
+@export_group("Static light fade")
+## Seconds a static light takes to fade in when it is revealed or comes into range, and to fade out again.
+@export var static_light_fade_in: float = 0.9
+@export var static_light_fade_out: float = 0.6
+
 @export_group("Wall cut-away")
 ## Surfaces closer to the camera than the player, within this radius of the view ray through the
 ## player, are cut away so walls never hide the player.
 @export var cutaway_radius: float = 1.1
-## Width of the dithered edge around the cut-away.
-@export var cutaway_soft: float = 0.6
+## Width of the soft edge around the cut-away: glyphs dim and drop out (per glyph cell) across it.
+@export var cutaway_soft: float = 0.9
 ## Height above the player's feet the view ray is aimed at.
 @export var cutaway_height: float = 0.5
 ## Distance along the view ray (towards the camera) before the cut starts, so the floor under the player stays.
 @export var cutaway_margin: float = 0.15
+## Brightness kept by the glyphs at the very edge of the cut-away (they dim before they drop out).
+@export_range(0.0, 1.0) var cutaway_edge_dim: float = 0.35

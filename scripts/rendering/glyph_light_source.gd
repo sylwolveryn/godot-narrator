@@ -9,6 +9,10 @@ var radius: float = 1.0
 var color: Vector3 = Vector3.ONE
 ## Map cells of the source; the light only counts once one of them has been seen or remembered.
 var cells: Array[Vector2i] = []
+## The source cell nearest to the light position: where occlusion rays start.
+var origin_cell: Vector2i = Vector2i.ZERO
+## Occlusion of the light: cell -> visibility, filled by `bake_visibility` (static, the map does not change).
+var visibility: Dictionary[Vector2i, float] = {}
 
 
 ## All static lights of a map: one per item, one per 4-connected patch of spikes or corruption.
@@ -43,7 +47,18 @@ static func _make(world: WorldConfig, cells: Array[Vector2i], col: Color, intens
 	src.radius = radius
 	src.color = Vector3(col.r, col.g, col.b) * intensity
 	src.cells = cells
+	var best: float = INF
+	for c in cells:
+		var d: float = (Vector2(c) + Vector2(0.5, 0.5) - centre).length_squared()
+		if d < best:
+			best = d
+			src.origin_cell = c
 	return src
+
+
+## Computes the static occlusion of the light on a map (see GlyphLightOcclusion).
+func bake_visibility(map: MapData, world: WorldConfig, penumbra: float) -> void:
+	visibility = GlyphLightOcclusion.compute(map, origin_cell, radius / world.cell_size, penumbra)
 
 
 ## Longest side of the patch's bounding box in cells, minus one (a single cell has extent 0).

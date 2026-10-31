@@ -4,8 +4,18 @@
 // the geometry. Per glyph cell the light is evaluated once at the cell centre; its brightness picks
 // the glyph from the type's density ramp (atlas row = surface type, vertex COLOR.r * 8) and the colour
 // comes from a per-type gradient tinted by the light colour. No shadows, no screen texture.
-// Per vertex: UV = the map cell (for the reveal mask), COLOR.r = type id / 8, NORMAL = face normal.
-// Fragment cost: 1 mask fetch, 1 atlas fetch (textureGrad), 1 loop over <= 8 analytic lights.
+// Per vertex: UV = the map cell (for the reveal mask), COLOR.r = type id / 8, NORMAL = face normal,
+// COLOR.g = wall edge bits / 16, COLOR.b = 1 on the floor quad under a wall (see WorldMeshBuilder).
+//
+// Look pass (task-036): wall faces read as carved stone (block seams on a world grid, static per-block variation,
+// bright rims where a face meets a free edge, darker wall bases), distance and screen-top darkening for depth, and
+// light occlusion from two small per-cell visibility textures computed on the CPU (GlyphLightOcclusion): channel i of
+// (light_vis_a, light_vis_b) is the visibility of light slot i, sampled per glyph cell. The floor region of the
+// texture (x < map width) is sampled bilinear; the wall region (x > map width) holds, per wall cell, the best
+// visibility of its open neighbours and is fetched nearest (wall tops, floor under walls). Wall side faces sample the
+// open cell in front of the face, so a light behind a wall does not light the far side.
+// Fragment cost: 1 mask fetch, 1 atlas fetch (textureGrad), 1-2 visibility fetches (the 2nd only above 4 lights),
+// 1 loop over <= 8 analytic point lights, ~60 extra ALU for the carved look, depth and the cut-away.
 // Assumes a yaw-only isometric camera; the grid axes are derived from INV_VIEW_MATRIX.
 shader_type spatial;
 render_mode unshaded, cull_back, depth_draw_opaque, fog_disabled;
@@ -15,6 +25,7 @@ const int TYPE_COUNT = 5;
 const float ATLAS_COLS = 8.0;            // GlyphAtlasSpec.COLUMNS
 const float ATLAS_ROWS = 6.0;            // GlyphAtlasSpec.ROWS
 const float TYPE_DIV = 8.0;              // GlyphSurfaceType.TYPE_DIV
+const float EDGE_DIV = 16.0;             // WorldMeshBuilder.EDGE_DIV
 const int T_WALL = 0;
 const int T_FLOOR = 1;
 const int T_CORRUPT = 3;
@@ -24,6 +35,9 @@ const float MIN_SIDE_FACTOR = 0.2;       // guards the side-face width against a
 
 global uniform sampler2D reveal_mask : filter_nearest;
 
+uniform sampler2D light_vis_a : filter_linear, repeat_disable;   // light slots 0..3 in r,g,b,a
+uniform sampler2D light_vis_b : filter_linear, repeat_disable;   // light slots 4..7
+uniform vec4 vis_params = vec4(40.0, 23.0, 1.0, 0.0);            // xy map size in cells, z world units per cell, w 1 = occlusion on
 uniform sampler2D glyph_atlas : filter_linear_mipmap, repeat_disable;
 uniform vec4 pal_dark[TYPE_COUNT];       // rgb per surface type
 uniform vec4 pal_bright[TYPE_COUNT];
@@ -44,9 +58,31 @@ uniform float memory_saturation = 0.25;
 uniform vec3 glint_color = vec3(0.2, 0.8, 1.0);
 uniform vec4 cut_center = vec4(0.0, 0.5, 0.0, 1.1);   // xyz view-ray point (the player), w radius
 uniform vec2 cut_params = vec2(0.6, 0.15);            // x soft edge width, y margin towards the camera
+uniform float cut_edge_dim = 0.35;       // brightness kept by the glyphs at the very edge of the cut-away
+uniform float light_falloff_sharp = 0.6; // 0 = linear light falloff, 1 = quadratic (light concentrates near the source)
+// carved stone
+uniform vec2 wall_block = vec2(0.66, 0.5);  // block width / course height of the wall masonry, world units
+uniform float floor_tile = 0.5;             // flagstone size of the floor
+uniform float seam_width = 0.07;            // seams are this wide (world units, resolved per glyph cell)
+uniform float seam_dim = 0.55;              // brightness kept on a seam
+uniform float block_variation = 0.28;       // static per-block brightness variation
+uniform float edge_width = 0.11;            // rim width on wall tops (world units)
+uniform float edge_gain = 1.1;              // rim cells gain this fraction of the light they catch
+uniform float edge_ambient = 0.10;          // light every rim catches even in the dark
+uniform float wall_base_dark = 0.6;         // brightness kept at the foot of a wall
+uniform float wall_ao_height = 0.7;         // height over which the foot darkening fades out
+uniform float wall_top_ambient = 0.7;       // ambient on wall tops (they are dark stone, the rims carry the outline)
+// depth
+uniform float depth_near = 3.0;             // ambient starts fading at this distance from the player light
+uniform float depth_far = 9.0;
+uniform float depth_ambient_min = 0.35;     // ambient kept at depth_far and beyond
+uniform float fog_strength = 0.35;          // darkening towards the top of the screen
+uniform float fog_start = 0.3;              // fraction of the screen height (from the bottom) where the fog begins
 
 varying flat vec3 w_nrm;
 varying flat float v_type;
+varying flat float v_flags;              // COLOR.g: edge bits
+varying flat float v_under;              // COLOR.b: floor quad under a wall
 varying flat vec2 v_cell;
 varying flat vec3 v_axu;
 varying flat vec3 v_axv;
@@ -64,6 +100,8 @@ void vertex() {
 	vec3 n = normalize(mat3(MODEL_MATRIX) * NORMAL);
 	w_nrm = n;
 	v_type = COLOR.r;
+	v_flags = COLOR.g;
+	v_under = COLOR.b;
 	v_cell = UV;
 	vec3 cam_right = INV_VIEW_MATRIX[0].xyz;
 	vec3 to_cam = INV_VIEW_MATRIX[2].xyz;
@@ -93,21 +131,6 @@ void fragment() {
 		discard;
 	}
 
-	// Cut-away: surfaces between the camera and the player never hide the player.
-	if (t != T_FLOOR) {
-		vec3 to_cam = INV_VIEW_MATRIX[2].xyz;
-		vec3 d = w_pos - cut_center.xyz;
-		float along = dot(d, to_cam);
-		if (along > cut_params.y) {
-			float pd = length(d - to_cam * along);
-			float keep = smoothstep(cut_center.w, cut_center.w + cut_params.x, pd);
-			float ign = fract(52.9829189 * fract(dot(FRAGCOORD.xy, vec2(0.06711056, 0.00583715))));
-			if (ign >= keep) {
-				discard;
-			}
-		}
-	}
-
 	vec3 n = w_nrm;
 	bool top = abs(n.y) > TOP_NORMAL_Y;
 	vec3 axu = v_axu;
@@ -116,10 +139,55 @@ void fragment() {
 	vec2 cell = floor(uv);
 	vec2 loc = uv - cell;
 	vec3 pc = w_pos + axu * ((cell.x + 0.5 - uv.x) * v_cellsize.x) + axv * ((cell.y + 0.5 - uv.y) * v_cellsize.y);
+	float h = hash12(cell + vec2(float(t) * 7.31, dot(n, vec3(1.7, 2.9, 3.3)) + floor(dot(w_pos, n) * 4.0)));
+
+	// Cut-away: surfaces between the camera and the player never hide the player. Decided per glyph cell:
+	// glyphs dim towards the edge, then whole glyphs drop out, so the edge reads as dissolving glyphs.
+	float cut_keep = 1.0;
+	if (t != T_FLOOR) {
+		vec3 to_cam = INV_VIEW_MATRIX[2].xyz;
+		vec3 dc = pc - cut_center.xyz;
+		float along = dot(dc, to_cam);
+		if (along > cut_params.y) {
+			float pd = length(dc - to_cam * along);
+			cut_keep = smoothstep(cut_center.w, cut_center.w + cut_params.x, pd);
+			if (hash12(cell.yx * 1.618 + vec2(7.7, float(t) + h)) >= cut_keep) {
+				discard;
+			}
+		}
+	}
+
+	// Light visibility per slot (occlusion), see the header.
+	float cs = vis_params.z;
+	float vis_l[8] = float[8](1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+	if (vis_params.w > 0.5) {
+		vec4 va;
+		vec4 vb = vec4(1.0);
+		if ((t == T_WALL && top) || (t == T_FLOOR && v_under > 0.5)) {
+			ivec2 wc = ivec2(v_cell + 0.5) + ivec2(int(vis_params.x + 0.5) + 1, 0);
+			va = texelFetch(light_vis_a, wc, 0);
+			if (light_count > 4) {
+				vb = texelFetch(light_vis_b, wc, 0);
+			}
+		} else {
+			vec2 vp = pc.xz / cs;
+			if (t == T_WALL) {
+				vp += n.xz * 0.5;
+			}
+			vec2 vuv = vp / vec2(2.0 * vis_params.x + 1.0, vis_params.y);
+			va = texture(light_vis_a, vuv);
+			if (light_count > 4) {
+				vb = texture(light_vis_b, vuv);
+			}
+		}
+		vis_l = float[8](va.r, va.g, va.b, va.a, vb.r, vb.g, vb.b, vb.a);
+	}
 
 	// light at the cell centre
-	float face_amb = top ? 1.0 : (n.z > 0.5 ? 0.7 : 0.45);
-	vec3 lit = vec3(0.55, 0.65, 1.0) * ambient_level * face_amb;
+	float face_amb = top ? (t == T_WALL ? wall_top_ambient : 1.0) : (n.z > 0.5 ? 0.7 : 0.45);
+	float depth_k = smoothstep(depth_near, depth_far, length(pc.xz - light_pos[0].xz));
+	vec3 lit = vec3(0.55, 0.65, 1.0) * ambient_level * face_amb * mix(1.0, depth_ambient_min, depth_k);
+	vec3 lights = vec3(0.0);
 	for (int i = 0; i < MAX_LIGHTS; i++) {
 		if (i >= light_count) {
 			break;
@@ -127,17 +195,56 @@ void fragment() {
 		vec3 L = light_pos[i].xyz - pc;
 		float d = length(L);
 		float att = clamp(1.0 - d / light_pos[i].w, 0.0, 1.0);
+		att = mix(att, att * att, light_falloff_sharp);
 		float ndl = 0.45 + 0.55 * smoothstep(-0.15, 0.65, dot(n, L / max(d, 0.001)));
-		lit += light_col[i].rgb * (att * ndl);
+		lights += light_col[i].rgb * (att * ndl * vis_l[i]);
+	}
+	lit += lights;
+	float lum_l = max(lights.r, max(lights.g, lights.b));
+
+	// Carved stone: masonry blocks on a world grid (running bond on walls), seams, static per-block variation,
+	// bright rims on free edges, darker wall feet.
+	float stone = 1.0;
+	float edge = 0.0;
+	if (t == T_WALL || t == T_FLOOR) {
+		vec2 bs = wall_block;
+		float along = top ? pc.x : dot(pc, axu);
+		float course_pos = top ? pc.z : pc.y;
+		if (t == T_FLOOR) {
+			bs = vec2(floor_tile);
+		} else if (top) {
+			bs = vec2(wall_block.x);
+		}
+		float course = floor(course_pos / bs.y);
+		float su = along / bs.x + 0.5 * mod(course, 2.0);
+		vec2 bf = vec2(fract(su) * bs.x, fract(course_pos / bs.y) * bs.y);
+		float seam = (bf.x < seam_width || bf.y < seam_width) ? 1.0 : 0.0;
+		float bvar = hash12(vec2(floor(su), course) + vec2(float(t) * 3.7, dot(abs(n), vec3(1.3, 2.1, 4.7))));
+		stone = (1.0 + (bvar - 0.5) * 2.0 * block_variation) * mix(1.0, seam_dim, seam);
+		if (t == T_WALL) {
+			int fl = int(v_flags * EDGE_DIV + 0.5);
+			if (top) {
+				vec2 lo = pc.xz - v_cell * cs;
+				float e = float(fl & 1) * step(lo.x, edge_width);
+				e = max(e, float((fl >> 1) & 1) * step(cs - lo.x, edge_width));
+				e = max(e, float((fl >> 2) & 1) * step(lo.y, edge_width));
+				e = max(e, float((fl >> 3) & 1) * step(cs - lo.y, edge_width));
+				edge = e;
+			} else {
+				float la = n.x > 0.5 ? pc.z - v_cell.y * cs : pc.x - v_cell.x * cs;
+				float e = step((wall_height - pc.y) / v_cellsize.y, 0.5);
+				e = max(e, float(fl & 1) * step(la / v_cellsize.x, 0.5));
+				e = max(e, float((fl >> 1) & 1) * step((cs - la) / v_cellsize.x, 0.5));
+				edge = e;
+				stone *= mix(wall_base_dark, 1.0, smoothstep(0.0, wall_ao_height, pc.y));
+			}
+		}
 	}
 
-	float h = hash12(cell + vec2(float(t) * 7.31, dot(n, vec3(1.7, 2.9, 3.3)) + floor(dot(w_pos, n) * 4.0)));
 	float pulse = 0.04 * sin(TIME * 0.55 + h * 6.2832);
-	float b = max(lit.r, max(lit.g, lit.b)) + emit[t] * (0.8 + 1.5 * pulse) + (h - 0.5) * 0.10 + pulse;
-	if (!top && t == T_WALL) {
-		b += smoothstep(wall_height - 0.12, wall_height, w_pos.y) * 0.22;   // rim along wall tops
-	}
-	b *= min(vis, 1.0);
+	float b = max(lit.r, max(lit.g, lit.b)) * stone + emit[t] * (0.8 + 1.5 * pulse) + (h - 0.5) * 0.10 + pulse;
+	b += edge * edge_gain * (lum_l + edge_ambient);
+	b *= min(vis, 1.0) * mix(cut_edge_dim, 1.0, cut_keep);
 	float s = clamp(b, 0.0, 0.999);
 	float idx = min(1.0 + floor(pow(s, 0.65) * (ATLAS_COLS - 1.0)), ATLAS_COLS - 1.0);
 
@@ -162,5 +269,8 @@ void fragment() {
 	float grey = dot(c, vec3(0.3, 0.59, 0.11));
 	c = mix(vec3(grey), c, mix(memory_saturation, 1.0, seen)) * mix(memory_dim, 1.0, seen);
 	c += glint_color * m.b * cov;
+	// Depth fog: the far (upper) part of the screen sinks into the dark.
+	float screen_top = 1.0 - FRAGCOORD.y / VIEWPORT_SIZE.y;
+	c *= 1.0 - fog_strength * smoothstep(fog_start, 1.0, screen_top);
 	ALBEDO = c * vis;
 }

@@ -5,9 +5,16 @@ extends RefCounted
 ## shader reads the reveal mask with it), NORMAL = the flat face normal.
 ## Every non-void cell has a floor quad (under walls it shows where the cut-away opens a wall).
 ## Only the faces an isometric camera at +x,+z (yaw 45) can see are emitted: tops, +x faces, +z faces.
+## Per vertex (carved-stone look, task-036): COLOR.g = edge bits / EDGE_DIV for wall faces (top face: bit0 -x,
+## bit1 +x, bit2 -z, bit3 +z side has no wall neighbour; side face: bit0 / bit1 = low / high end of the face is a
+## free corner), COLOR.b = 1 on the floor quad under a wall (the shader samples wall-region light data there).
 
 ## Triangle vertex order of a quad (a, b, c, d).
 const QUAD_ORDER: Array[int] = [0, 1, 2, 0, 2, 3]
+## Neighbour cell for each bit of a top face's edge bits: -x, +x, -z, +z.
+const SIDE_STEPS: Array[Vector2i] = [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
+## Edge bit divisor (the shader multiplies COLOR.g by the same value).
+const EDGE_DIV: float = 16.0
 const CORRUPT_SEED_A: float = 12.9898
 const CORRUPT_SEED_B: float = 78.233
 const CORRUPT_SEED_SALT: float = 37.719
@@ -19,6 +26,8 @@ var _normals: PackedVector3Array = PackedVector3Array()
 var _colors: PackedColorArray = PackedColorArray()
 var _uvs: PackedVector2Array = PackedVector2Array()
 var _cell: Vector2i = Vector2i.ZERO
+var _edge_bits: int = 0
+var _under_wall: bool = false
 
 
 ## Mesh of the whole map; null for an empty map.
@@ -36,7 +45,10 @@ func build(map: MapData, config: WorldConfig) -> ArrayMesh:
 			var type: StringName = map.type_at(_cell)
 			if type == MapLegend.VOID:
 				continue
+			_under_wall = type == MapLegend.WALL
+			_edge_bits = 0
 			_floor()
+			_under_wall = false
 			if type == MapLegend.WALL:
 				_wall(map)
 				continue
@@ -78,8 +90,53 @@ func _floor() -> void:
 func _wall(map: MapData) -> void:
 	var s: float = _config.cell_size
 	var o: Vector3 = _origin() + Vector3(s, 0, s) * 0.5
-	_box(o.x, o.z, 0.0, _config.wall_height, s * 0.5, s * 0.5, GlyphSurfaceType.WALL,
-			map.type_at(_cell + Vector2i(1, 0)) != MapLegend.WALL, map.type_at(_cell + Vector2i(0, 1)) != MapLegend.WALL)
+	var face_x: bool = not _is_wall(map, _cell + Vector2i(1, 0))
+	var face_z: bool = not _is_wall(map, _cell + Vector2i(0, 1))
+	var top_bits: int = 0
+	for i in SIDE_STEPS.size():
+		if not _is_wall(map, _cell + SIDE_STEPS[i]):
+			top_bits |= 1 << i
+	_edge_bits = top_bits
+	_quad_top(o, s)
+	if face_x:
+		_edge_bits = _end_bits(map, Vector2i(0, -1), Vector2i(0, 1), Vector2i(1, 0))
+		_box_side_x(o, s)
+	if face_z:
+		_edge_bits = _end_bits(map, Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, 1))
+		_box_side_z(o, s)
+	_edge_bits = 0
+
+
+## A face of a wall continues past its end when the neighbour there is a wall that shows the same face.
+func _end_bits(map: MapData, low: Vector2i, high: Vector2i, out: Vector2i) -> int:
+	var bits: int = 0
+	if not (_is_wall(map, _cell + low) and not _is_wall(map, _cell + low + out)):
+		bits |= 1
+	if not (_is_wall(map, _cell + high) and not _is_wall(map, _cell + high + out)):
+		bits |= 2
+	return bits
+
+
+func _is_wall(map: MapData, cell: Vector2i) -> bool:
+	return map.type_at(cell) == MapLegend.WALL
+
+
+func _quad_top(o: Vector3, s: float) -> void:
+	var h: float = s * 0.5
+	var y: float = _config.wall_height
+	_quad(Vector3(o.x - h, y, o.z - h), Vector3(o.x + h, y, o.z - h), Vector3(o.x + h, y, o.z + h), Vector3(o.x - h, y, o.z + h), Vector3.UP, GlyphSurfaceType.WALL)
+
+
+func _box_side_x(o: Vector3, s: float) -> void:
+	var h: float = s * 0.5
+	var y1: float = _config.wall_height
+	_quad(Vector3(o.x + h, 0.0, o.z - h), Vector3(o.x + h, 0.0, o.z + h), Vector3(o.x + h, y1, o.z + h), Vector3(o.x + h, y1, o.z - h), Vector3.RIGHT, GlyphSurfaceType.WALL)
+
+
+func _box_side_z(o: Vector3, s: float) -> void:
+	var h: float = s * 0.5
+	var y1: float = _config.wall_height
+	_quad(Vector3(o.x - h, 0.0, o.z + h), Vector3(o.x + h, 0.0, o.z + h), Vector3(o.x + h, y1, o.z + h), Vector3(o.x - h, y1, o.z + h), Vector3.BACK, GlyphSurfaceType.WALL)
 
 
 func _item() -> void:
@@ -136,7 +193,7 @@ func _box(cx: float, cz: float, y0: float, y1: float, hx: float, hz: float, type
 func _vertex(p: Vector3, n: Vector3, type: int) -> void:
 	_positions.append(p)
 	_normals.append(n)
-	_colors.append(Color(float(type) / GlyphSurfaceType.TYPE_DIV, 0.0, 0.0, 1.0))
+	_colors.append(Color(float(type) / GlyphSurfaceType.TYPE_DIV, float(_edge_bits) / EDGE_DIV, 1.0 if _under_wall else 0.0, 1.0))
 	_uvs.append(Vector2(_cell))
 
 
