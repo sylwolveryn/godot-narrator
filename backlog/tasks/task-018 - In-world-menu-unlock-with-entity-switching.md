@@ -27,9 +27,9 @@ After three deaths the player gains an in-world menu built by morphing the surro
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The menu becomes available after the configured death count (from a resource) and never pauses the game
-- [ ] #2 The menu offers switching between the single-glyph and multi-glyph entity when the latter is unlocked
-- [ ] #3 The menu is built from in-world ASCII elements, readable per the task-004 overlay decision
+- [x] #1 The menu becomes available after the configured death count (from a resource) and never pauses the game
+- [x] #2 The menu offers switching between the single-glyph and multi-glyph entity when the latter is unlocked
+- [x] #3 The menu is built from in-world ASCII elements, readable per the task-004 overlay decision
 <!-- AC:END -->
 
 ## Implementation Plan
