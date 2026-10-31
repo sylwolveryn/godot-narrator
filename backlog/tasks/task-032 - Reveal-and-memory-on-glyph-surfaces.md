@@ -1,9 +1,11 @@
 ---
 id: TASK-032
 title: Reveal and memory on glyph surfaces
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T22:45:00Z'
+updated_date: '2026-10-31T09:05:00Z'
 labels:
   - rendering
   - world
