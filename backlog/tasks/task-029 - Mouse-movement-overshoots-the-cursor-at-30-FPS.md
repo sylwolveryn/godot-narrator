@@ -1,11 +1,11 @@
 ---
 id: TASK-029
 title: Mouse movement overshoots the cursor at 30 FPS
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T22:27:00Z'
-updated_date: '2026-10-30T23:52:00Z'
+updated_date: '2026-10-31T01:26:00Z'
 labels:
   - player
   - input
@@ -41,3 +41,9 @@ With the potato rule (--max-fps 30, physics 60 Hz), tools/test_input_movement.gd
 <!-- SECTION:NOTES:BEGIN -->
 ROOT CAUSE: not a frame-rate bug in the arrival logic. The test aimed at spawn-area player z+1.0 (target z 14.93) but the wall at row 15 limits the body centre to z 14.65 (15 - body_radius 0.35); the player was simply stopped by the wall (z 14.649 == wall clearance) and the message 'overshot' was misleading (it was an undershoot). Where the player started that phase depends on timer-driven earlier phases, which differ per frame rate, so it passed uncapped. Also the camera follows the player, so a cursor left at a fixed screen point recedes in world space. Fix: test now starts from spawn, targets open floor 1 unit away, re-places the cursor on the same world point each physics frame, and measures worst overshoot past the target, arrival distance and settle wobble. Hardening: Player._limit_to_cursor() clamps velocity each physics step so one step never travels past the cursor (independent of frame rate / residual speed); uses physics delta only. Test runs the full suite with Engine.max_fps 30 then 0.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Root cause was the test, not frame rate: it aimed 1 unit past the player into a wall (reachable z capped at 14.65), and the start point depended on frame-rate-dependent earlier phases. Test now targets open floor and re-places the cursor each physics frame; Player._limit_to_cursor clamps each physics step to the remaining distance as hardening. The test runs at 30 FPS and uncapped in one invocation, stable across repeated runs. godot-validator PASS.
+<!-- SECTION:FINAL_SUMMARY:END -->
