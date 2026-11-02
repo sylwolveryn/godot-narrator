@@ -1,7 +1,7 @@
 ---
 id: TASK-039
 title: Origin ledger and invariant
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
@@ -46,3 +46,9 @@ Decisions: run_index = persistent PersistentProgress.run_count (RunManager run_i
 
 Validator fix: ledger-only-writer scan in tools/test_origin_ledger.gd now covers res://scripts/ only (allow-list: ledger, persistent_progress, save_service); tools/test_save.gd no longer flagged. Docs: origin_tags wording replaced in docs/narration_m1.md (line 3) and docs/game_design.md (208, 263, 309). Re-run: all 16 tools/test_*.gd PASS headless, boot --quit-after 60 = 0 error lines.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+OriginLedger (child of Main) is the only runtime writer of struck_natures / armed_trials / strike_counts / last_strike_run (persisted, type-sanitized on load, invariant repaired by the ledger). Floor rule: >= 2 of 4 natures always alive, deeds never struck; a strike that would break the floor recants the oldest strike first; strike_counts drive trial_scale for harder re-trials. Resources built by tools/build_origin.gd. tools/test_origin_ledger.gd: 1000 random sequences, save repair, persistence. Validator PASS after a scan-guard fix.
+<!-- SECTION:FINAL_SUMMARY:END -->
