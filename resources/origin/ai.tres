@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="OriginHypothesis" format=3]
+
+[ext_resource type="Script" path="res://scripts/origin/origin_hypothesis.gd" id="1_qwrto"]
+[ext_resource type="Resource" path="res://resources/origin/trial_ai.tres" id="2_bml3n"]
+
+[resource]
+script = ExtResource("1_qwrto")
+id = &"ai"
+sigil = "#"
+label = "the machine"
+claim_beat_id = "claim_ai"
+broken_beat_id = "broken_ai"
+recant_beat_id = "recant_ai"
+trial = ExtResource("2_bml3n")

@@ -10,5 +10,6 @@ event = &"item_revealed"
 min_run = 3
 min_deaths = 2
 mood = &"pulse"
-origin_tags = PackedStringArray("alien")
+supports = PackedStringArray("alien")
+contradicts = PackedStringArray()
 order = 15

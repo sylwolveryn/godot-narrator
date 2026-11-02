@@ -107,7 +107,9 @@ func _run() -> void:
 func _test_data() -> void:
 	var config: NarratorConfig = load(CONFIG_PATH)
 	_check(config.beats.size() == 26, "expected 26 beats, got %d" % config.beats.size())
-	var tags: Dictionary = {}
+	var supports: Dictionary = {}
+	var contradicts: Dictionary = {}
+	var neutral: int = 0
 	var ids: Dictionary = {}
 	var moods: Dictionary = {}
 	for m: NarrationMood in config.moods:
@@ -116,16 +118,69 @@ func _test_data() -> void:
 		_check(not ids.has(b.id), "duplicate beat id %s" % b.id)
 		ids[b.id] = true
 		_check(moods.has(b.mood), "beat %s uses unknown mood %s" % [b.id, b.mood])
-		for t in b.origin_tags:
-			tags[t] = tags.get(t, 0) + 1
-	for tag in ["hero", "villain", "alien", "ai", "demonic", "angelic", "none"]:
-		_check(tags.get(tag, 0) >= 3, "origin tag %s in fewer than 3 beats" % tag)
+		_check(b.role == NarrationBeat.Role.STORY, "beat %s: the M1 table has only STORY beats" % b.id)
+		neutral += int(b.supports.is_empty() and b.contradicts.is_empty())
+		for t in b.supports:
+			supports[t] = supports.get(t, 0) + 1
+			_check(not b.contradicts.has(t), "beat %s lists %s in supports and contradicts" % [b.id, t])
+		for t in b.contradicts:
+			contradicts[t] = contradicts.get(t, 0) + 1
+	for tag in ["hero", "villain", "alien", "ai", "demonic", "angelic"]:
+		_check(supports.get(tag, 0) >= 3, "hypothesis %s supported by fewer than 3 beats" % tag)
+	_check(neutral >= 3, "fewer than 3 neutral beats")
+	# Stance table of docs/game_design.md (Origin Contradiction, section 5).
+	for tag in ["ai", "demonic", "alien", "angelic"]:
+		_check(supports.get(tag, 0) == {"ai": 6, "demonic": 5, "alien": 4, "angelic": 4}[tag], "support count of %s" % tag)
+	var expected_contra: Dictionary = {
+		"start_came_back": ["demonic"], "corrupt_after_war": ["demonic"], "erosion_true_name": ["ai"],
+		"death_spikes_willing": ["villain"], "idle_burned": ["hero"],
+	}
+	for b in config.beats:
+		_check(Array(b.contradicts) == expected_contra.get(b.id, []), "beat %s contradicts %s" % [b.id, b.contradicts])
+	for id in ["start_hero_lied", "wall_keep_them_out"]:
+		var both: NarrationBeat = _beat_by_id(config, id)
+		_check(both.supports.has("hero") and both.supports.has("villain"), "%s supports both deeds" % id)
+	_test_lint(config)
 	_check(config.moods.size() == 5, "expected 5 sound moods")
 	var time_beat: NarrationBeat = null
 	for b in config.beats:
 		if b.trigger == NarrationBeat.Trigger.TIME:
 			time_beat = b
 	_check(time_beat != null and time_beat.delay == 60.0, "TIME beat with 60 s delay missing")
+
+
+## NarrationLint (task-040): the real table passes; synthetic tables fail for each rule.
+func _test_lint(config: NarratorConfig) -> void:
+	var origin: OriginConfig = load("res://resources/config/origin_config.tres")
+	var natures: PackedStringArray = origin.nature_ids()
+	var deeds: PackedStringArray = origin.deed_ids()
+	var real: Dictionary = NarrationLint.lint(config.beats, natures, deeds, false)
+	_check((real["errors"] as PackedStringArray).is_empty(), "the M1 table passes the lint: %s" % [real["errors"]])
+	_check((real["warnings"] as PackedStringArray).size() == 2, "alien and angelic lack a contradicting beat (warnings until task-044), got %s" % [real["warnings"]])
+	var strict: Dictionary = NarrationLint.lint(config.beats, natures, deeds, true)
+	_check((strict["errors"] as PackedStringArray).size() == 2 and (strict["warnings"] as PackedStringArray).is_empty(), "strict mode turns the missing contradictions into errors")
+
+	var full: Array = []
+	for n in natures:
+		full.append(_lint_beat("s_" + n, [n], []))
+		full.append(_lint_beat("c_" + n, [], [n]))
+	_check((NarrationLint.lint(full, natures, deeds, true)["errors"] as PackedStringArray).is_empty(), "a table with every nature supported and contradicted passes strict")
+	var both: Array = full.duplicate()
+	both.append(_lint_beat("both", ["ai"], ["ai"]))
+	_check((NarrationLint.lint(both, natures, deeds, false)["errors"] as PackedStringArray).size() == 1, "a hypothesis in both supports and contradicts is an error")
+	var unsupported: Array = full.filter(func(b: NarrationBeat) -> bool: return b.id != "s_alien")
+	_check((NarrationLint.lint(unsupported, natures, deeds, false)["errors"] as PackedStringArray).size() == 1, "a nature without a supporting beat is an error")
+	var unknown: Array = full.duplicate()
+	unknown.append(_lint_beat("typo", ["alein"], []))
+	_check((NarrationLint.lint(unknown, natures, deeds, false)["errors"] as PackedStringArray).size() == 1, "an unknown hypothesis id is an error")
+
+
+func _lint_beat(id: String, supports: Array, contradicts: Array) -> NarrationBeat:
+	var beat := NarrationBeat.new()
+	beat.id = id
+	beat.supports = PackedStringArray(supports)
+	beat.contradicts = PackedStringArray(contradicts)
+	return beat
 
 
 func _test_eligibility() -> void:

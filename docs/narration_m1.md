@@ -1,6 +1,6 @@
 # Narration Beats: M1 "Awakening Run"
 
-Content spec for the M1 narrator. Implements the `NarrationBeat` fields in `docs/architecture.md` (Narrator), plus three additions: `min_deaths`, `mood`, `origin_tags`. All timings below are default values. They live in the narrator config `.tres`, not in code.
+Content spec for the M1 narrator. Implements the `NarrationBeat` fields in `docs/architecture.md` (Narrator), plus three additions: `min_deaths`, `mood`, and the origin stances `supports`, `contradicts`, `role`. All timings below are default values. They live in the narrator config `.tres`, not in code.
 
 ## Rules
 

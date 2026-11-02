@@ -4,6 +4,8 @@ extends Resource
 ## tools/build_narration.gd from data/narration/m1_beats.json.
 
 enum Trigger { EVENT, TIME }
+## STORY = ordinary line; CLAIM arms a nature's trial when heard; BROKEN plays when it is struck; RECANT when it comes back.
+enum Role { STORY, CLAIM, BROKEN, RECANT }
 
 @export var id: String = ""
 @export var text: String = ""
@@ -22,7 +24,10 @@ enum Trigger { EVENT, TIME }
 @export var once: bool = true
 ## Sound mood played with the beat (a NarrationMood id in NarratorConfig).
 @export var mood: StringName = &"hum"
-## Origins the line hints at (M2 uses them to rule origins out).
-@export var origin_tags: PackedStringArray = PackedStringArray()
+## Hypothesis ids (OriginHypothesis, natures and deeds) the line speaks for. Empty and not contradicting = neutral.
+@export var supports: PackedStringArray = PackedStringArray()
+## Hypothesis ids the line denies. A hypothesis is never in both lists (checked by NarrationLint).
+@export var contradicts: PackedStringArray = PackedStringArray()
+@export var role: Role = Role.STORY
 ## Position in the beat table; breaks ties inside an event ladder.
 @export var order: int = 0

@@ -8,5 +8,6 @@ id = "erosion_again"
 text = "Coming apart. Again."
 event = &"erosion_high"
 mood = &"static"
-origin_tags = PackedStringArray("ai")
+supports = PackedStringArray("ai")
+contradicts = PackedStringArray()
 order = 7

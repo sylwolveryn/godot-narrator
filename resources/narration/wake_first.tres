@@ -8,4 +8,5 @@ id = "wake_first"
 text = "...a shape. Waking."
 event = &"run_started"
 max_run = 1
-origin_tags = PackedStringArray("none")
+supports = PackedStringArray()
+contradicts = PackedStringArray()

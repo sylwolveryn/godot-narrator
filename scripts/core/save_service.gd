@@ -5,6 +5,8 @@ extends Node
 ## falls back to fresh progress with a warning; loading never executes scripts from the file.
 
 signal progress_changed
+## Emitted after a progress file was loaded and sanitized (not for the fresh fallback). Lets data owners repair semantic invariants.
+signal progress_loaded
 
 @export var config: SaveConfig
 
@@ -45,6 +47,7 @@ func load_progress() -> void:
 		push_warning("[SaveService] Save at %s did not load as PersistentProgress, starting fresh" % path)
 		return
 	progress = _sanitized(loaded as PersistentProgress)
+	progress_loaded.emit()
 	progress_changed.emit()
 
 
@@ -72,6 +75,13 @@ func _notification(what: int) -> void:
 
 func _exit_tree() -> void:
 	save_if_dirty()
+
+
+## Marks progress changed by its owner (e.g. OriginLedger), notifies listeners and saves at once.
+func commit_progress() -> void:
+	_dirty = true
+	progress_changed.emit()
+	save_progress()
 
 
 ## Writes the progress only when something changed since the last write.
@@ -196,8 +206,25 @@ func _sanitized(loaded: PersistentProgress) -> PersistentProgress:
 	clean.entity_form = loaded.entity_form if EntityForm.is_valid(StringName(loaded.entity_form)) else String(EntityForm.SINGLE)
 	clean.entity_grow_played = loaded.entity_grow_played and loaded.entity_unlocked
 	clean.menu_unlocked = loaded.menu_unlocked
+	# Origin ledger: only types and duplicates are fixed here; OriginLedger drops unknown ids and repairs the invariant.
+	clean.struck_natures = _unique(loaded.struck_natures)
+	clean.armed_trials = _unique(loaded.armed_trials)
+	clean.last_strike_run = maxi(0, loaded.last_strike_run)
+	for key: Variant in loaded.strike_counts:
+		var count: Variant = loaded.strike_counts[key]
+		if (key is StringName or key is String) and count is int:
+			clean.strike_counts[String(key)] = maxi(0, count)
 	for key: Variant in loaded.revealed_cells:
 		var cells: Variant = loaded.revealed_cells[key]
 		if (key is StringName or key is String) and cells is PackedVector2Array:
 			clean.revealed_cells[StringName(key)] = cells
 	return clean
+
+
+## Copy without duplicates, order kept.
+func _unique(values: PackedStringArray) -> PackedStringArray:
+	var out := PackedStringArray()
+	for v in values:
+		if not out.has(v):
+			out.append(v)
+	return out

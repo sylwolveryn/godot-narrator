@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="OriginConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/origin/origin_hypothesis.gd" id="1_pmgmg"]
+[ext_resource type="Resource" path="res://resources/origin/alien.tres" id="2_tefei"]
+[ext_resource type="Resource" path="res://resources/origin/ai.tres" id="3_na4pt"]
+[ext_resource type="Resource" path="res://resources/origin/demonic.tres" id="4_kn3ix"]
+[ext_resource type="Resource" path="res://resources/origin/angelic.tres" id="5_8tm4g"]
+[ext_resource type="Resource" path="res://resources/origin/hero.tres" id="6_3a8uv"]
+[ext_resource type="Resource" path="res://resources/origin/villain.tres" id="7_xxiue"]
+[ext_resource type="Script" path="res://scripts/origin/origin_config.gd" id="8_x5lck"]
+
+[resource]
+script = ExtResource("8_x5lck")
+hypotheses = Array[ExtResource("1_pmgmg")]([ExtResource("2_tefei"), ExtResource("3_na4pt"), ExtResource("4_kn3ix"), ExtResource("5_8tm4g"), ExtResource("6_3a8uv"), ExtResource("7_xxiue")])

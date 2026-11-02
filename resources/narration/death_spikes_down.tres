@@ -8,5 +8,6 @@ id = "death_spikes_down"
 text = "Down."
 event = &"died_spikes"
 mood = &"low_drone"
-origin_tags = PackedStringArray("none")
+supports = PackedStringArray()
+contradicts = PackedStringArray()
 order = 8

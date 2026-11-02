@@ -39,6 +39,14 @@ func _build() -> void:
 	save.set("config", load(CFG + "save_config.tres"))
 	_add(root, save)
 
+	# Origin ledger (task-039): the only writer of the rule-out state; right after SaveService so it repairs the loaded
+	# save before anything reads it. Run tools/build_origin.gd first.
+	var ledger: Node = load("res://scripts/origin/origin_ledger.gd").new()
+	ledger.name = "OriginLedger"
+	ledger.set("config", load(CFG + "origin_config.tres"))
+	ledger.set("save_service", save)
+	_add(root, ledger)
+
 	# Narrator sits right after SaveService and before Player/MapReveal: signal handlers run in tree
 	# order, so counters are updated and run_started is seen before the first reveal events.
 	# Entity growth (task-017): unlocks and owns the active form; sits right after SaveService so its unlock

@@ -8,5 +8,6 @@ id = "corrupt_knows"
 text = "It knows the shape."
 event = &"corruption_entered"
 mood = &"static"
-origin_tags = PackedStringArray("demonic", "ai")
+supports = PackedStringArray("demonic", "ai")
+contradicts = PackedStringArray()
 order = 6

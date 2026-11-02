@@ -10,5 +10,6 @@ event = &"run_started"
 min_run = 4
 max_run = 4
 min_deaths = 3
-origin_tags = PackedStringArray("none")
+supports = PackedStringArray()
+contradicts = PackedStringArray()
 order = 19

@@ -8,5 +8,6 @@ id = "item_not_yet"
 text = "Not yours. Not yet."
 event = &"item_revealed"
 mood = &"chime"
-origin_tags = PackedStringArray("none")
+supports = PackedStringArray()
+contradicts = PackedStringArray()
 order = 4

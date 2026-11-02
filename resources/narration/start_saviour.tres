@@ -11,5 +11,6 @@ min_run = 3
 max_run = 3
 min_deaths = 2
 mood = &"chime"
-origin_tags = PackedStringArray("hero")
+supports = PackedStringArray("hero")
+contradicts = PackedStringArray()
 order = 14

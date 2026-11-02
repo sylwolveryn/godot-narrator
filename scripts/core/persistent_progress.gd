@@ -21,3 +21,12 @@ extends Resource
 @export var entity_grow_played: bool = false
 ## True once the in-world menu has been unlocked (death_count reached MenuConfig.menu_unlock_deaths, task-018). Never reverts.
 @export var menu_unlocked: bool = false
+## Origin rule-out ledger state (task-039). Written ONLY by OriginLedger.
+## Natures ruled out, oldest strike first.
+@export var struck_natures: PackedStringArray = PackedStringArray()
+## Natures whose trial is armed (their claim beat was heard and they are alive).
+@export var armed_trials: PackedStringArray = PackedStringArray()
+## Nature id -> number of times it was struck (scales the retry threshold, drives the ledger crack).
+@export var strike_counts: Dictionary = {}
+## Persistent run number (run_count) of the last strike; 0 = never. Enforces the per-run strike cap.
+@export var last_strike_run: int = 0

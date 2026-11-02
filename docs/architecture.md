@@ -124,6 +124,7 @@ All folders and files use snake_case.
   - `identity` (glyph string + seed)
   - `revealed_cells` (PackedVector2Array or Dictionary per map id)
   - `heard_beats` (PackedStringArray)
+  - origin ledger state (task-039, written only by `OriginLedger`): `struck_natures` (oldest first), `armed_trials`, `strike_counts`, `last_strike_run`
 - Missing or corrupt file: fresh default + logged warning.
 
 ## Narrator
@@ -136,9 +137,18 @@ All folders and files use snake_case.
   - `min_run`, `max_run`
   - `sfx` (AudioStream, may be null)
   - `once` (bool)
+  - `supports`, `contradicts` (hypothesis ids), `role` (STORY / CLAIM / BROKEN / RECANT) (task-040; they replaced `origin_tags`)
 - `Narrator` node listens to SignalBus events and picks eligible beats.
 - Presentation goes through the overlay (task-034): `NarrationOverlay` lays the line out into single letters once per beat; they assemble Spike-B style (fly in from scattered spots, ease-out, left-to-right stagger), rest with zero per-frame work, then disperse (drift up and away, fading). A soft additive glow quad per letter is tinted by the beat mood (`NarratorConfig.mood_glow_colors`). No random character swapping. Two canvas items (glow ADD, text) redraw only while a morph runs: about 3 batched passes. The line sits at `vertical_anchor` (lower third), clear of the player, entity and menu. The intro wave thins out first (`IntroConfig.wave_dissolve_fraction`) and the veil lifts on a sine ease while the world reveal disc is already growing.
 - Heard beats persist.
+
+## Origin Rule-Out (tasks 039-040; design: docs/game_design.md, Origin Contradiction and Rule-Out System)
+
+- Data (`scripts/origin/`): `OriginHypothesis` (id, axis NATURE/DEED, sigil, label, claim/broken/recant beat ids, trial), `OriginTrial` (kind, seconds, distance, requires_entity_unlocked), `OriginConfig` (hypotheses + `min_alive_nature`, `max_strikes_per_run`, `retry_scale`, `doubt_scramble`, `tie_prefer_dual_support`). Built by `tools/build_origin.gd` into `resources/origin/*.tres` (4 natures, 2 deeds, one trial file per nature) and `resources/config/origin_config.tres`. Run it before `build_narration.gd` and `build_main_scene.gd`.
+- `OriginLedger` (logic node in Main, right after `SaveService`) is the ONLY writer of the rule-out state in `PersistentProgress`. Operations: `request_strike(id, run_index)` (per-run cap, `run_index` = `PersistentProgress.run_count`), `strike`, `recant`, `arm`, `repair`. Floor rule: at least 2 natures alive, deeds never struck; a strike that would break the floor recants the oldest strike first; `strike_counts` feeds `trial_scale(id)` (`retry_scale` per previous strike) for the trial monitor (task-041). On load (`SaveService.progress_loaded`) unknown ids and deeds are dropped and the newest strikes are recanted until the floor holds (`push_warning`, `repair_log`). It writes via `SaveService.commit_progress()` (saved at once).
+- SignalBus: `origin_trial_passed(id)` (monitor -> ledger), `origin_claim_heard(id)` (narrator -> ledger, arms the trial), `origin_struck(id)`, `origin_recanted(id)`, `origin_ledger_changed(alive, struck)`.
+- Content lint: `NarrationLint` runs inside `tools/build_narration.gd` and fails the build (exit 1, nothing written) when a hypothesis id is unknown, listed in both `supports` and `contradicts`, a nature has no supporting beat, or (strict mode only) no contradicting beat. `data/narration/m1_beats.json` has `lint.strict_contradiction`: `false` until the contradicting beats for alien and angelic exist (task-044), when task-042/044 switches it on; until then those two natures only produce warnings.
+- Tests: `tools/test_origin_ledger.gd`, `tools/test_narrator.gd` (stance table, lint).
 
 ## Validation Per Task
 

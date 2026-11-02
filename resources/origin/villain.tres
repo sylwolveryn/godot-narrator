@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="OriginHypothesis" format=3]
+
+[ext_resource type="Script" path="res://scripts/origin/origin_hypothesis.gd" id="1_kjej1"]
+
+[resource]
+script = ExtResource("1_kjej1")
+id = &"villain"
+axis = 1
+sigil = "x"
+label = "the villain"

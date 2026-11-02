@@ -11,5 +11,6 @@ min_run = 6
 max_run = 6
 min_deaths = 5
 mood = &"chime"
-origin_tags = PackedStringArray("angelic", "alien")
+supports = PackedStringArray("angelic", "alien")
+contradicts = PackedStringArray()
 order = 24

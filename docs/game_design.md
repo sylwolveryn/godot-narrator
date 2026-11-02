@@ -205,7 +205,7 @@ The existing origin tags split into two axes. A single flat list would not work:
 - **Deed axis** (what it did): `hero`, `villain`. This axis is testimony and can never be ruled out. Both deeds always stay open, and the narrator keeps arguing both sides.
 - `none` is not a hypothesis. It means the beat is neutral.
 
-Each beat holds a **stance** toward each hypothesis: `supports`, `contradicts`, or neutral (not listed). The current `origin_tags` become `supports`. A `contradicts` entry is added where the text denies an account (see 5). The player never sees the stances. They are used for narrator selection, ledger feedback and content checks.
+Each beat holds a **stance** toward each hypothesis: `supports`, `contradicts`, or neutral (not listed). The former origin tags (now `supports`) hold the hypotheses a beat speaks for. A `contradicts` entry is added where the text denies an account (see 5). The player never sees the stances. They are used for narrator selection, ledger feedback and content checks.
 
 ### 2. How gameplay rules a nature out: claims and trials
 A rule-out is never stated by the narrator. The player earns it by **disproving something the narrator claimed**.
@@ -260,7 +260,7 @@ Argument:
   - `hypotheses: Array[OriginHypothesis]`
   - `min_alive_nature` (2, clamped to at least 2), `max_strikes_per_run` (1), `retry_scale` (1.5), `doubt_scramble` (0.3), `tie_prefer_dual_support` (bool)
 - **`NarrationBeat`** additions:
-  - `supports`, `contradicts` (PackedStringArray; these replace `origin_tags`)
+  - `supports`, `contradicts` (PackedStringArray; they replaced the old origin tags)
   - `role` enum: STORY, CLAIM, BROKEN, RECANT
   - `event_param` (StringName; the hypothesis id for `claim_broken` and `claim_recanted`)
 - **`PersistentProgress`** additions:
@@ -306,7 +306,7 @@ Argument:
 - Loading a save with 3 struck natures repairs it to 2 struck (the newest strike is recanted) and logs a warning.
 
 **B. Beat stance retag and content lint**
-- `NarrationBeat` has `supports`, `contradicts` and `role`. All 26 beats are migrated as in 5, and `origin_tags` is removed.
+- `NarrationBeat` has `supports`, `contradicts` and `role`. All 26 beats are migrated as in 5, and the old origin tags field is removed.
 - A lint run by the builder fails if any nature lacks a supporting or a contradicting beat, or if a beat lists a hypothesis in both `supports` and `contradicts`.
 
 **C. Trial monitor (demonic, ai, angelic)**

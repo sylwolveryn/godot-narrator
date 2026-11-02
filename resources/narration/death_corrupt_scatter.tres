@@ -8,5 +8,6 @@ id = "death_corrupt_scatter"
 text = "Scattered. Gathering."
 event = &"died_corruption"
 mood = &"static"
-origin_tags = PackedStringArray("ai")
+supports = PackedStringArray("ai")
+contradicts = PackedStringArray()
 order = 9

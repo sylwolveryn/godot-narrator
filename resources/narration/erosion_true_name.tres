@@ -10,5 +10,6 @@ event = &"erosion_high"
 min_run = 4
 min_deaths = 3
 mood = &"low_drone"
-origin_tags = PackedStringArray("demonic")
+supports = PackedStringArray("demonic")
+contradicts = PackedStringArray("ai")
 order = 21

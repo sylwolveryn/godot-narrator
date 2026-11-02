@@ -51,3 +51,14 @@ signal menu_action_requested(action: StringName)
 ## Emitted by PushableObjects when the grown entity pushes a small object one cell: `object_id` is its index in the map,
 ## `form` the pushing entity's form (EntityForm). Hook for the future alien trial; carries no narration.
 signal object_moved(object_id: int, from_cell: Vector2i, to_cell: Vector2i, form: StringName)
+
+## Origin rule-out system (task-039). Emitted by the trial monitor when an armed trial passed; OriginLedger answers.
+signal origin_trial_passed(id: StringName)
+## Emitted by the narrator when a CLAIM beat was heard; OriginLedger arms that nature's trial.
+signal origin_claim_heard(id: StringName)
+## Emitted by OriginLedger when a nature was struck (ruled out).
+signal origin_struck(id: StringName)
+## Emitted by OriginLedger when a struck nature came back (recanted).
+signal origin_recanted(id: StringName)
+## Emitted by OriginLedger after every change: the natures alive and the natures struck (oldest strike first).
+signal origin_ledger_changed(alive: PackedStringArray, struck: PackedStringArray)

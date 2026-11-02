@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="OriginTrial" format=3]
+
+[ext_resource type="Script" path="res://scripts/origin/origin_trial.gd" id="1_yyali"]
+
+[resource]
+script = ExtResource("1_yyali")
+kind = 1
+seconds = 60.0

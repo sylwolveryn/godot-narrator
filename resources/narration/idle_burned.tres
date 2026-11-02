@@ -10,5 +10,6 @@ event = &"idle"
 min_run = 3
 min_deaths = 2
 mood = &"low_drone"
-origin_tags = PackedStringArray("villain", "demonic")
+supports = PackedStringArray("villain", "demonic")
+contradicts = PackedStringArray("hero")
 order = 16

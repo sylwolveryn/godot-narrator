@@ -10,5 +10,6 @@ event = &"spikes_revealed"
 min_run = 2
 min_deaths = 1
 mood = &"low_drone"
-origin_tags = PackedStringArray("alien", "villain")
+supports = PackedStringArray("alien", "villain")
+contradicts = PackedStringArray()
 order = 11

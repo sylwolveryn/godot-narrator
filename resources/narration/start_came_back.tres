@@ -10,5 +10,6 @@ event = &"run_started"
 min_run = 2
 max_run = 2
 min_deaths = 1
-origin_tags = PackedStringArray("angelic", "ai")
+supports = PackedStringArray("angelic", "ai")
+contradicts = PackedStringArray("demonic")
 order = 10

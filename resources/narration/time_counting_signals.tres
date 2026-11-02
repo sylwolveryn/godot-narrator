@@ -11,5 +11,6 @@ delay = 60.0
 min_run = 3
 min_deaths = 2
 mood = &"pulse"
-origin_tags = PackedStringArray("alien", "ai")
+supports = PackedStringArray("alien", "ai")
+contradicts = PackedStringArray()
 order = 18

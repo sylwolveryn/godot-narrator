@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="OriginHypothesis" format=3]
+
+[ext_resource type="Script" path="res://scripts/origin/origin_hypothesis.gd" id="1_vacuy"]
+[ext_resource type="Resource" path="res://resources/origin/trial_alien.tres" id="2_6yn30"]
+
+[resource]
+script = ExtResource("1_vacuy")
+id = &"alien"
+sigil = "*"
+label = "the stars"
+claim_beat_id = "claim_alien"
+broken_beat_id = "broken_alien"
+recant_beat_id = "recant_alien"
+trial = ExtResource("2_6yn30")

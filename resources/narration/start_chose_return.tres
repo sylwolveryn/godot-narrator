@@ -9,5 +9,6 @@ text = "Whatever you were, you chose to come back."
 event = &"run_started"
 min_run = 7
 min_deaths = 6
-origin_tags = PackedStringArray("none")
+supports = PackedStringArray()
+contradicts = PackedStringArray()
 order = 25

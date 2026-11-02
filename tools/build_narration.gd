@@ -2,12 +2,14 @@ extends SceneTree
 ## Builds the narration resources from data/narration/m1_beats.json:
 ##   resources/narration/<id>.tres        one NarrationBeat per beat
 ##   resources/narration/narrator_config.tres   NarratorConfig (beats in table order + sound moods)
-## Idempotent. Run before tools/build_main_scene.gd.
+## Idempotent. Run after tools/build_origin.gd and before tools/build_main_scene.gd.
+## Lints the beats first (NarrationLint) and builds nothing when the lint has errors (exit code 1).
 ## Usage: godot --headless --path . -s tools/build_narration.gd
 
 const DATA_PATH := "res://data/narration/m1_beats.json"
 const DIR := "res://resources/narration/"
 const CONFIG_FILE := "narrator_config.tres"
+const ORIGIN_CONFIG_PATH := "res://resources/config/origin_config.tres"
 
 
 func _init() -> void:
@@ -20,23 +22,30 @@ func _build() -> void:
 		push_error("Bad beat table at %s" % DATA_PATH)
 		quit(1)
 		return
+	var origin: OriginConfig = load(ORIGIN_CONFIG_PATH) as OriginConfig
+	if origin == null:
+		push_error("Missing %s: run tools/build_origin.gd first" % ORIGIN_CONFIG_PATH)
+		quit(1)
+		return
+	var rows: Array[NarrationBeat] = []
+	for row: Dictionary in (parsed as Dictionary)["beats"]:
+		rows.append(_beat_from(row))
+	var lint_options: Dictionary = (parsed as Dictionary).get("lint", {})
+	var report: Dictionary = NarrationLint.lint(rows, origin.nature_ids(), origin.deed_ids(), bool(lint_options.get("strict_contradiction", false)))
+	for warning: String in report["warnings"]:
+		print("WARNING [narration lint] ", warning)
+	if not (report["errors"] as PackedStringArray).is_empty():
+		for error: String in report["errors"]:
+			push_error("[narration lint] " + error)
+		printerr("Narration lint FAILED with %d error(s); nothing was built." % (report["errors"] as PackedStringArray).size())
+		quit(1)
+		return
+
 	DirAccess.make_dir_recursive_absolute(DIR)
 	var ok := true
 	var beats: Array[NarrationBeat] = []
 	var order: int = 0
-	for row: Dictionary in (parsed as Dictionary)["beats"]:
-		var beat := NarrationBeat.new()
-		beat.id = row["id"]
-		beat.text = row["text"]
-		beat.trigger = NarrationBeat.Trigger[str(row["trigger"])]
-		beat.event = StringName(row.get("event", ""))
-		beat.delay = float(row.get("delay", 0.0))
-		beat.min_run = int(row["min_run"])
-		beat.max_run = int(row["max_run"])
-		beat.min_deaths = int(row["min_deaths"])
-		beat.once = bool(row["once"])
-		beat.mood = StringName(row["mood"])
-		beat.origin_tags = PackedStringArray(row["origin_tags"])
+	for beat in rows:
 		beat.order = order
 		order += 1
 		var path: String = DIR + beat.id + ".tres"
@@ -49,6 +58,24 @@ func _build() -> void:
 	config.moods = _moods()
 	ok = _save(config, DIR + CONFIG_FILE) and ok
 	quit(0 if ok else 1)
+
+
+func _beat_from(row: Dictionary) -> NarrationBeat:
+	var beat := NarrationBeat.new()
+	beat.id = row["id"]
+	beat.text = row["text"]
+	beat.trigger = NarrationBeat.Trigger[str(row["trigger"])]
+	beat.event = StringName(row.get("event", ""))
+	beat.delay = float(row.get("delay", 0.0))
+	beat.min_run = int(row["min_run"])
+	beat.max_run = int(row["max_run"])
+	beat.min_deaths = int(row["min_deaths"])
+	beat.once = bool(row["once"])
+	beat.mood = StringName(row["mood"])
+	beat.supports = PackedStringArray(row.get("supports", []))
+	beat.contradicts = PackedStringArray(row.get("contradicts", []))
+	beat.role = NarrationBeat.Role[str(row.get("role", "STORY"))]
+	return beat
 
 
 ## Deletes beat files from earlier builds so removed beats do not linger.

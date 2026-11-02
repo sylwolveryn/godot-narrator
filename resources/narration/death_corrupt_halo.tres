@@ -10,5 +10,6 @@ event = &"died_corruption"
 min_run = 3
 min_deaths = 2
 mood = &"low_drone"
-origin_tags = PackedStringArray("angelic", "demonic")
+supports = PackedStringArray("angelic", "demonic")
+contradicts = PackedStringArray()
 order = 17

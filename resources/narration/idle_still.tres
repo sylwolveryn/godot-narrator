@@ -8,5 +8,6 @@ id = "idle_still"
 text = "Still. As it was kept."
 event = &"idle"
 mood = &"low_drone"
-origin_tags = PackedStringArray("villain", "demonic")
+supports = PackedStringArray("villain", "demonic")
+contradicts = PackedStringArray()
 order = 2

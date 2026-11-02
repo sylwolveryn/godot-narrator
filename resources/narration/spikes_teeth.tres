@@ -8,5 +8,6 @@ id = "spikes_teeth"
 text = "Teeth."
 event = &"spikes_revealed"
 mood = &"static"
-origin_tags = PackedStringArray("none")
+supports = PackedStringArray()
+contradicts = PackedStringArray()
 order = 5

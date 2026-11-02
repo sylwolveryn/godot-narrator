@@ -9,5 +9,6 @@ text = "I'm sorry. I watch every time."
 event = &"died_spikes"
 min_run = 5
 min_deaths = 4
-origin_tags = PackedStringArray("none")
+supports = PackedStringArray()
+contradicts = PackedStringArray()
 order = 23

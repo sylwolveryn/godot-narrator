@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="OriginHypothesis" format=3]
+
+[ext_resource type="Script" path="res://scripts/origin/origin_hypothesis.gd" id="1_urm0l"]
+[ext_resource type="Resource" path="res://resources/origin/trial_demonic.tres" id="2_j50ar"]
+
+[resource]
+script = ExtResource("1_urm0l")
+id = &"demonic"
+sigil = "^"
+label = "the name"
+claim_beat_id = "claim_demonic"
+broken_beat_id = "broken_demonic"
+recant_beat_id = "recant_demonic"
+trial = ExtResource("2_j50ar")

@@ -9,5 +9,6 @@ text = "You built walls like these. To keep them out."
 event = &"wall_revealed"
 min_run = 4
 min_deaths = 3
-origin_tags = PackedStringArray("hero", "villain")
+supports = PackedStringArray("hero", "villain")
+contradicts = PackedStringArray()
 order = 20

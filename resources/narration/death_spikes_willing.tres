@@ -10,5 +10,6 @@ event = &"died_spikes"
 min_run = 2
 min_deaths = 1
 mood = &"chime"
-origin_tags = PackedStringArray("hero", "angelic")
+supports = PackedStringArray("hero", "angelic")
+contradicts = PackedStringArray("villain")
 order = 13
