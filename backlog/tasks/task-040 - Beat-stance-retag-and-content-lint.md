@@ -27,3 +27,12 @@ Draft from task-016. Beats need supports/contradicts/role instead of origin_tags
 - [ ] #1 NarrationBeat has supports, contradicts and role; all 26 beats migrated per the design; origin_tags removed
 - [ ] #2 The builder lint fails if a nature lacks a supporting or contradicting beat, or a beat lists a hypothesis in both
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. NarrationBeat: supports/contradicts/role, drop origin_tags.
+2. Migrate 26 beats in m1_beats.json per design section 5.
+3. NarrationLint class (scripts/narrator) run by tools/build_narration.gd; contradiction rule is a WARNING until json lint.strict_contradiction=true (switched on in task-042/044).
+4. Update test_narrator.gd, docs/architecture.md.
+<!-- SECTION:PLAN:END -->
