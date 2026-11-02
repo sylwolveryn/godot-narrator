@@ -1,7 +1,7 @@
 ---
-id: DRAFT-001
+id: TASK-039
 title: Origin ledger and invariant
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-11-02T06:43:00Z'
 labels:
