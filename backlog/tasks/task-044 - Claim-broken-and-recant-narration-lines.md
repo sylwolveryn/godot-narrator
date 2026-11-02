@@ -1,11 +1,11 @@
 ---
 id: TASK-044
 title: Claim, broken and recant narration lines
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T08:55:00Z'
+updated_date: '2026-11-02T09:00:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -41,3 +41,9 @@ User approved all 14 lines in docs/narration_origin.md on 2026-11-02, with one c
 
 14 approved lines added as data/narration/origin_beats.json (generated from docs/narration_origin.md; tools/test_narrator.gd compares text and every field against the doc), appended by tools/build_narration.gd. lint.strict_contradiction is true in m1_beats.json; build_narration passes strict (builders idempotent apart from random node unique_ids in main.tscn, pre-existing). Lint gained role rules. AC3 user approval recorded 2026-11-02. Not committed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The 14 user-approved lines (2026-11-02) are in data/narration/origin_beats.json, text identical to docs/narration_origin.md (verified by test and validator); claim_ai_one triggers on the form switch per the user. Strict contradiction lint is on and passes. Alien lines stay dormant until task-045.
+<!-- SECTION:FINAL_SUMMARY:END -->
