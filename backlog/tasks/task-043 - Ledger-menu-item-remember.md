@@ -25,8 +25,8 @@ Draft from task-016. A menu item that shows the origin ledger as a row of sigils
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Struck sigils stay on the floor, recanted ones show a crack, deed sigils never settle
-- [ ] #2 Offered only after a claim has been heard; stays within the menu single draw call
+- [x] #1 Struck sigils stay on the floor, recanted ones show a crack, deed sigils never settle
+- [x] #2 Offered only after a claim has been heard; stays within the menu single draw call
 - [ ] #3 User visual check
 <!-- AC:END -->
 
