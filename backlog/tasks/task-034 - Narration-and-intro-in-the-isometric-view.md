@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T22:45:00Z'
-updated_date: '2026-11-02T06:40:00Z'
+updated_date: '2026-11-02T06:59:00Z'
 labels:
   - narrator
   - ux
@@ -30,3 +30,9 @@ Narration text and the intro wave were tuned for the old top-down, post-processe
 - [ ] #2 The intro hands off into the iso glyph world without a visual pop
 - [ ] #3 tools/test_narrator.gd passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Overlay per-letter eased morph with mood glow. 2. Intro easing. 3. Test + captures.
+<!-- SECTION:PLAN:END -->
