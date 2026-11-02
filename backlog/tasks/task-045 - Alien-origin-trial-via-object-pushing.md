@@ -1,11 +1,11 @@
 ---
 id: TASK-045
 title: Alien origin trial via object pushing
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T09:04:00Z'
+updated_date: '2026-11-02T09:22:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -40,3 +40,9 @@ Draft from task-016, blocked by task-019 (small-object pushing). Moving a small 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented: build_origin alien trial non-dormant (trial_alien.tres rebuilt, idempotent); OriginTrialMonitor._on_object_moved passes alien (one grown push, armed+alive, once per run; no seconds so trial_scale n/a). Tests: test_origin_trials (grown push passes; unarmed/single/struck do not; one strike per run, refused trial stays armed) PASS; test_narrator (claim_alien_weight plays on item_revealed and arms alien) PASS; all other tests PASS (test_save printed a parse error from the concurrent menu_glyph_view work, still PASS). Boot --quit-after 60: 0 ERROR. docs/architecture.md updated.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The alien trial is live: OriginTrialMonitor listens to SignalBus.object_moved and passes alien when the grown form pushes a stone while the trial is armed and the nature alive (one push, once per run). claim_alien_weight is no longer dormant and arms the trial on item_revealed; broken/recant alien lines can play. Validator PASS (combined with task-043).
+<!-- SECTION:FINAL_SUMMARY:END -->
