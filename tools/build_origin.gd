@@ -27,6 +27,7 @@ func _init() -> void:
 	var moved := OriginTrial.new()
 	moved.kind = OriginTrial.Kind.OBJECT_MOVED
 	moved.requires_entity_unlocked = true
+	moved.dormant = true  # until entity pushing exists (task-045): the narrator never plays its claim
 
 	var trials: Dictionary = {&"demonic": erosion, &"ai": single, &"angelic": dark, &"alien": moved}
 	var natures: Array = [

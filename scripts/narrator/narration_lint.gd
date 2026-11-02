@@ -5,9 +5,10 @@ extends RefCounted
 ##
 ## Errors: a hypothesis id that does not exist, a hypothesis in both supports and contradicts, a nature that
 ## no beat supports, and (only in strict mode) a nature that no beat contradicts.
-## Without strict mode a missing contradicting beat is a warning: contradicting lines for alien and angelic
-## are authored in task-044. Strict mode is switched on in data/narration/m1_beats.json ("lint.strict_contradiction")
-## by task-042/044 once every nature has a contradicting beat.
+## Role rules (task-042): a CLAIM supports exactly one nature; a BROKEN or RECANT beat names a nature in event_param,
+## on the matching origin event; BROKEN contradicts it, RECANT supports it.
+## Without strict mode a missing contradicting beat is a warning. Strict mode is on in data/narration/m1_beats.json
+## ("lint.strict_contradiction") since task-044 gave every nature a contradicting beat.
 
 
 ## Returns {"errors": PackedStringArray, "warnings": PackedStringArray}. `natures` and `deeds` are hypothesis ids.
@@ -16,9 +17,11 @@ static func lint(beats: Array, natures: PackedStringArray, deeds: PackedStringAr
 	var warnings := PackedStringArray()
 	var known := PackedStringArray(natures)
 	known.append_array(deeds)
+	var nature_ids := PackedStringArray(natures)
 	var supported: Dictionary = {}
 	var contradicted: Dictionary = {}
 	for beat: NarrationBeat in beats:
+		errors.append_array(_lint_role(beat, nature_ids))
 		for id in beat.supports:
 			if not known.has(id):
 				errors.append("beat '%s' supports unknown hypothesis '%s'" % [beat.id, id])
@@ -39,3 +42,21 @@ static func lint(beats: Array, natures: PackedStringArray, deeds: PackedStringAr
 			else:
 				warnings.append(message + " (not strict yet: authored in task-044)")
 	return {"errors": errors, "warnings": warnings}
+
+
+static func _lint_role(beat: NarrationBeat, natures: PackedStringArray) -> PackedStringArray:
+	var errors := PackedStringArray()
+	match beat.role:
+		NarrationBeat.Role.CLAIM:
+			if beat.supports.size() != 1 or not natures.has(beat.supports[0]):
+				errors.append("claim beat '%s' must support exactly one nature" % beat.id)
+		NarrationBeat.Role.BROKEN, NarrationBeat.Role.RECANT:
+			var broken: bool = beat.role == NarrationBeat.Role.BROKEN
+			var event: StringName = NarrationEvents.ORIGIN_STRUCK if broken else NarrationEvents.ORIGIN_RECANTED
+			if beat.event != event or not natures.has(String(beat.event_param)):
+				errors.append("beat '%s' must answer %s with a nature as event_param" % [beat.id, event])
+			elif broken and (not beat.contradicts.has(String(beat.event_param)) or not beat.supports.is_empty()):
+				errors.append("broken beat '%s' must contradict '%s' and support nothing" % [beat.id, beat.event_param])
+			elif not broken and not beat.supports.has(String(beat.event_param)):
+				errors.append("recant beat '%s' must support '%s'" % [beat.id, beat.event_param])
+	return errors

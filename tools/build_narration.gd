@@ -1,5 +1,6 @@
 extends SceneTree
-## Builds the narration resources from data/narration/m1_beats.json:
+## Builds the narration resources from data/narration/m1_beats.json plus data/narration/origin_beats.json
+## (appended after it; the lint options come from m1_beats.json):
 ##   resources/narration/<id>.tres        one NarrationBeat per beat
 ##   resources/narration/narrator_config.tres   NarratorConfig (beats in table order + sound moods)
 ## Idempotent. Run after tools/build_origin.gd and before tools/build_main_scene.gd.
@@ -7,6 +8,7 @@ extends SceneTree
 ## Usage: godot --headless --path . -s tools/build_narration.gd
 
 const DATA_PATH := "res://data/narration/m1_beats.json"
+const EXTRA_DATA_PATHS: PackedStringArray = ["res://data/narration/origin_beats.json"]
 const DIR := "res://resources/narration/"
 const CONFIG_FILE := "narrator_config.tres"
 const ORIGIN_CONFIG_PATH := "res://resources/config/origin_config.tres"
@@ -30,6 +32,14 @@ func _build() -> void:
 	var rows: Array[NarrationBeat] = []
 	for row: Dictionary in (parsed as Dictionary)["beats"]:
 		rows.append(_beat_from(row))
+	for path in EXTRA_DATA_PATHS:
+		var extra: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if not extra is Dictionary or not (extra as Dictionary).get("beats") is Array:
+			push_error("Bad beat table at %s" % path)
+			quit(1)
+			return
+		for row: Dictionary in (extra as Dictionary)["beats"]:
+			rows.append(_beat_from(row))
 	var lint_options: Dictionary = (parsed as Dictionary).get("lint", {})
 	var report: Dictionary = NarrationLint.lint(rows, origin.nature_ids(), origin.deed_ids(), bool(lint_options.get("strict_contradiction", false)))
 	for warning: String in report["warnings"]:
@@ -66,6 +76,7 @@ func _beat_from(row: Dictionary) -> NarrationBeat:
 	beat.text = row["text"]
 	beat.trigger = NarrationBeat.Trigger[str(row["trigger"])]
 	beat.event = StringName(row.get("event", ""))
+	beat.event_param = StringName(row.get("event_param", ""))
 	beat.delay = float(row.get("delay", 0.0))
 	beat.min_run = int(row["min_run"])
 	beat.max_run = int(row["max_run"])

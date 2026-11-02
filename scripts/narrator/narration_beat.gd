@@ -29,5 +29,8 @@ enum Role { STORY, CLAIM, BROKEN, RECANT }
 ## Hypothesis ids the line denies. A hypothesis is never in both lists (checked by NarrationLint).
 @export var contradicts: PackedStringArray = PackedStringArray()
 @export var role: Role = Role.STORY
+## EVENT beats with a parameterised event (origin_struck, origin_recanted): the nature id the beat answers.
+## Empty = the beat answers the event whatever its parameter.
+@export var event_param: StringName = &""
 ## Position in the beat table; breaks ties inside an event ladder.
 @export var order: int = 0

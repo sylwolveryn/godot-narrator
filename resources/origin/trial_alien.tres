@@ -6,3 +6,4 @@
 script = ExtResource("1_73638")
 kind = 3
 requires_entity_unlocked = true
+dormant = true

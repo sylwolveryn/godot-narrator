@@ -2,6 +2,8 @@
 
 **Status: approved by the user on 2026-11-02** (task-044). Change from draft: `claim_ai_one` triggers on the form switch (`entity_form_changed`), not `died_corruption`.
 
+**Implementation status (task-042/044, 2026-11-02):** the 14 lines are in `data/narration/origin_beats.json` (text copied from the table below, checked by `tools/test_narrator.gd`); the narrator integration and the strict lint are in. The text here is unchanged and remains the source of truth.
+
 Content for the Origin Contradiction and Rule-Out System (`docs/game_design.md`, section "Origin Contradiction and Rule-Out System"). It follows the format and rules of `docs/narration_m1.md`: the same events, eligibility, ladder priority, display cap, tone curve and moods. All numbers are defaults that live in the narrator and origin config `.tres` files.
 
 ## Rules specific to these beats

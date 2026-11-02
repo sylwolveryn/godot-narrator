@@ -62,6 +62,14 @@ func is_armed(id: StringName) -> bool:
 	return _progress().armed_trials.has(String(id))
 
 
+## True when the narrator may play this nature's claim: an alive nature with a live trial that is not armed yet.
+func is_claimable(id: StringName) -> bool:
+	if not is_alive(id) or is_armed(id):
+		return false
+	var trial: OriginTrial = config.find(id).trial
+	return trial != null and not trial.dormant
+
+
 func strike_count(id: StringName) -> int:
 	return int(_progress().strike_counts.get(String(id), 0))
 

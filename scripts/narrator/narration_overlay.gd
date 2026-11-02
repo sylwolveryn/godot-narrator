@@ -5,8 +5,11 @@ extends CanvasLayer
 ## spot with an ease-out, staggered left to right, and settles on its place; the line then rests (no per-frame
 ## work at all) and finally disperses the same calm way (letters drift up and away, fading). A soft additive glow
 ## tinted by the beat's mood sits behind the letters and is strongest while they fly. No random character swapping.
+## Doubt lines (task-042): a share of the letters never settle. They keep a slow sway around their place and a
+## gentle brightness dip (NarratorConfig.doubt_*, at most 0.5 Hz); the characters themselves never change.
 ## Cost: two canvas items redrawn only while a morph runs (about 3 batched passes: glow quads, outlines, fills),
-## nothing allocated per frame. Pure presentation: it listens to the Narrator and never writes data.
+## nothing allocated per frame; a doubt line also redraws every frame while it rests, for the few seconds it is on
+## screen. Pure presentation: it listens to the Narrator and never writes data.
 
 enum Phase { IDLE, ASSEMBLE, HOLD, DISPERSE }
 
@@ -41,6 +44,13 @@ var _out_delay: PackedFloat32Array = PackedFloat32Array()
 var _pos: PackedVector2Array = PackedVector2Array()
 var _alpha: PackedFloat32Array = PackedFloat32Array()
 var _glow: PackedFloat32Array = PackedFloat32Array()
+## Share of letters left unsettled in the current line (0 = a normal line) and, per letter, whether it is one of them.
+var _doubt_fraction: float = 0.0
+var _doubt: PackedByteArray = PackedByteArray()
+## Per unsettled letter: sway phase (x, y) and speed factor, rolled once per layout.
+var _doubt_phase: PackedVector2Array = PackedVector2Array()
+var _doubt_speed: PackedFloat32Array = PackedFloat32Array()
+var _doubt_time: float = 0.0
 
 
 func _ready() -> void:
@@ -68,7 +78,7 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_on_resized)
 	_apply_scale()
 	if narrator != null:
-		narrator.beat_started.connect(show_beat)
+		narrator.beat_started.connect(_on_beat_started)
 		narrator.beat_dissolving.connect(dissolve)
 
 
@@ -78,13 +88,18 @@ func _process(delta: float) -> void:
 
 ## Moves the morph on by `delta` seconds (tests call it directly).
 func advance(delta: float) -> void:
-	if phase == Phase.IDLE or phase == Phase.HOLD:
+	if phase == Phase.IDLE:
+		return
+	_doubt_time += delta
+	if phase == Phase.HOLD:
+		if _has_doubt():
+			_redraw()
 		return
 	_t += delta
 	if _t >= _duration:
 		if phase == Phase.ASSEMBLE:
 			phase = Phase.HOLD
-			set_process(false)
+			set_process(_has_doubt())
 			_redraw()
 		else:
 			_clear()
@@ -97,9 +112,21 @@ func is_showing() -> bool:
 	return phase != Phase.IDLE
 
 
-## Lays the beat out and starts assembling it. Any previous line is replaced.
-func show_beat(beat: NarrationBeat) -> void:
+func _on_beat_started(beat: NarrationBeat) -> void:
+	show_beat(beat, narrator.current_doubt)
+
+
+## True when part of the current line is unsettled.
+func _has_doubt() -> bool:
+	return _doubt_fraction > 0.0 and not _doubt_phase.is_empty()
+
+
+## Lays the beat out and starts assembling it. Any previous line is replaced. `doubt_fraction` > 0 leaves that
+## share of the letters unsettled (a doubt line, see Narrator.doubt_fraction).
+func show_beat(beat: NarrationBeat, doubt_fraction: float = 0.0) -> void:
 	_text = beat.text
+	_doubt_fraction = clampf(doubt_fraction, 0.0, 1.0)
+	_doubt_time = 0.0
 	_glow_color = config.mood_glow_colors.get(beat.mood, config.default_glow_color)
 	_layout()
 	_fill_motion()
@@ -124,6 +151,7 @@ func dissolve(fast: bool) -> void:
 
 func _clear() -> void:
 	phase = Phase.IDLE
+	_doubt_fraction = 0.0
 	set_process(false)
 	_glow_node.queue_redraw()
 	_text_node.queue_redraw()
@@ -214,6 +242,37 @@ func _fill_motion() -> void:
 		_out_unit[i] = Vector2.from_angle(_rng.randf() * TAU) * sqrt(_rng.randf())
 		_in_delay[i] = config.stagger_fraction * (0.75 * float(i) / denom + 0.25 * _rng.randf())
 		_out_delay[i] = config.stagger_fraction * (0.3 * float(i) / denom + 0.7 * _rng.randf())
+	_fill_doubt()
+
+
+## Picks the unsettled letters: round(doubt_fraction * visible letters), spread by a partial shuffle of the
+## non-space letters, plus their sway phases and speeds.
+func _fill_doubt() -> void:
+	var n: int = _chars.size()
+	_doubt.resize(n)
+	_doubt.fill(0)
+	_doubt_phase = PackedVector2Array()
+	_doubt_speed = PackedFloat32Array()
+	if _doubt_fraction <= 0.0:
+		return
+	var pool: PackedInt32Array = PackedInt32Array()
+	for i in n:
+		if _chars[i] != " ":
+			pool.append(i)
+	var count: int = clampi(roundi(_doubt_fraction * float(pool.size())), 0, pool.size())
+	_doubt_phase.resize(n)
+	_doubt_speed.resize(n)
+	for k in count:
+		var pick: int = k + _rng.randi() % (pool.size() - k)
+		var tmp: int = pool[k]
+		pool[k] = pool[pick]
+		pool[pick] = tmp
+		var i: int = pool[k]
+		_doubt[i] = 1
+		_doubt_phase[i] = Vector2(_rng.randf() * TAU, _rng.randf() * TAU)
+		_doubt_speed[i] = 0.8 + 0.4 * _rng.randf()
+	if count == 0:
+		_doubt_phase = PackedVector2Array()
 
 
 ## Fills the per-letter pose caches for the current phase and time.
@@ -242,6 +301,14 @@ func _pose() -> void:
 				_pos[i] = rest
 				_alpha[i] = 1.0
 				_glow[i] = config.glow_strength
+		if _doubt[i] != 0 and _has_doubt():
+			# Unsettled: a calm sway around the place and a slow dip in brightness, never a character swap.
+			var w: float = TAU * config.doubt_hz * _doubt_speed[i] * _doubt_time
+			var ph: Vector2 = _doubt_phase[i]
+			_pos[i] += Vector2(sin(w + ph.x), cos(w * 0.8 + ph.y)) * config.doubt_drift_px * _scale
+			var dip: float = 1.0 - config.doubt_alpha_dip * (0.5 + 0.5 * sin(w + ph.y))
+			_alpha[i] *= dip
+			_glow[i] *= dip
 
 
 func _draw_glow() -> void:

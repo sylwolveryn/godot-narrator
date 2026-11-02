@@ -1,6 +1,6 @@
 {
 	"_comment": "M1 narration beat table (source: docs/narration_m1.md). Row order = ladder tie-break order. supports/contradicts = hypothesis ids (docs/game_design.md section Origin Contradiction); role STORY|CLAIM|BROKEN|RECANT. Run tools/build_narration.gd after editing (it lints). max_run -1 = none. trigger: EVENT or TIME.",
-	"lint": {"strict_contradiction": false, "_comment": "false = a nature without a contradicting beat is only a WARNING (alien and angelic have none until the content task-044). Set true in task-042/044 once every nature has one."},
+	"lint": {"strict_contradiction": true, "_comment": "true = a nature without a contradicting beat is a lint ERROR (every nature has one since task-044). The origin beats live in origin_beats.json."},
 	"beats": [
 		{"id": "wake_first", "text": "...a shape. Waking.", "trigger": "EVENT", "event": "run_started", "min_run": 1, "max_run": 1, "min_deaths": 0, "once": true, "mood": "hum", "supports": [], "contradicts": [], "role": "STORY"},
 		{"id": "move_first", "text": "So. It moves.", "trigger": "EVENT", "event": "first_move", "min_run": 1, "max_run": 1, "min_deaths": 0, "once": true, "mood": "chime", "supports": [], "contradicts": [], "role": "STORY"},

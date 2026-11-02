@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_7bsup"]
+
+[resource]
+script = ExtResource("1_7bsup")
+id = "claim_alien_weight"
+text = "If you came from the stars, nothing here would move for you."
+event = &"item_revealed"
+min_run = 4
+min_deaths = 3
+mood = &"pulse"
+supports = PackedStringArray("alien")
+contradicts = PackedStringArray()
+role = 1
+order = 29

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_u1ddr"]
+
+[resource]
+script = ExtResource("1_u1ddr")
+id = "broken_angelic"
+text = "...You rested there. Then not the light. Not yet."
+event = &"origin_struck"
+min_run = 4
+min_deaths = 3
+once = false
+mood = &"chime"
+supports = PackedStringArray()
+contradicts = PackedStringArray("angelic")
+role = 2
+event_param = &"angelic"
+order = 32

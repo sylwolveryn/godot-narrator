@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_wofa0"]
+
+[resource]
+script = ExtResource("1_wofa0")
+id = "broken_ai"
+text = "...Still one. Then not built. Or built to lie."
+event = &"origin_struck"
+min_run = 4
+min_deaths = 3
+once = false
+mood = &"static"
+supports = PackedStringArray()
+contradicts = PackedStringArray("ai")
+role = 2
+event_param = &"ai"
+order = 31

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_igi0u"]
+
+[resource]
+script = ExtResource("1_igi0u")
+id = "recant_alien"
+text = "No. I was too sure. The stars come back."
+event = &"origin_recanted"
+min_run = 4
+min_deaths = 3
+once = false
+mood = &"pulse"
+supports = PackedStringArray("alien")
+contradicts = PackedStringArray()
+role = 3
+event_param = &"alien"
+order = 37

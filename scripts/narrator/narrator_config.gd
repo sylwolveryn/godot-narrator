@@ -31,6 +31,7 @@ extends Resource
 	NarrationEvents.DIED_CORRUPTION: 5,
 	NarrationEvents.EROSION_HIGH: 4,
 	NarrationEvents.CORRUPTION_ENTERED: 3,
+	NarrationEvents.ENTITY_FORM_CHANGED: 3,
 	NarrationEvents.SPIKES_REVEALED: 3,
 	NarrationEvents.ITEM_REVEALED: 2,
 	NarrationEvents.WALL_REVEALED: 2,
@@ -39,6 +40,11 @@ extends Resource
 	NarrationEvents.IDLE: 0,
 	NarrationEvents.TIME: 0,
 }
+## Reactive events (the death-beat class of docs/narration_origin.md, without the preempt): their beats answer
+## something the player just did. They never go through the one-slot queue, so the queue TTL cannot drop them and
+## nothing replaces them; they wait in a FIFO and start as soon as no beat is showing (the silence gap does not
+## hold them back). They start before any queued ordinary beat and are accepted outside a run too.
+@export var reactive_events: Array[StringName] = [NarrationEvents.ORIGIN_STRUCK, NarrationEvents.ORIGIN_RECANTED]
 ## Priority at or above which a beat preempts whatever is on screen.
 @export var preempt_priority: int = 5
 ## Run end cause -> death event.
@@ -84,6 +90,16 @@ extends Resource
 	&"pulse": Color("#7DFFB0"),
 }
 @export var default_glow_color: Color = Color("#FFC98A")
+
+@export_group("Doubt")
+## A doubt line (all its supported natures struck, see Narrator.current_doubt) lets a share of its letters
+## (OriginConfig.doubt_scramble) drift calmly instead of settling: they sway around their place by this many reference
+## px and dip in brightness. The letters themselves never change.
+@export var doubt_drift_px: float = 5.0
+## Sway / dip speed in Hz, at most 0.5 (docs/visual_direction.md flicker limits; per-letter speed varies by up to 20%).
+@export_range(0.05, 0.5) var doubt_hz: float = 0.4
+## Brightness of an unsettled letter swings between 1 and 1 minus this (a swing of half of it, within the 0.25 limit).
+@export_range(0.0, 0.5) var doubt_alpha_dip: float = 0.4
 
 @export_group("Audio")
 @export var sfx_volume_db: float = -14.0

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_81kfm"]
+
+[resource]
+script = ExtResource("1_81kfm")
+id = "recant_ai"
+text = "I was too sure. Machines can wait. Longer than that."
+event = &"origin_recanted"
+min_run = 4
+min_deaths = 3
+once = false
+mood = &"static"
+supports = PackedStringArray("ai")
+contradicts = PackedStringArray()
+role = 3
+event_param = &"ai"
+order = 35

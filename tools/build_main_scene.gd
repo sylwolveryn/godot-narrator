@@ -73,6 +73,7 @@ func _build() -> void:
 	narrator.name = "Narrator"
 	narrator.set("config", narrator_cfg)
 	narrator.set("save_service", save)
+	narrator.set("ledger", ledger)
 	_add(root, narrator)
 
 	var rig: Node3D = load("res://scripts/rendering/camera_rig.gd").new()

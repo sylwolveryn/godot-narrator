@@ -13,5 +13,11 @@ const CORRUPTION_ENTERED: StringName = &"corruption_entered"
 const EROSION_HIGH: StringName = &"erosion_high"
 const DIED_SPIKES: StringName = &"died_spikes"
 const DIED_CORRUPTION: StringName = &"died_corruption"
+## The player switched the entity form in the menu (animated entity_form_changed; task-042).
+const ENTITY_FORM_CHANGED: StringName = &"entity_form_changed"
+## A nature was struck / came back (SignalBus.origin_struck / origin_recanted). The narrator offers them with the
+## nature id as the event parameter (NarrationBeat.event_param).
+const ORIGIN_STRUCK: StringName = &"origin_struck"
+const ORIGIN_RECANTED: StringName = &"origin_recanted"
 ## Priority key used for TIME beats (they have no event name).
 const TIME: StringName = &"time"

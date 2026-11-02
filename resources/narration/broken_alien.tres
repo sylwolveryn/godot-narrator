@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_d20lh"]
+
+[resource]
+script = ExtResource("1_d20lh")
+id = "broken_alien"
+text = "...It moved for you. Then not the stars."
+event = &"origin_struck"
+min_run = 4
+min_deaths = 3
+once = false
+mood = &"pulse"
+supports = PackedStringArray()
+contradicts = PackedStringArray("alien")
+role = 2
+event_param = &"alien"
+order = 33
