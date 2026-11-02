@@ -1,10 +1,11 @@
 ---
 id: TASK-039
 title: Origin ledger and invariant
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T07:35:00Z'
+updated_date: '2026-11-02T07:38:00Z'
 labels:
   - narrator
 milestone: m-1
