@@ -4,12 +4,16 @@ title: Ledger menu item "remember"
 status: To Do
 assignee: []
 created_date: '2026-11-02T06:43:00Z'
+updated_date: '2026-11-02T07:36:00Z'
 labels:
   - narrator
 milestone: m-1
-dependencies: []
+dependencies:
+  - TASK-039
+  - TASK-042
 documentation:
   - docs/game_design.md
+priority: medium
 ---
 
 ## Description
