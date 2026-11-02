@@ -24,9 +24,9 @@ Draft from task-016. Gameplay tests that disprove a narrator claim: survive high
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each trial fires origin_trial_passed only while armed and its nature is alive; thresholds from config
-- [ ] #2 At most one strike per run, saved immediately
-- [ ] #3 A headless test covers one pass and one non-pass case per trial
+- [x] #1 Each trial fires origin_trial_passed only while armed and its nature is alive; thresholds from config
+- [x] #2 At most one strike per run, saved immediately
+- [x] #3 A headless test covers one pass and one non-pass case per trial
 <!-- AC:END -->
 
 ## Implementation Plan
