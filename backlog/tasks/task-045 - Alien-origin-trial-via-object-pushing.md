@@ -1,7 +1,7 @@
 ---
-id: DRAFT-007
+id: TASK-045
 title: Alien origin trial via object pushing
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-11-02T06:43:00Z'
 labels:
