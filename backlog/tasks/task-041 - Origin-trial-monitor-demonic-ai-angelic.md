@@ -1,10 +1,11 @@
 ---
 id: TASK-041
 title: Origin trial monitor (demonic, ai, angelic)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T07:35:00Z'
+updated_date: '2026-11-02T08:12:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -27,3 +28,9 @@ Draft from task-016. Gameplay tests that disprove a narrator claim: survive high
 - [ ] #2 At most one strike per run, saved immediately
 - [ ] #3 A headless test covers one pass and one non-pass case per trial
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. OriginTrialMonitor node (scripts/origin) listening to existing signals; trial params from OriginTrial resources scaled by ledger.trial_scale. 2. Wire in build_main_scene. 3. tools/test_origin_trials.gd. 4. Validate, docs/architecture.md.
+<!-- SECTION:PLAN:END -->
