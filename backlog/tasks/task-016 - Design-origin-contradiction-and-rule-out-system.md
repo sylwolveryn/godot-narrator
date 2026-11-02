@@ -1,11 +1,11 @@
 ---
 id: TASK-016
 title: 'Design: origin contradiction and rule-out system'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:42:00Z'
-updated_date: '2026-11-02T06:43:00Z'
+updated_date: '2026-11-02T07:36:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -35,3 +35,9 @@ The character origin must never have a single answer: narration contradicts itse
 <!-- SECTION:NOTES:BEGIN -->
 game-designer drafted the section "Origin Contradiction and Rule-Out System" in docs/game_design.md (status: draft for user review). Guarantee: at least 2 of 4 natures always open and deeds never struck; a rule-out that would break the floor recants the oldest strike first. Seven follow-ups created as Backlog drafts (M2). Waiting on user review before Done.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Origin contradiction and rule-out system designed by game-designer (docs/game_design.md) and approved by the user on 2026-11-02. Two axes: natures (alien, ai, demonic, angelic) can be ruled out by gameplay trials after a narrator claim; deeds (hero, villain) never. Guarantee: at least 2 natures always open; a rule-out that would break the floor recants the oldest strike. Implementation tasks: task-039..045.
+<!-- SECTION:FINAL_SUMMARY:END -->
