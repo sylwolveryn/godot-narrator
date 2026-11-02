@@ -1,7 +1,7 @@
 ---
-id: DRAFT-005
+id: TASK-043
 title: Ledger menu item "remember"
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-11-02T06:43:00Z'
 labels:
