@@ -15,6 +15,7 @@ dependencies:
 documentation:
   - docs/game_design.md
 priority: medium
+ordinal: 40000
 ---
 
 ## Description

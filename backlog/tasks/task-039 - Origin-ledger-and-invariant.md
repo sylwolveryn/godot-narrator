@@ -13,6 +13,7 @@ dependencies: []
 documentation:
   - docs/game_design.md
 priority: high
+ordinal: 44000
 ---
 
 ## Description

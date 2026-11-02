@@ -1,7 +1,7 @@
 ---
 id: TASK-043
 title: Ledger menu item "remember"
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
@@ -15,6 +15,7 @@ dependencies:
 documentation:
   - docs/game_design.md
 priority: medium
+ordinal: 46000
 ---
 
 ## Description
