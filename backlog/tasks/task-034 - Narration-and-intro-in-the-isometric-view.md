@@ -1,9 +1,11 @@
 ---
 id: TASK-034
 title: Narration and intro in the isometric view
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-30T22:45:00Z'
+updated_date: '2026-11-02T06:40:00Z'
 labels:
   - narrator
   - ux
