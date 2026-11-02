@@ -36,3 +36,9 @@ Narration text and the intro wave were tuned for the old top-down, post-processe
 <!-- SECTION:PLAN:BEGIN -->
 1. Overlay per-letter eased morph with mood glow. 2. Intro easing. 3. Test + captures.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Overlay letter morph (no scramble), mood glow tints in NarratorConfig, intro easing; test_narrator extended; all tests PASS headless; boot 0 ERROR; captures at 1366x768 and 1920x1080 reviewed; measure: 30 FPS, 4.7 draw calls.
+<!-- SECTION:NOTES:END -->
