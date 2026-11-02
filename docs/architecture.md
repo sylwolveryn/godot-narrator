@@ -95,10 +95,16 @@ All folders and files use snake_case.
 | `*` | item |
 | `^` | spikes |
 | `%` | corrupting glyph area |
+| `o` | small pushable object (floor underneath; start cell recorded in `MapData.objects`) |
 
 - Unknown chars log a warning and become floor.
 - Missing `@` logs an error and spawns at the first floor cell.
 - The loader never crashes on bad input.
+
+### Small-object pushing (task-019)
+- `PushableObjects` (data layer, node under Main): object cells from `MapData.objects`, one `StaticBody3D` each, grid-based push by the grown form (`EntityProgression.current_form()`), reset at `run_started`; emits `SignalBus.object_moved(id, from, to, form)`. Tunables in `PushConfig` (`push_config.tres`); block size in `WorldConfig`.
+- `ObjectGlyphView` draws all objects as ONE MultiMesh with the glyph-surface material (`WorldMeshBuilder.build_object`, vertex COLOR.b = 0.5); the shader derives the reveal cell from the instance origin and skips the cut-away for them. +1 draw call. Objects do not block light occlusion.
+- Tests: `tools/test_pushing.gd`; capture: `tools/capture_pushing.gd`.
 
 ## Run Lifecycle
 

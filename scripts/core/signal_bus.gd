@@ -48,3 +48,6 @@ signal menu_selection_changed(index: int)
 signal menu_item_pointed(index: int, activate: bool)
 ## Emitted by MenuController when an item was confirmed: `action` is a MenuItemDef action (e.g. switch_form); the data layer applies it.
 signal menu_action_requested(action: StringName)
+## Emitted by PushableObjects when the grown entity pushes a small object one cell: `object_id` is its index in the map,
+## `form` the pushing entity's form (EntityForm). Hook for the future alien trial; carries no narration.
+signal object_moved(object_id: int, from_cell: Vector2i, to_cell: Vector2i, form: StringName)

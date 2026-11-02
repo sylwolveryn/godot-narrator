@@ -84,6 +84,8 @@ uniform float depth_far = 9.0;
 uniform float depth_ambient_min = 0.35;     // ambient kept at depth_far and beyond
 uniform float fog_strength = 0.35;          // darkening towards the top of the screen
 uniform float fog_start = 0.3;              // fraction of the screen height (from the bottom) where the fog begins
+// small pushable objects (task-019): free-standing wall-type blocks drawn as a MultiMesh; COLOR.b = 0.5, the cell is the one the instance origin is in
+uniform vec2 object_params = vec2(0.5, 0.31);   // x block height, y half edge length (world units)
 uniform vec4 lift_zone = vec4(0.0, 0.0, 1.0, 0.0);   // in-world menu (task-018): xz centre, radius, dim amount while its glyphs are away
 
 varying flat vec3 w_nrm;
@@ -93,6 +95,7 @@ varying flat float v_under;              // COLOR.b: floor quad under a wall
 varying flat vec2 v_cell;
 varying flat vec3 v_axu;
 varying flat vec3 v_axv;
+varying flat vec3 v_origin;              // model origin (the centre of a small object)
 varying flat vec2 v_cellsize;            // glyph cell width / height in world units along v_axu / v_axv
 varying vec3 w_pos;
 
@@ -109,7 +112,11 @@ void vertex() {
 	v_type = COLOR.r;
 	v_flags = COLOR.g;
 	v_under = COLOR.b;
+	v_origin = MODEL_MATRIX[3].xyz;
 	v_cell = UV;
+	if (COLOR.b > 0.25 && COLOR.b < 0.75) {
+		v_cell = floor(v_origin.xz / vis_params.z);   // small object: the cell its centre is in
+	}
 	vec3 cam_right = INV_VIEW_MATRIX[0].xyz;
 	vec3 to_cam = INV_VIEW_MATRIX[2].xyz;
 	if (abs(n.y) > TOP_NORMAL_Y) {
@@ -151,7 +158,7 @@ void fragment() {
 	// Cut-away: surfaces between the camera and the player never hide the player. Decided per glyph cell:
 	// glyphs dim towards the edge, then whole glyphs drop out, so the edge reads as dissolving glyphs.
 	float cut_keep = 1.0;
-	if (t != T_FLOOR) {
+	if (t != T_FLOOR && v_under < 0.25) {   // small objects (v_under 0.5) never dissolve: the entity glyph is never hidden by them
 		vec3 to_cam = INV_VIEW_MATRIX[2].xyz;
 		vec3 dc = pc - cut_center.xyz;
 		float along = dot(dc, to_cam);
@@ -170,7 +177,8 @@ void fragment() {
 	if (vis_params.w > 0.5) {
 		vec4 va;
 		vec4 vb = vec4(1.0);
-		if ((t == T_WALL && top) || (t == T_FLOOR && v_under > 0.5)) {
+		bool wall_cell = v_under < 0.25;       // false for a free-standing small object
+		if ((t == T_WALL && top && wall_cell) || (t == T_FLOOR && v_under > 0.5)) {
 			ivec2 wc = ivec2(v_cell + 0.5) + ivec2(int(vis_params.x + 0.5) + 1, 0);
 			va = texelFetch(light_vis_a, wc, 0);
 			if (light_count > 4) {
@@ -178,7 +186,7 @@ void fragment() {
 			}
 		} else {
 			vec2 vp = pc.xz / cs;
-			if (t == T_WALL) {
+			if (t == T_WALL && wall_cell) {
 				vp += n.xz * 0.5;
 			}
 			vec2 vuv = vp / vec2(2.0 * vis_params.x + 1.0, vis_params.y);
@@ -230,7 +238,11 @@ void fragment() {
 		stone = (1.0 + (bvar - 0.5) * 2.0 * block_variation) * mix(1.0, seam_dim, seam);
 		if (t == T_WALL) {
 			int fl = int(v_flags * EDGE_DIV + 0.5);
-			if (top) {
+			bool free_stand = v_under > 0.25;
+			if (top && free_stand) {
+				vec2 od = object_params.y - abs(pc.xz - v_origin.xz);
+				edge = step(min(od.x, od.y), edge_width);
+			} else if (top) {
 				vec2 lo = pc.xz - v_cell * cs;
 				float e = float(fl & 1) * step(lo.x, edge_width);
 				e = max(e, float((fl >> 1) & 1) * step(cs - lo.x, edge_width));
@@ -239,11 +251,12 @@ void fragment() {
 				edge = e;
 			} else {
 				float la = n.x > 0.5 ? pc.z - v_cell.y * cs : pc.x - v_cell.x * cs;
-				float e = step((wall_height - pc.y) / v_cellsize.y, 0.5);
+				float top_y = free_stand ? object_params.x : wall_height;
+				float e = step((top_y - pc.y) / v_cellsize.y, 0.5);
 				e = max(e, float(fl & 1) * step(la / v_cellsize.x, 0.5));
 				e = max(e, float((fl >> 1) & 1) * step((cs - la) / v_cellsize.x, 0.5));
 				edge = e;
-				stone *= mix(wall_base_dark, 1.0, smoothstep(0.0, wall_ao_height, pc.y));
+				stone *= mix(wall_base_dark, 1.0, smoothstep(0.0, wall_ao_height, pc.y * wall_height / top_y));
 			}
 		}
 	}

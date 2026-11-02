@@ -99,6 +99,9 @@ func parse_text(text: String) -> MapData:
 				else:
 					map.has_spawn = true
 					map.spawn_cell = cell
+			if type == MapLegend.OBJECT:
+				map.objects.append(cell)
+				type = MapLegend.FLOOR
 			if first_floor.x < 0 and (type == MapLegend.FLOOR or type == MapLegend.SPAWN):
 				first_floor = cell
 			map.set_type(cell, type)

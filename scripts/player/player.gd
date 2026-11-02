@@ -17,6 +17,9 @@ signal identity_changed(glyph: String)
 @export var camera_rig: CameraRig
 
 var identity_glyph: String = ""
+## Direction the input asks for this physics step on the ground (length 0..1, zero when idle). Differs from the
+## velocity when the body is blocked; PushableObjects reads it to know what is being pushed.
+var move_intent: Vector3 = Vector3.ZERO
 
 var _ground: Plane = Plane(Vector3.UP, 0.0)
 var _moving: bool = false
@@ -40,6 +43,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	var wanted: Vector3 = _wanted_velocity()
+	move_intent = wanted / config.max_speed
 	var rate: float = config.acceleration if wanted != Vector3.ZERO else config.friction
 	velocity = velocity.move_toward(wanted, rate * delta)
 	velocity.y = 0.0

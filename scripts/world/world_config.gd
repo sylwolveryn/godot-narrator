@@ -49,3 +49,10 @@ extends Resource
 ## Corruption column height: min + random(0..1) * random(0..1) * span.
 @export var corrupt_column_min: float = 0.12
 @export var corrupt_column_span: float = 0.55
+
+@export_group("Small objects")
+## Edge length of a small pushable object (task-019) as a fraction of cell_size, and its height.
+@export_range(0.2, 0.95) var object_size_ratio: float = 0.62
+@export var object_height: float = 0.5
+## Edge length of the collision box of an object as a fraction of cell_size (the stone is drawn a little smaller).
+@export_range(0.2, 1.0) var object_collision_ratio: float = 0.8

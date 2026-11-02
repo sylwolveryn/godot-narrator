@@ -9,6 +9,8 @@ var height: int = 0
 var types: Array[StringName] = []
 var spawn_cell: Vector2i = Vector2i.ZERO
 var has_spawn: bool = false
+## Start cells of the small pushable objects (legend OBJECT), row-major; the object id is the index. The cells hold floor in `types`.
+var objects: Array[Vector2i] = []
 ## Errors make the map unusable or degrade it (e.g. missing file, no spawn).
 var errors: PackedStringArray = PackedStringArray()
 ## Warnings are recoverable oddities (unknown char, ragged rows).

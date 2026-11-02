@@ -15,6 +15,8 @@ const QUAD_ORDER: Array[int] = [0, 1, 2, 0, 2, 3]
 const SIDE_STEPS: Array[Vector2i] = [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]
 ## Edge bit divisor (the shader multiplies COLOR.g by the same value).
 const EDGE_DIV: float = 16.0
+## COLOR.b of the vertices of a small object (a wall cell's floor quad uses 1.0, everything else 0.0).
+const FREE_STANDING: float = 0.5
 const CORRUPT_SEED_A: float = 12.9898
 const CORRUPT_SEED_B: float = 78.233
 const CORRUPT_SEED_SALT: float = 37.719
@@ -28,6 +30,8 @@ var _uvs: PackedVector2Array = PackedVector2Array()
 var _cell: Vector2i = Vector2i.ZERO
 var _edge_bits: int = 0
 var _under_wall: bool = false
+## Vertex marker COLOR.b = FREE_STANDING for a small object (wall-type surface that is not part of a wall cell).
+var _free_standing: bool = false
 
 
 ## Mesh of the whole map; null for an empty map.
@@ -61,6 +65,33 @@ func build(map: MapData, config: WorldConfig) -> ArrayMesh:
 					_corruption()
 	if _positions.is_empty():
 		return null
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = _positions
+	arrays[Mesh.ARRAY_NORMAL] = _normals
+	arrays[Mesh.ARRAY_COLOR] = _colors
+	arrays[Mesh.ARRAY_TEX_UV] = _uvs
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+## Mesh of ONE small pushable object (task-019), centred on the origin of its cell, standing on y = 0: a stone block
+## with a top and the +x / +z faces. Wall-type surface; COLOR.b = FREE_STANDING tells the shader it is not a wall cell
+## (UV is zero: the shader takes the cell from the instance origin).
+func build_object(config: WorldConfig) -> ArrayMesh:
+	_config = config
+	_positions.clear()
+	_normals.clear()
+	_colors.clear()
+	_uvs.clear()
+	_cell = Vector2i.ZERO
+	_edge_bits = 0
+	_under_wall = false
+	_free_standing = true
+	var half: float = config.object_size_ratio * config.cell_size * 0.5
+	_box(0.0, 0.0, 0.0, config.object_height, half, half, GlyphSurfaceType.WALL, true, true)
+	_free_standing = false
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = _positions
@@ -193,7 +224,7 @@ func _box(cx: float, cz: float, y0: float, y1: float, hx: float, hz: float, type
 func _vertex(p: Vector3, n: Vector3, type: int) -> void:
 	_positions.append(p)
 	_normals.append(n)
-	_colors.append(Color(float(type) / GlyphSurfaceType.TYPE_DIV, float(_edge_bits) / EDGE_DIV, 1.0 if _under_wall else 0.0, 1.0))
+	_colors.append(Color(float(type) / GlyphSurfaceType.TYPE_DIV, float(_edge_bits) / EDGE_DIV, 1.0 if _under_wall else (FREE_STANDING if _free_standing else 0.0), 1.0))
 	_uvs.append(Vector2(_cell))
 
 

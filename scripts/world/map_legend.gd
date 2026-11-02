@@ -9,6 +9,8 @@ const SPAWN: StringName = &"spawn"
 const ITEM: StringName = &"item"
 const SPIKES: StringName = &"spikes"
 const CORRUPT: StringName = &"corrupt"
+## A small pushable object (task-019). The cell under it is floor; MapData.objects records where it starts.
+const OBJECT: StringName = &"object"
 
 ## Character -> cell type.
 @export var entries: Dictionary[String, StringName] = {
@@ -19,6 +21,7 @@ const CORRUPT: StringName = &"corrupt"
 	"*": ITEM,
 	"^": SPIKES,
 	"%": CORRUPT,
+	"o": OBJECT,
 }
 ## Hazard cell type -> its data-driven definition (see HazardDefinition). Types missing here are harmless.
 @export var hazards: Dictionary[StringName, HazardDefinition] = {}

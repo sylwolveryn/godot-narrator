@@ -194,6 +194,23 @@ func _build() -> void:
 	player.set("run_manager", runs)
 	menu.set("run_manager", runs)
 
+	# Small pushable objects (task-019): data layer (cells, collision, pushing) and its MultiMesh presentation.
+	var push_cfg: PushConfig = load(CFG + "push_config.tres")
+	var pushables: Node3D = load("res://scripts/world/pushable_objects.gd").new()
+	pushables.name = "PushableObjects"
+	pushables.set("config", push_cfg)
+	pushables.set("map_loader", loader)
+	pushables.set("player", player)
+	pushables.set("entity", progression)
+	pushables.set("run_manager", runs)
+	_add(root, pushables)
+	var object_view: Node3D = load("res://scripts/rendering/object_glyph_view.gd").new()
+	object_view.name = "ObjectGlyphView"
+	object_view.set("pushables", pushables)
+	object_view.set("map_loader", loader)
+	object_view.set("config", push_cfg)
+	_add(root, object_view)
+
 	var hazards: Node = load("res://scripts/world/hazard_monitor.gd").new()
 	hazards.name = "HazardMonitor"
 	hazards.set("map_loader", loader)

@@ -117,6 +117,8 @@ func apply_static() -> void:
 	material.set_shader_parameter(&"fog_start", config.fog_start)
 	if map_loader != null and map_loader.world_config != null:
 		material.set_shader_parameter(&"wall_height", map_loader.world_config.wall_height)
+		material.set_shader_parameter(&"object_params", Vector2(map_loader.world_config.object_height,
+				map_loader.world_config.object_size_ratio * map_loader.world_config.cell_size * 0.5))
 	var player_col := Vector3(config.player_light_color.r, config.player_light_color.g, config.player_light_color.b)
 	_light_col[PLAYER_LIGHT_SLOT] = Vector4(player_col.x, player_col.y, player_col.z, 1.0) * config.player_light_intensity
 	_apply_visibility_params()
