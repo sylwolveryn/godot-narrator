@@ -1,7 +1,7 @@
 ---
-id: DRAFT-004
+id: TASK-042
 title: Narrator integration for claims, rule-outs and recants
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-11-02T06:43:00Z'
 labels:
