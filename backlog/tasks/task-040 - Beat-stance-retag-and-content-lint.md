@@ -1,7 +1,7 @@
 ---
-id: DRAFT-002
+id: TASK-040
 title: Beat stance retag and content lint
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-11-02T06:43:00Z'
 labels:
