@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T08:40:00Z'
+updated_date: '2026-11-02T08:55:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -27,9 +27,9 @@ Draft from task-016. The narrator arms trials with CLAIM beats, reacts to strike
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Hearing a CLAIM beat arms its trial; BROKEN and RECANT beats play on origin_struck / origin_recanted
-- [ ] #2 Beats whose supports are all struck play with the doubt flag (part of the glyphs never settle)
-- [ ] #3 At the floor, tie-breaking prefers beats supporting both surviving natures
+- [x] #1 Hearing a CLAIM beat arms its trial; BROKEN and RECANT beats play on origin_struck / origin_recanted
+- [x] #2 Beats whose supports are all struck play with the doubt flag (part of the glyphs never settle)
+- [x] #3 At the floor, tie-breaking prefers beats supporting both surviving natures
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,3 +37,9 @@ Draft from task-016. The narrator arms trials with CLAIM beats, reacts to strike
 <!-- SECTION:PLAN:BEGIN -->
 1. Narrator: event_param, origin_struck/origin_recanted/entity_form_changed events, reactive FIFO for broken/recant, claim eligibility via ledger, origin_claim_heard on CLAIM/RECANT display. 2. Doubt flag (doubt_fraction -> overlay: share of letters sway, no char swap). 3. Floor tie-break in pick_for_event. 4. Tests in tools/test_narrator.gd, capture tool for visual check. 5. Docs.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented (not committed). Narrator: NarrationBeat.event_param; events origin_struck / origin_recanted (reactive FIFO, never dropped by queue TTL, start from GAP, no preempt of death beats) and entity_form_changed (animated only). CLAIM beats eligible only via OriginLedger.is_claimable (alive, unarmed, trial not dormant: alien dormant). CLAIM or RECANT display emits origin_claim_heard -> ledger arms. Doubt: Narrator.doubt_fraction (all supports struck natures) -> current_doubt -> overlay sways a share (OriginConfig.doubt_scramble) of letters calmly (<=0.5 Hz, no char swapping). Floor tie-break in pick_for_event (min_run first, then beat supporting both survivors, then order). Evidence: tools/test_narrator.gd PASS (claim arms trial end-to-end, struck->broken per param, floor strike plays recant then broken, doubt iff all supports struck, tie-break, claim_ai_one on animated switch only); ALL tools/test_*.gd PASS; headless boot --quit-after 60 zero ERROR; visual: tools/capture_origin_narration.gd (temp save) contact sheet t042_origin_sheet.png shows broken_demonic, broken_ai and doubt-flagged erosion_again. Decisions: RECANT also arms (restates claim, per design); reactive events outside a run accepted; added OriginTrial.dormant. Docs updated: docs/architecture.md, docs/narration_origin.md.
+<!-- SECTION:NOTES:END -->
