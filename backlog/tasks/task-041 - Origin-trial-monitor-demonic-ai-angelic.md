@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T08:12:00Z'
+updated_date: '2026-11-02T08:18:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -34,3 +34,9 @@ Draft from task-016. Gameplay tests that disprove a narrator claim: survive high
 <!-- SECTION:PLAN:BEGIN -->
 1. OriginTrialMonitor node (scripts/origin) listening to existing signals; trial params from OriginTrial resources scaled by ledger.trial_scale. 2. Wire in build_main_scene. 3. tools/test_origin_trials.gd. 4. Validate, docs/architecture.md.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented scripts/origin/origin_trial_monitor.gd (OriginTrialMonitor node under Main, after HazardMonitor, wired in tools/build_main_scene.gd with exported refs ledger/run_manager/player/map_loader). OriginTrial got erosion_fraction (0.7, set in tools/build_origin.gd; trial_demonic.tres rebuilt). Evidence: tools/test_origin_trials.gd PASS headless (demonic/ai/angelic pass + non-pass cases, unarmed, struck, one strike per run with disk check, recant scaling, alien dormant). All tools/test_*.gd PASS; boot --quit-after 60 = 0 ERROR lines; build_origin idempotent (md5 of resources equal); build_main_scene structure stable but node unique_ids are random per build (pre-existing). --check-only on the monitor reports 'Identifier not found: SignalBus' like the existing ledger (autoload not visible to standalone check); the boot and tests compile it. Decisions: scale applies to seconds only (distance/erosion fraction unscaled so small maps stay feasible); ai/angelic timers start from the choice/idle even if the claim arrives later (claim_ai_one plays on the same event) but tick only while armed; demonic restarts survive time if erosion rises again; a trial reports once per run (a cap-refused one stays armed for next run); process is off unless a timer is running.
+<!-- SECTION:NOTES:END -->
