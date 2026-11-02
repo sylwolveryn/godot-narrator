@@ -26,9 +26,9 @@ Narration text and the intro wave were tuned for the old top-down, post-processe
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Narration lines are legible over the glyph world at 1366x768 and 1920x1080 and never cover the player
-- [ ] #2 The intro hands off into the iso glyph world without a visual pop
-- [ ] #3 tools/test_narrator.gd passes
+- [x] #1 Narration lines are legible over the glyph world at 1366x768 and 1920x1080 and never cover the player
+- [x] #2 The intro hands off into the iso glyph world without a visual pop
+- [x] #3 tools/test_narrator.gd passes
 <!-- AC:END -->
 
 ## Implementation Plan
