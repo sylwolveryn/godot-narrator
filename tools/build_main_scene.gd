@@ -155,6 +155,18 @@ func _build() -> void:
 	menu_view.set("surface_material", load(GLYPH_MATERIAL))
 	_add(root, menu_view)
 
+	# The glyph storm (task-030): glyphs of the surroundings swirl around the player; one MultiMesh, no per-instance data.
+	# Run tools/build_storm.gd first.
+	var storm_view: Node3D = load("res://scripts/rendering/glyph_storm_view.gd").new()
+	storm_view.name = "GlyphStormView"
+	storm_view.set("config", load(CFG + "storm_config.tres"))
+	storm_view.set("fx_config", load(CFG + "glyph_fx_config.tres"))
+	storm_view.set("player", player)
+	storm_view.set("map_loader", loader)
+	storm_view.set("world", load(CFG + "world_config.tres"))
+	storm_view.set("surface_material", load(GLYPH_MATERIAL))
+	_add(root, storm_view)
+
 	# Soft halos over items, spikes and corruption: one MultiMesh, reveal-aware in the shader.
 	var halos: Node3D = load("res://scripts/rendering/glyph_halo_field.gd").new()
 	halos.name = "GlyphHaloField"

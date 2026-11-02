@@ -65,3 +65,8 @@ signal origin_struck(id: StringName)
 signal origin_recanted(id: StringName)
 ## Emitted by OriginLedger after every change: the natures alive and the natures struck (oldest strike first).
 signal origin_ledger_changed(alive: PackedStringArray, struck: PackedStringArray)
+
+## Glyph storm (task-030). Anyone may ask for a storm: the glyphs of the floor and walls within `radius` of `centre` (world
+## position) lift off, swirl for `duration` seconds and settle. `radius` <= 0 / `duration` <= 0 use the StormConfig defaults,
+## `tint` with alpha 0 uses the default tint. The origin ledger's strike already starts one by itself (origin_struck).
+signal glyph_storm_requested(centre: Vector3, radius: float, duration: float, tint: Color)

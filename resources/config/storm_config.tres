@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="StormConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/storm_config.gd" id="1_q7j1m"]
+
+[resource]
+script = ExtResource("1_q7j1m")
+font_names = PackedStringArray("Consolas", "Lucida Console", "Courier New", "monospace")

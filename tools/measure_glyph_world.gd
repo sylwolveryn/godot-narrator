@@ -12,6 +12,8 @@ const WARMUP := 150
 ## Frame at which "-- menu" opens the in-world menu (after the intro; the opening glyph flight ends well before WARMUP).
 const MENU_FRAME := 60
 const SAMPLES := 300
+## Length of the storm of "-- storm" (covers the warm-up and both cases).
+const STORM_SECONDS := 40.0
 const WIDE_RADIUS := 8.0
 const WORST_CELL := Vector2i(25, 3)
 
@@ -67,6 +69,10 @@ func _start() -> void:
 
 func _tick() -> void:
 	_frame += 1
+	if _frame == MENU_FRAME and OS.get_cmdline_user_args().has("storm"):
+		# Glyph storm (task-030): one long storm that spans the whole measurement.
+		var storm_player: Node3D = _main.get_node("Player")
+		root.get_node("SignalBus").emit_signal("glyph_storm_requested", storm_player.global_position, 0.0, STORM_SECONDS, Color(0, 0, 0, 0))
 	if _frame == MENU_FRAME and OS.get_cmdline_user_args().has("menu"):
 		for pressed in [true, false]:
 			var tab := InputEventKey.new()

@@ -53,3 +53,4 @@ shader_parameter/fog_strength = null
 shader_parameter/fog_start = null
 shader_parameter/object_params = null
 shader_parameter/lift_zone = null
+shader_parameter/storm_zone = null

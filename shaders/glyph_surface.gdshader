@@ -87,6 +87,7 @@ uniform float fog_start = 0.3;              // fraction of the screen height (fr
 // small pushable objects (task-019): free-standing wall-type blocks drawn as a MultiMesh; COLOR.b = 0.5, the cell is the one the instance origin is in
 uniform vec2 object_params = vec2(0.5, 0.31);   // x block height, y half edge length (world units)
 uniform vec4 lift_zone = vec4(0.0, 0.0, 1.0, 0.0);   // in-world menu (task-018): xz centre, radius, dim amount while its glyphs are away
+uniform vec4 storm_zone = vec4(0.0, 0.0, 1.0, 0.0);  // glyph storm (task-030): same, while the storm's glyphs are away
 
 varying flat vec3 w_nrm;
 varying flat float v_type;
@@ -271,6 +272,9 @@ void fragment() {
 	b = max(b, memory_floor * mem * (t == T_FLOOR ? 0.8 : 1.0));
 	if (lift_zone.w > 0.0) {
 		b *= 1.0 - lift_zone.w * (1.0 - smoothstep(lift_zone.z * 0.4, lift_zone.z, distance(w_pos.xz, lift_zone.xy)));
+	}
+	if (storm_zone.w > 0.0) {
+		b *= 1.0 - storm_zone.w * (1.0 - smoothstep(storm_zone.z * 0.4, storm_zone.z, distance(w_pos.xz, storm_zone.xy)));
 	}
 	float s = clamp(b, 0.0, 0.999);
 	float idx = min(1.0 + floor(pow(s, 0.65) * (ATLAS_COLS - 1.0)), ATLAS_COLS - 1.0);
