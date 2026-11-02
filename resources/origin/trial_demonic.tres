@@ -5,3 +5,4 @@
 [resource]
 script = ExtResource("1_bvtph")
 seconds = 15.0
+erosion_fraction = 0.7

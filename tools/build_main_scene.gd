@@ -226,6 +226,15 @@ func _build() -> void:
 	hazards.set("run_manager", runs)
 	_add(root, hazards)
 
+	# Origin trial monitor (task-041): evaluates the demonic / ai / angelic trials from existing signals.
+	var trials: Node = load("res://scripts/origin/origin_trial_monitor.gd").new()
+	trials.name = "OriginTrialMonitor"
+	trials.set("ledger", ledger)
+	trials.set("run_manager", runs)
+	trials.set("player", player)
+	trials.set("map_loader", loader)
+	_add(root, trials)
+
 	var packed := PackedScene.new()
 	var pack_err := packed.pack(root)
 	root.free()

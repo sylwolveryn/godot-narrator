@@ -16,6 +16,7 @@ func _init() -> void:
 	var erosion := OriginTrial.new()
 	erosion.kind = OriginTrial.Kind.EROSION_ESCAPE
 	erosion.seconds = 15.0
+	erosion.erosion_fraction = 0.7
 	var single := OriginTrial.new()
 	single.kind = OriginTrial.Kind.SINGLE_FORM_SURVIVE
 	single.seconds = 60.0
