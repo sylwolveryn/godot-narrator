@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T22:44:00Z'
-updated_date: '2026-11-02T10:34:00Z'
+updated_date: '2026-11-02T10:38:00Z'
 labels:
   - rendering
 milestone: m-4
@@ -39,4 +39,6 @@ The user loved the "storm" in Spike B (key 4 in scenes/spikes/glyph_morph): ever
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented. Trigger: SignalBus.origin_struck (tint per nature) and generic SignalBus.glyph_storm_requested(centre, radius, duration, tint). Start cost (CPU, Time.get_ticks_usec around start_storm, ~10 uniforms): mean 13 us, worst 42 us over 20 starts (tools/test_glyph_storm.gd, dev PC); MultiMesh preallocated at 800 instances, shader compiled by a 2-frame warm-up at load, so no build/compile hitch. Perf (tools/measure_glyph_world.gd -- storm, 1920x1080, GTX 1060, 30 fps capped): frame 33.33 ms mean in both cases; draw calls 5.8 -> 6.7 (opening) (+1 for the storm; measure counts include overhead); GPU ms opening 0.58 -> 0.69, wide-reveal worst case 0.72 -> 1.73 mean. NOT measured on an Intel HD 2500/4000 (none available), so AC2 left unchecked pending that. Tests: tools/test_glyph_storm.gd PASS; all tools/test_*.gd PASS; headless boot zero ERROR. Visual: contact sheets in scratchpad t030_strip_1366.png, t030_zoom_1366.png, t030_strip_1920.png (lift, swirl, settle; ai cyan, demonic red). Docs updated: architecture.md, game_design.md.
+
+Validated (validator PASS) and committed. Storm start costs ~12 us mean (uniforms only), 30 FPS held on the dev GTX 1060 (+1 draw call, GPU 0.7-1.7 ms at 1080p). AC #2 (30 FPS on the target low-end GPU) stays open until the user laptop check (task-037).
 <!-- SECTION:NOTES:END -->
