@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T09:01:00Z'
+updated_date: '2026-11-02T09:17:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -35,3 +35,9 @@ Draft from task-016. A menu item that shows the origin ledger as a row of sigils
 <!-- SECTION:PLAN:BEGIN -->
 1. Add remember MenuItemDef (action remember) + builder; 2. MenuController offers it only after a claim is heard; 3. Glyph view renders ledger sigil row in the same MultiMesh with per-state flags (alive/struck/recanted/deed); 4. Tests + capture; 5. docs
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented: MenuItemDef remember (requires_claim, built by tools/build_menu.gd); OriginLedger.any_claim_heard(); MenuController.ledger (read-only), show_ledger/back_to_list/ledger_entries, SignalBus.menu_ledger_shown; MenuGlyphView sigil row in the same MultiMesh (kinds 4 alive,5 struck,6 recanted,7 deed) + glyph_menu.gdshader (struck pinned on floor dim, recanted split-crack, deed slow calm drift, never settles); MenuConfig Ledger group. Evidence: tools/test_menu.gd PASS (absent before claim, present after, state->kind mapping, single MultiMesh, no pause, back/Tab); all 16 tools/test_*.gd PASS; headless boot 0 ERROR; build_menu idempotent. Contact sheet: scratchpad/t043_remember.png (capture tools/capture_remember.gd). User visual check pending.
+<!-- SECTION:NOTES:END -->
