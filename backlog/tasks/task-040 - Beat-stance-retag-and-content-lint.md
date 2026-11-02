@@ -1,11 +1,11 @@
 ---
 id: TASK-040
 title: Beat stance retag and content lint
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T07:45:00Z'
+updated_date: '2026-11-02T08:11:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -44,3 +44,9 @@ Implemented: NarrationBeat supports/contradicts/role (origin_tags removed from b
 Lint: errors for unknown id, id in both lists, nature without supporting beat; nature without contradicting beat is an ERROR only when m1_beats.json lint.strict_contradiction=true, otherwise a printed WARNING (currently alien and angelic). Verified: strict=true -> exit 1 with 'nature alien/angelic has no contradicting beat', nothing built; strict=false -> exit 0 with 2 warnings. Strict mode to be switched on in task-042/044 when the content lands.
 Tests: tools/test_narrator.gd updated (stance table, counts, expected contradicts, lint pass/fail cases on synthetic tables; no existing check weakened) PASS. tools/test_save.gd field allow-list extended with the 4 new fields. docs/architecture.md updated. Not edited (off limits): docs/narration_m1.md still mentions origin_tags in its intro.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+NarrationBeat now has supports / contradicts / role (origin_tags removed); all 26 beats migrated per the design stance table. tools/build_narration.gd runs NarrationLint: fails on a hypothesis in both lists, missing support or unknown ids; the "every nature needs a contradicting beat" rule is behind lint.strict_contradiction (off until the approved alien/angelic lines land in task-042/044). Validator PASS.
+<!-- SECTION:FINAL_SUMMARY:END -->
