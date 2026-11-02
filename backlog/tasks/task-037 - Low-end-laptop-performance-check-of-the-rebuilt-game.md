@@ -1,7 +1,7 @@
 ---
 id: TASK-037
 title: Low-end laptop performance check of the rebuilt game
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-10-30T22:45:00Z'
 updated_date: '2026-11-02T10:16:00Z'
@@ -12,7 +12,7 @@ dependencies:
   - TASK-035
 priority: high
 type: task
-ordinal: 1000
+ordinal: 47000
 ---
 
 ## Description
