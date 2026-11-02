@@ -78,7 +78,7 @@ Visual identity is central. The world is real 3D geometry shown in an isometric 
 ### Narration contradictions and rule-outs
 - Narration contradicts itself across runs. Accounts include: hero or villain, alien origin, an AI reassembled after a war, and occult (demonic or angelic).
 - No account is ever confirmed. The true origin is never revealed.
-- Some accounts can be ruled out through gameplay. How rule-outs work is undecided (see Open Questions).
+- Some accounts can be ruled out through gameplay. Draft design: see Origin Contradiction and Rule-Out System (task-016, awaiting user review).
 - The design of this system is part of M2.
 
 ### Character Identity
@@ -194,6 +194,143 @@ World map editor. Additional handcrafted maps and content.
 - Other view modes beyond the isometric 2.5D view: undecided (see Open Questions).
 - Pause menu. (Excluded by design.)
 
+## Origin Contradiction and Rule-Out System
+
+**Status: draft for user review** (task-016). This is story-core design; nothing here is decided until the user approves it. All numbers are defaults that will live in `.tres` resources.
+
+### 1. Hypotheses and how beats reference them
+The existing origin tags split into two axes. A single flat list would not work: "hero" and "alien" do not exclude each other, so two survivors like {hero, alien} would still read as one answer ("a heroic alien").
+- **Nature axis** (what it is): `alien`, `ai`, `demonic`, `angelic`. Only this axis can be ruled out.
+- **Deed axis** (what it did): `hero`, `villain`. This axis is testimony and can never be ruled out. Both deeds always stay open, and the narrator keeps arguing both sides.
+- `none` is not a hypothesis. It means the beat is neutral.
+
+Each beat holds a **stance** toward each hypothesis: `supports`, `contradicts`, or neutral (not listed). The current `origin_tags` become `supports`. A `contradicts` entry is added where the text denies an account (see 5). The player never sees the stances. They are used for narrator selection, ledger feedback and content checks.
+
+### 2. How gameplay rules a nature out: claims and trials
+A rule-out is never stated by the narrator. The player earns it by **disproving something the narrator claimed**.
+1. **Claim.** One claim beat per nature makes a testable statement of the form "if you were X, you could never Y". It reads as a taunt, not as a rule. Example (demonic): "If the static reads your name, it keeps you." Hearing the claim **arms** that nature's trial. Without the claim, the trial cannot fire, so every rule-out has been set up in the fiction first (pillar: discovery through play).
+2. **Trial.** A trial is a systemic condition, checked from signals the game already emits:
+
+| Nature | Claim (gist) | Trial (falsifier) | Built on |
+|---|---|---|---|
+| `demonic` | Its name in the static would keep it. | Reach `erosion_high`, leave the corruption, and stay alive for `demonic_survive_s` (15 s). | erosion, hazards |
+| `ai` | What collected itself would never come apart by choice. | Choose "become one" in the menu, then survive `ai_single_s` (60 s) in single form in the same run. | menu, entity form |
+| `angelic` | Bright things cannot rest in the dark. | Stand idle for `angelic_dark_s` (20 s) on a cell at least `dark_distance` (6) cells from any light-source cell (item, spikes, corruption). | idle, map data |
+| `alien` | What fell from the stars cannot hold what was made here. | Move a small object with the grown entity (M2 pushing). The trial stays dormant until pushing exists. | entity ability |
+
+3. **Strike.** When a trial passes, the nature is **struck**. The cap is `max_strikes_per_run` (1) per run. The strike is saved at once, not only at death.
+
+**Player-readable feedback** (the answer is never told, only "not that"):
+- **Narrator reaction.** A `claim_broken` beat plays right away. It sounds unsettled, not triumphant. Example: "...Then not the stars." Its mood comes from the struck nature.
+- **Doubt rendering.** Later beats whose `supports` contain only struck natures still play, but their letters do not fully settle: some glyphs keep scrambling (`doubt_scramble`). The narrator keeps saying the old line, and the line no longer holds together.
+- **Ledger in the menu.** A new `MenuItemDef` named "remember" opens a row of six sigils, one glyph per hypothesis, defined in data. They are built from the surroundings like the rest of the menu: struck natures do not lift with the others and stay dim on the floor, and a recanted nature lifts with a crack glyph beside it. The two deed sigils always lift but never settle; they keep swapping places. Label legibility follows the menu's simplification over use. Opening the ledger is still not a pause.
+
+### 3. The guarantee
+**Invariant: at least `min_alive_nature` = 2 nature hypotheses are always alive, and deed hypotheses can never be struck. Every account therefore has at least 2 x 2 = 4 open combinations, and no sequence of runs leaves exactly one answer.**
+
+Argument:
+- `OriginLedger` is the only writer of the struck list, and it has only two operations.
+- `strike(h)`:
+  - It is a no-op if `h` is already struck or is a deed.
+  - If striking would drop the alive count below the floor, it first **recants** the oldest struck nature (FIFO) and then strikes `h`. That recant always exists: at the floor with 4 natures, 2 are struck, and `h` is not one of them.
+  - The alive count is never below the floor afterwards.
+- `recant(h)` only raises the alive count.
+- On load, a save with fewer than 2 alive natures is repaired by recanting the newest strikes. A config value below 2 is clamped to 2 with a logged error.
+- No other code path changes the list, so the invariant holds by induction over every operation, in any number of runs.
+- Content rule: no beat may be `CONFIRM`-like. Every beat that supports a single nature must have a later or parallel beat that supports a different one (checked by the lint in task B).
+
+**Narrator behaviour as options shrink:**
+- **4 alive:** normal play.
+- **3 alive:** beats that support a struck nature render with doubt.
+- **2 alive (floor):**
+  - The next successful trial causes a **recant**. The narrator reclaims what it lost, for example: "No. I was too sure. The stars come back." The recant beat restates that nature's claim and re-arms its trial with its threshold multiplied by `retry_scale` (1.5) per previous strike, so ping-pong gets slower each time.
+  - In ladder ties, beats that support both survivors at once are preferred. This turns the narrator's contradiction onto the last two.
+- The truth slips; it never converges.
+
+### 4. Data model sketch
+- **`OriginHypothesis`** Resource (`resources/origin/*.tres`):
+  - `id` (StringName), `axis` (NATURE/DEED), `sigil` (String glyph), `label` (String)
+  - `claim_beat_id`, `broken_beat_id`, `recant_beat_id`
+  - `trial: OriginTrial` (null for deeds)
+- **`OriginTrial`** Resource:
+  - `kind` enum: EROSION_ESCAPE, SINGLE_FORM_SURVIVE, DARK_IDLE, OBJECT_MOVED
+  - `seconds` (float), `distance` (int), `requires_entity_unlocked` (bool)
+- **`OriginConfig`** (`resources/config/origin_config.tres`):
+  - `hypotheses: Array[OriginHypothesis]`
+  - `min_alive_nature` (2, clamped to at least 2), `max_strikes_per_run` (1), `retry_scale` (1.5), `doubt_scramble` (0.3), `tie_prefer_dual_support` (bool)
+- **`NarrationBeat`** additions:
+  - `supports`, `contradicts` (PackedStringArray; these replace `origin_tags`)
+  - `role` enum: STORY, CLAIM, BROKEN, RECANT
+  - `event_param` (StringName; the hypothesis id for `claim_broken` and `claim_recanted`)
+- **`PersistentProgress`** additions:
+  - `struck_natures` (PackedStringArray, ordered oldest first)
+  - `armed_trials` (PackedStringArray)
+  - `strike_counts` (Dictionary id -> int, used for the retry scaling and the ledger crack)
+  - `last_strike_run` (int, enforces the per-run cap)
+  - Missing fields default to empty.
+- **Nodes:**
+  - `OriginLedger` (logic, after `SaveService`): the sole mutator; it enforces the invariant.
+  - `OriginTrialMonitor` (logic): listens to `erosion_changed`, `run_ended`, `entity_form_changed`, `idle`, the player cell and the future `object_moved`, and runs timers for armed trials only.
+- **SignalBus:**
+  - `origin_trial_passed(id)` (monitor -> ledger)
+  - `origin_struck(id)`, `origin_recanted(id)`, `origin_ledger_changed(alive, struck)` (the narrator, the menu and the doubt rendering listen)
+  - `origin_claim_heard(id)` (narrator -> ledger, arms the trial)
+- **Narrator eligibility:**
+  - A CLAIM beat is eligible only while its nature is alive and unarmed.
+  - BROKEN and RECANT beats fire on their events with a matching `event_param`.
+  - Doubt is a display flag passed to the overlay.
+
+### 5. Content implications for the 26 M1 beats
+- **Retag only (text unchanged):**
+  - `supports` = the current tags, with `hero`/`villain` now on the deed axis.
+  - New `contradicts` entries:
+    - `start_came_back` contradicts `demonic` (it returned by choice, not bound).
+    - `corrupt_after_war` contradicts `demonic` (machine, not name).
+    - `erosion_true_name` contradicts `ai`.
+    - `death_spikes_willing` contradicts `villain`.
+    - `idle_burned` contradicts `hero`.
+  - `start_hero_lied` and `wall_keep_them_out` support both deeds.
+- **Imbalance:** `ai` is supported by 6 beats (mostly corruption), `demonic` by 5, `alien` and `angelic` by 4 each. No beat contradicts `alien` or `angelic`.
+- **Gaps:**
+  - At least one beat contradicting `alien` and one contradicting `angelic`.
+  - 4 CLAIM beats, 4 BROKEN beats and 4 RECANT beats (12 short lines). The alien set ships dormant.
+  - Claims gate at `min_deaths` 3 or more, so they arrive with the menu and the ledger.
+  - Beats for runs 7 and later that support both survivors, to fill the intended start silence.
+- No new line may name a control or say "ruled out". The fiction is always "I was wrong" or "I was too sure".
+
+### Proposed backlog tasks
+**A. Origin ledger and invariant**
+- `OriginHypothesis`, `OriginTrial` and `OriginConfig` exist and are built by a `tools/` builder. The 4 nature and 2 deed `.tres` files load.
+- `OriginLedger` is the only writer of `struck_natures`. A headless test applies 1000 random strike sequences and asserts that at least 2 natures are always alive and that the deeds are never struck.
+- Loading a save with 3 struck natures repairs it to 2 struck (the newest strike is recanted) and logs a warning.
+
+**B. Beat stance retag and content lint**
+- `NarrationBeat` has `supports`, `contradicts` and `role`. All 26 beats are migrated as in 5, and `origin_tags` is removed.
+- A lint run by the builder fails if any nature lacks a supporting or a contradicting beat, or if a beat lists a hypothesis in both `supports` and `contradicts`.
+
+**C. Trial monitor (demonic, ai, angelic)**
+- Each trial fires `origin_trial_passed` only while it is armed and its nature is alive. Thresholds come from config.
+- At most one strike per run (`last_strike_run`), and the strike is saved immediately.
+- A headless test drives the signals and checks one pass and one non-pass case per trial.
+
+**D. Narrator integration**
+- Hearing a CLAIM beat arms its trial. BROKEN and RECANT beats play on `origin_struck` and `origin_recanted` with the matching `event_param`.
+- Beats whose `supports` are all struck play with the doubt flag. The overlay keeps `doubt_scramble` of the glyphs unsettled.
+- At the floor, tie-breaking prefers beats that support both survivors.
+
+**E. Ledger menu item "remember"**
+- A new `MenuItemDef` opens the sigil row built from surrounding glyphs, with no pause. Struck sigils stay on the floor, recanted ones show a crack, and the deed sigils never settle.
+- It is offered only after a claim has been heard. It stays within the menu's single MultiMesh draw call. Visual check by the user.
+
+**F. Claim, broken and recant lines (user-authored or user-approved)**
+- 12 lines plus 2 contradicting lines for `alien` and `angelic`, added to `docs/narration_m1.md` (or an M2 narration doc). They follow the tone curve and the no-tutorial rule.
+- The task B lint passes with the new beats.
+
+**G. Alien trial (blocked by entity pushing)**
+- OBJECT_MOVED fires when the grown entity moves a small object while the alien trial is armed. The alien CLAIM beat stops being dormant.
+
+**Later (not M2):** run-ending narrative choices add testimony to the deed axis. The narrator answers with a beat for the opposite deed (contrarian), and no deed is ever struck.
+
 ## Open Questions and Risks
 
 ### Risks
@@ -215,8 +352,7 @@ World map editor. Additional handcrafted maps and content.
 - How identity changes over time beyond the third-run growth (stages, pacing, what changes).
 - Pool and rules for random identity generation on the first run.
 - Full ability list for the multi-glyph entity, and how small-object pushing works.
-- Rule-out mechanics: which gameplay actions rule out which accounts, whether rule-outs are permanent or reversible, and whether and how the player sees them.
-- How contradicting narration beats are authored and sequenced across runs.
+- Rule-out mechanics and how contradicting beats are authored: draft answer in Origin Contradiction and Rule-Out System (task-016). Open until the user reviews it.
 - Narrator tone: the run counts at which the cryptic-to-clear shift happens, and how it is paced.
 - How revealed map memory is displayed (for example, faintly) and how it differs from currently visible areas.
 - Which meta-progression systems exist, and what each one costs and unlocks (permanent functions, starting points, items, skills, world parts, achievements).
