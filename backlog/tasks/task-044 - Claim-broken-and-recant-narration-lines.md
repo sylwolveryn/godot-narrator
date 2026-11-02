@@ -4,7 +4,7 @@ title: Claim, broken and recant narration lines
 status: To Do
 assignee: []
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T07:35:00Z'
+updated_date: '2026-11-02T08:04:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -26,3 +26,9 @@ Draft from task-016. About 14 new lines (claim/broken/recant per nature plus con
 - [ ] #2 The beat lint passes with the new beats
 - [ ] #3 User approves the text
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+User approved all 14 lines in docs/narration_origin.md on 2026-11-02, with one change: claim_ai_one triggers on entity_form_changed (form switch) instead of died_corruption. Lines still need to be added to data/narration and the lint switched to strict (done together with task-042).
+<!-- SECTION:NOTES:END -->
