@@ -131,7 +131,7 @@ All folders and files use snake_case.
   - `sfx` (AudioStream, may be null)
   - `once` (bool)
 - `Narrator` node listens to SignalBus events and picks eligible beats.
-- Presentation goes through the overlay with morphing text (glyph scramble → resolve).
+- Presentation goes through the overlay (task-034): `NarrationOverlay` lays the line out into single letters once per beat; they assemble Spike-B style (fly in from scattered spots, ease-out, left-to-right stagger), rest with zero per-frame work, then disperse (drift up and away, fading). A soft additive glow quad per letter is tinted by the beat mood (`NarratorConfig.mood_glow_colors`). No random character swapping. Two canvas items (glow ADD, text) redraw only while a morph runs: about 3 batched passes. The line sits at `vertical_anchor` (lower third), clear of the player, entity and menu. The intro wave thins out first (`IntroConfig.wave_dissolve_fraction`) and the veil lifts on a sine ease while the world reveal disc is already growing.
 - Heard beats persist.
 
 ## Validation Per Task

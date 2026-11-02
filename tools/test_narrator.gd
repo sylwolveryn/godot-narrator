@@ -87,6 +87,7 @@ func _run() -> void:
 	_test_display_cap_and_queue()
 	_test_preempt()
 	_test_run_start_after_death()
+	_test_overlay()
 	_test_time_beat()
 	_test_idle_and_motion()
 	await _test_persistence()
@@ -442,3 +443,54 @@ func _test_run_start_after_death() -> void:
 	_wait(n, 40.0)
 	_check(_started == PackedStringArray(["wake_first", "corrupt_knows", "start_came_back"]), "displaced start beat should re-queue, got %s" % [_started])
 	_teardown(rig)
+
+
+## The overlay presentation (task-034): calm letter assembly/dispersal, no character swapping, text kept clear of the
+## player (centre of the screen), every beat mood has a glow tint.
+func _test_overlay() -> void:
+	var config: NarratorConfig = (load(CONFIG_PATH) as NarratorConfig).duplicate()
+	for beat: NarrationBeat in config.beats:
+		_check(config.mood_glow_colors.has(beat.mood), "beat %s mood %s has no glow tint" % [beat.id, beat.mood])
+	root.size = Vector2i(1366, 768)
+	var overlay: Node = load("res://scripts/narrator/narration_overlay.gd").new()
+	overlay.set("config", config)
+	root.add_child(overlay)
+	var beat: NarrationBeat = _beat_by_id(config, "wake_first")
+	_check(not overlay.call("is_showing"), "overlay idle before a beat")
+	overlay.call("show_beat", beat)
+	_check(overlay.call("is_showing"), "overlay shows the beat")
+	var chars: PackedStringArray = overlay.get("_chars")
+	_check("".join(chars) == beat.text.replace(" ", ""), "letters are exactly the beat text (no swapped characters), got %s" % ["".join(chars)])
+	var rest: PackedVector2Array = overlay.get("_rest")
+	var view: Vector2 = root.get_visible_rect().size
+	for p: Vector2 in rest:
+		_check(p.y > view.y * 0.6 and p.y < view.y and p.x > 0.0 and p.x < view.x, "letter at rest stays in the lower third and on screen: %s" % [p])
+	overlay.call("advance", config.morph_in_seconds * 0.3)
+	var pos: PackedVector2Array = overlay.get("_pos")
+	var moved: int = 0
+	for i in pos.size():
+		if pos[i].distance_to(rest[i]) > 1.0:
+			moved += 1
+	_check(moved > 0, "letters are in flight mid-assembly")
+	overlay.call("advance", config.morph_in_seconds)
+	_check(overlay.get("phase") == 2, "assembled line rests (HOLD)")
+	_check(not overlay.is_processing(), "a resting line costs no per-frame processing")
+	pos = overlay.get("_pos")
+	for i in pos.size():
+		_check(pos[i].is_equal_approx(rest[i]), "rested letter %d on its place" % i)
+	overlay.call("dissolve", true)
+	_check(overlay.get("phase") == 3, "dissolving")
+	overlay.call("advance", config.preempt_dissolve_seconds + 0.05)
+	_check(not overlay.call("is_showing"), "fast dissolve clears the line")
+	overlay.call("show_beat", beat)
+	overlay.call("dissolve", false)
+	overlay.call("advance", config.morph_out_seconds + 0.05)
+	_check(not overlay.call("is_showing"), "normal dissolve clears the line")
+	overlay.free()
+
+
+func _beat_by_id(config: NarratorConfig, id: String) -> NarrationBeat:
+	for b: NarrationBeat in config.beats:
+		if b.id == id:
+			return b
+	return null

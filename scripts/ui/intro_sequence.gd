@@ -47,8 +47,10 @@ func play(lite: bool = false) -> void:
 	_tween.tween_interval(config.wave_hold * time_scale)
 	_tween.tween_callback(_hand_off)
 	_tween.set_parallel(true)
-	_tween.tween_method(_set_envelope, 1.0, 0.0, config.reveal_duration * time_scale)
-	_tween.tween_method(_set_veil, 1.0, 0.0, config.reveal_duration * time_scale)
+	# The wave thins out first (it is gone before the veil is), the veil then lifts on a smooth ease so the world's own
+	# reveal disc (already growing from the hand-off) takes over without a visible step.
+	_tween.tween_method(_set_envelope, 1.0, 0.0, config.reveal_duration * config.wave_dissolve_fraction * time_scale) 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_tween.tween_method(_set_veil, 1.0, 0.0, config.reveal_duration * time_scale) 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_tween.set_parallel(false)
 	_tween.tween_callback(func() -> void: _veil.visible = false)
 

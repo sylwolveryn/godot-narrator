@@ -53,7 +53,6 @@ extends Resource
 @export var font_names: PackedStringArray = PackedStringArray(["Consolas", "Cascadia Mono", "Courier New", "monospace"])
 @export var font_size: int = 60
 @export var text_color: Color = Color("#EAF2FF")
-@export var scramble_color: Color = Color("#8FA3D9")
 @export var outline_color: Color = Color(0.012, 0.016, 0.035, 0.95)
 @export var outline_size: int = 16
 ## Vertical position of the text line as a fraction of the screen height (lower third).
@@ -62,11 +61,29 @@ extends Resource
 @export var max_text_width: float = 1600.0
 ## Fraction of the screen width kept free on each side (applies when the window is narrower than max_text_width).
 @export_range(0.0, 0.4) var side_margin: float = 0.08
-@export var scramble_glyphs: String = "#%&@$?!/|<>=+*~^;:0123456789abcdefxyz"
-## Random glyph changes per second.
-@export var scramble_rate: float = 24.0
-## Width of the scrambling front, in characters, that sweeps across the line while morphing.
-@export var morph_front_chars: float = 4.0
+
+@export_group("Letter motion")
+## Letters fly in from scattered spots at most this far (reference px, scaled at runtime) and settle with an ease-out.
+@export var assemble_scatter_px: float = 150.0
+## Letters leave towards scattered spots this far, drifting up by `disperse_rise_px`.
+@export var disperse_scatter_px: float = 90.0
+@export var disperse_rise_px: float = 40.0
+## Fraction of the morph time spent staggering the letters' start (0 = all start together; the rest is each letter's flight).
+@export_range(0.0, 0.8) var stagger_fraction: float = 0.55
+## Soft glow quad behind each letter: size as a multiple of the font size, and strength (0 = off).
+@export var glow_size_factor: float = 1.9
+@export_range(0.0, 1.0) var glow_strength: float = 0.45
+## Extra glow while a letter is in flight (it settles to `glow_strength`).
+@export_range(0.0, 1.0) var glow_flight_boost: float = 0.4
+## Glow tint per beat mood (same ids as the sound moods).
+@export var mood_glow_colors: Dictionary[StringName, Color] = {
+	&"hum": Color("#FFC98A"),
+	&"chime": Color("#BFF6FF"),
+	&"static": Color("#E07BFF"),
+	&"low_drone": Color("#FF6A4D"),
+	&"pulse": Color("#7DFFB0"),
+}
+@export var default_glow_color: Color = Color("#FFC98A")
 
 @export_group("Audio")
 @export var sfx_volume_db: float = -14.0

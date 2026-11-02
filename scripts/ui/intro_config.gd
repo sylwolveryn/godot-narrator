@@ -13,6 +13,8 @@ extends Resource
 ## Hand-off to the spawn step happens at the start of this phase: the wave and the black
 ## veil dissolve while the world (and the player) are already there.
 @export var reveal_duration: float = 1.4
+## Share of the reveal in which the wave fades out; the veil lifts over the whole reveal.
+@export_range(0.2, 1.0, 0.05) var wave_dissolve_fraction: float = 0.7
 ## Multiplier applied to every timing when the intro replays after a death.
 @export_range(0.0, 1.0, 0.05) var restart_time_scale: float = 0.35
 
