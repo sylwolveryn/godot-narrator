@@ -27,9 +27,9 @@ The grown entity must feel meaningfully different: it can move small objects, wh
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The multi-glyph entity can push objects marked as small in map data
-- [ ] #2 The single-glyph form cannot move those objects
-- [ ] #3 Push parameters come from a resource
+- [x] #1 The multi-glyph entity can push objects marked as small in map data
+- [x] #2 The single-glyph form cannot move those objects
+- [x] #3 Push parameters come from a resource
 <!-- AC:END -->
 
 ## Implementation Plan
