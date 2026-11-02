@@ -1,7 +1,7 @@
 ---
-id: DRAFT-003
+id: TASK-041
 title: Origin trial monitor (demonic, ai, angelic)
-status: Draft
+status: To Do
 assignee: []
 created_date: '2026-11-02T06:43:00Z'
 labels:
