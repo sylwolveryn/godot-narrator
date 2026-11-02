@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T07:45:00Z'
+updated_date: '2026-11-02T08:11:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -43,4 +43,6 @@ Draft from task-016 (pending user review of the origin rule-out design). The led
 Implemented: scripts/origin/{origin_trial,origin_hypothesis,origin_config,origin_ledger}.gd; tools/build_origin.gd (4 nature + 2 deed .tres, trial_<nature>.tres, origin_config.tres; idempotent, md5 of all resources identical on rebuild); PersistentProgress fields; SaveService type-sanitizes them + commit_progress()/progress_loaded; SignalBus origin_* signals; OriginLedger wired in build_main_scene after SaveService.
 Evidence: tools/test_origin_ledger.gd PASS headless (14000 random ops over 1000 sequences incl. deeds/unknown ids: >=2 natures alive, no deed struck, no dups, floor recants exercised; repair of 3 and 4 struck (newest recanted, repair_log + push_warning, repaired save written), unknown ids/deeds dropped; persistence round trip incl. per-run cap after reload; static scan proves no other script touches the state fields). All 16 tools/test_*.gd PASS; boot --quit-after 60: 0 ERROR lines. Expected 'ERROR: min_alive_nature 1 is below...' appears only in the clamp test (designed logged error).
 Decisions: run_index = persistent PersistentProgress.run_count (RunManager run_index resets per launch). Recant of a nature leaves its trial unarmed until origin_claim_heard. Trials stored as separate .tres (embedded sub-resource ids are random = non-idempotent). Sigils * # ^ + ! x and labels are placeholders for task-043. Claim/broken/recant beat ids are conventional (claim_<id> ...) and dangle until task-044. max_strikes_per_run > 1 undercounts after a reload (only last_strike_run persisted, as designed).
+
+Validator fix: ledger-only-writer scan in tools/test_origin_ledger.gd now covers res://scripts/ only (allow-list: ledger, persistent_progress, save_service); tools/test_save.gd no longer flagged. Docs: origin_tags wording replaced in docs/narration_m1.md (line 3) and docs/game_design.md (208, 263, 309). Re-run: all 16 tools/test_*.gd PASS headless, boot --quit-after 60 = 0 error lines.
 <!-- SECTION:NOTES:END -->
