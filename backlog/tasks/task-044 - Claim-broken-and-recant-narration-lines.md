@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T08:41:00Z'
+updated_date: '2026-11-02T08:55:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -23,9 +23,9 @@ Draft from task-016. About 14 new lines (claim/broken/recant per nature plus con
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Lines added to the narration doc following the tone curve and the no-tutorial rule
-- [ ] #2 The beat lint passes with the new beats
-- [ ] #3 User approves the text
+- [x] #1 Lines added to the narration doc following the tone curve and the no-tutorial rule
+- [x] #2 The beat lint passes with the new beats
+- [x] #3 User approves the text
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -38,4 +38,6 @@ Draft from task-016. About 14 new lines (claim/broken/recant per nature plus con
 
 <!-- SECTION:NOTES:BEGIN -->
 User approved all 14 lines in docs/narration_origin.md on 2026-11-02, with one change: claim_ai_one triggers on entity_form_changed (form switch) instead of died_corruption. Lines still need to be added to data/narration and the lint switched to strict (done together with task-042).
+
+14 approved lines added as data/narration/origin_beats.json (generated from docs/narration_origin.md; tools/test_narrator.gd compares text and every field against the doc), appended by tools/build_narration.gd. lint.strict_contradiction is true in m1_beats.json; build_narration passes strict (builders idempotent apart from random node unique_ids in main.tscn, pre-existing). Lint gained role rules. AC3 user approval recorded 2026-11-02. Not committed.
 <!-- SECTION:NOTES:END -->
