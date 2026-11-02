@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T06:43:00Z'
-updated_date: '2026-11-02T09:22:00Z'
+updated_date: '2026-11-02T10:16:00Z'
 labels:
   - narrator
 milestone: m-1
@@ -27,7 +27,7 @@ Draft from task-016. A menu item that shows the origin ledger as a row of sigils
 <!-- AC:BEGIN -->
 - [x] #1 Struck sigils stay on the floor, recanted ones show a crack, deed sigils never settle
 - [x] #2 Offered only after a claim has been heard; stays within the menu single draw call
-- [ ] #3 User visual check
+- [x] #3 User visual check
 <!-- AC:END -->
 
 ## Implementation Plan
