@@ -7,6 +7,8 @@ extends Resource
 ## SignalBus.menu_action_requested to the data layer that owns them.
 const ACTION_CLOSE: StringName = &"close"
 const ACTION_SWITCH_FORM: StringName = &"switch_form"
+## Shows the origin ledger as a row of sigils (task-043); handled by MenuController itself, nothing is requested upward.
+const ACTION_REMEMBER: StringName = &"remember"
 
 @export var id: StringName = &""
 @export var action: StringName = ACTION_CLOSE
@@ -17,6 +19,8 @@ const ACTION_SWITCH_FORM: StringName = &"switch_form"
 @export var alt_form: StringName = &""
 ## Only offered once the multi-glyph entity is unlocked.
 @export var requires_entity: bool = false
+## Only offered once any origin claim has been heard (OriginLedger.any_claim_heard).
+@export var requires_claim: bool = false
 ## Confirming it closes the menu (the player then sees the result in the world).
 @export var closes_menu: bool = true
 

@@ -2,7 +2,7 @@ extends SceneTree
 ## Headless test of the origin trial monitor (task-041) on the real main scene. Time is advanced by calling
 ## OriginTrialMonitor.advance() and the game signals are emitted by hand, so no real seconds pass.
 ## Per trial (demonic / ai / angelic) a pass case and non-pass cases; an unarmed trial and a struck nature never
-## pass; at most one strike per run, saved at once; thresholds scale after a recant; alien stays dormant.
+## pass; at most one strike per run, saved at once; thresholds scale after a recant; alien passes on a grown push.
 ## Scene nodes use the SignalBus autoload, so they are held as Variant (see test_narrator).
 ## Usage: godot --headless --path . --max-fps 30 -s tools/test_origin_trials.gd
 
@@ -116,7 +116,7 @@ func _run() -> void:
 	await _case_struck()
 	await _case_one_strike_per_run()
 	await _case_scaling()
-	await _case_alien_dormant()
+	await _case_alien()
 
 	Support.remove_file("user://test_progress_%s.tres" % TAG)
 	if _failures.is_empty():
@@ -373,11 +373,42 @@ func _case_scaling() -> void:
 	await _stop()
 
 
-func _case_alien_dormant() -> void:
+func _case_alien() -> void:
 	_start()
-	_check(_rig.ledger.config.find(&"alien").trial.kind == OriginTrial.Kind.OBJECT_MOVED, "setup: alien trial kind")
-	_rig.ledger.arm(&"alien")
+	var t: OriginTrial = _rig.ledger.config.find(&"alien").trial
+	_check(t.kind == OriginTrial.Kind.OBJECT_MOVED and not t.dormant, "setup: alien trial is OBJECT_MOVED and not dormant")
+	# Unarmed: a grown push does nothing.
 	_rig.bus.object_moved.emit(0, Vector2i.ZERO, Vector2i.ONE, FORM_GROWN)
-	_rig.monitor.advance(1000.0)
-	_check(_passed.is_empty(), "the alien trial must stay dormant (task-045)")
+	_check(_passed.is_empty(), "an unarmed alien trial passed")
+	_rig.ledger.arm(&"alien")
+	# Single form never counts.
+	_rig.bus.object_moved.emit(0, Vector2i.ZERO, Vector2i.ONE, FORM_SINGLE)
+	_check(_passed.is_empty(), "a single-form move passed the alien trial")
+	_rig.bus.object_moved.emit(0, Vector2i.ZERO, Vector2i.ONE, FORM_GROWN)
+	_check(_passed == [&"alien"], "a grown push while armed must pass alien, got %s" % [_passed])
+	_check(_rig.ledger.struck_natures() == PackedStringArray(["alien"]), "alien struck, got %s" % [_rig.ledger.struck_natures()])
+	_rig.bus.object_moved.emit(1, Vector2i.ZERO, Vector2i.ONE, FORM_GROWN)
+	_check(_passed.size() == 1, "alien reports once per run")
+	await _stop()
+
+	# Struck nature: never passes again.
+	_start()
+	_rig.ledger.arm(&"alien")
+	_rig.ledger.strike(&"alien", 0)
+	_rig.bus.object_moved.emit(0, Vector2i.ZERO, Vector2i.ONE, FORM_GROWN)
+	_check(_passed.is_empty(), "a struck alien trial passed")
+	await _stop()
+
+	# One strike per run: alien after demonic in the same run is refused, stays armed.
+	_start()
+	var d: OriginTrial = _rig.ledger.config.find(&"demonic").trial
+	_rig.ledger.arm(&"demonic")
+	_rig.ledger.arm(&"alien")
+	_erode(d.erosion_fraction + 0.1)
+	_erode(0.2)
+	_rig.monitor.advance(d.seconds + 1.0)
+	_rig.bus.object_moved.emit(0, Vector2i.ZERO, Vector2i.ONE, FORM_GROWN)
+	_check(_passed.size() == 2, "both reported, got %s" % [_passed])
+	_check(_rig.ledger.struck_natures() == PackedStringArray(["demonic"]), "only the first pass strikes, got %s" % [_rig.ledger.struck_natures()])
+	_check(_rig.ledger.is_armed(&"alien"), "the refused alien trial stays armed")
 	await _stop()

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MenuItemDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/menu_item_def.gd" id="1_0crtw"]
+
+[resource]
+script = ExtResource("1_0crtw")
+id = &"remember"
+action = &"remember"
+label = "remember"
+requires_claim = true
+closes_menu = false

@@ -7,7 +7,8 @@ extends Node
 ##  - ai (SINGLE_FORM_SURVIVE): the single form was CHOSEN (animated entity_form_changed) and held `seconds`
 ##    alive in the same run.
 ##  - angelic (DARK_IDLE): idle for `seconds` on a cell at least `distance` cells from every light-source cell.
-##  - alien (OBJECT_MOVED): dormant until task-045.
+##  - alien (OBJECT_MOVED): the GROWN form moved an object (SignalBus.object_moved); one push passes (instant: no
+##    seconds, so trial_scale does not apply).
 ## A trial only runs while its nature is alive and armed. Seconds are multiplied by OriginLedger.trial_scale(id)
 ## (harder after recants). Reads only; it never writes the ledger state. Per-frame work only while a timer runs.
 
@@ -58,6 +59,7 @@ func _ready() -> void:
 	SignalBus.entity_form_changed.connect(_on_form_changed)
 	SignalBus.player_motion_changed.connect(_on_motion_changed)
 	SignalBus.origin_ledger_changed.connect(_on_ledger_changed)
+	SignalBus.object_moved.connect(_on_object_moved)
 	set_process(false)
 
 
@@ -131,6 +133,16 @@ func _on_motion_changed(moving: bool) -> void:
 	_idle_clock = 0.0
 	_idle_far = NOT_FOUND
 	_refresh_processing()
+
+
+## Only the grown entity can push; the form is checked anyway. Passes at once while the alien trial is armed.
+func _on_object_moved(_object_id: int, _from_cell: Vector2i, _to_cell: Vector2i, form: StringName) -> void:
+	var kind: int = OriginTrial.Kind.OBJECT_MOVED
+	if form != EntityForm.GROWN or not _playing() or not _active(kind):
+		return
+	var id: StringName = _ids[kind]
+	_passed[id] = true
+	SignalBus.origin_trial_passed.emit(id)
 
 
 func _on_ledger_changed(_alive: PackedStringArray, _struck: PackedStringArray) -> void:

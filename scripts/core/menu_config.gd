@@ -61,6 +61,26 @@ extends Resource
 @export var floor_source_color: Color = Color(0.36, 0.40, 0.62)
 @export var wall_source_color: Color = Color(0.45, 0.58, 0.9)
 
+@export_group("Ledger")
+## The "remember" row (task-043): sigils are glyphs of the surroundings that fly into a row. Alive ones settle and glow,
+## struck ones stay on the floor (dim, never lift), recanted ones settle with a crack, deed ones hover and never settle.
+@export var sigil_size: float = 1.5
+@export var sigil_spacing: float = 1.5
+@export var sigil_alive_color: Color = Color(1.0, 0.93, 0.62)
+@export var sigil_recanted_color: Color = Color(0.85, 0.7, 0.55)
+@export var sigil_deed_color: Color = Color(0.62, 0.78, 0.95)
+## Dim colour of a struck sigil lying on the floor, and its size as a fraction of the sigil size.
+@export var sigil_struck_color: Color = Color(0.3, 0.33, 0.5)
+@export_range(0.1, 1.0) var sigil_struck_ratio: float = 0.4
+@export_range(0.0, 2.0) var sigil_glow: float = 0.9
+## Crack of a recanted sigil: half width of the gap and how far the halves slide apart (fractions of the glyph quad).
+@export_range(0.0, 0.3) var crack_width: float = 0.05
+@export_range(0.0, 0.3) var crack_shift: float = 0.07
+## Deed sigils drift slowly around their place: radius (world units) and speed (radians per second); calm, no flashing.
+@export var deed_drift: float = 0.18
+@export var deed_drift_speed: float = 0.6
+@export_range(0.0, 1.0) var deed_alpha: float = 0.75
+
 @export_group("Surroundings")
 ## Glyphs the menu borrows from the floor and from the walls, and the share taken from walls.
 @export var floor_source_glyphs: String = ".,:;'`"

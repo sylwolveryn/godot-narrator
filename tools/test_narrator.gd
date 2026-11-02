@@ -660,7 +660,7 @@ func _test_origin_data() -> void:
 	for id in ["recant_demonic", "recant_ai", "recant_angelic", "recant_alien"]:
 		_check(_beat_by_id(config, id).event == NarrationEvents.ORIGIN_RECANTED and not _beat_by_id(config, id).once, "%s answers origin_recanted and may repeat" % id)
 	var origin: OriginConfig = load(ORIGIN_CONFIG_PATH)
-	_check(origin.find(&"alien").trial.dormant and not origin.find(&"ai").trial.dormant, "only the alien trial is dormant")
+	_check(not origin.find(&"alien").trial.dormant and not origin.find(&"ai").trial.dormant, "no trial is dormant (alien: task-045)")
 
 
 ## A rig with ledger where every ordinary beat (except `keep`) is already heard, at run 5 / 4 deaths, a moving player
@@ -703,21 +703,22 @@ func _test_origin_claims() -> void:
 	_check(_started == PackedStringArray(["claim_demonic_name", "claim_angelic_dark"]), "the angelic claim plays on idle, got %s" % [_started])
 	_check(ledger.call("is_armed", &"angelic"), "angelic armed by its claim")
 
-	# The alien claim is dormant (no trial mechanic yet): item_revealed plays nothing.
+	# The alien claim is no longer dormant (task-045): item_revealed plays it and arms the trial.
+	_check(ledger.call("is_claimable", &"alien"), "alien is claimable")
 	_wait(n, 12.0)
 	_bus.emit_signal("narration_event", &"item_revealed")
 	_wait(n, STEP)
-	_check(_started.size() == 2 and not ledger.call("is_armed", &"alien"), "the alien claim stays dormant, got %s" % [_started])
-	_check(not ledger.call("is_claimable", &"alien"), "alien is not claimable while dormant")
+	_check(_started.size() == 3 and _started[2] == "claim_alien_weight" and ledger.call("is_armed", &"alien"), "the alien claim plays on item_revealed, got %s" % [_started])
 
 	# claim_ai_one: only a chosen form switch (animate = true) fires it.
 	_bus.emit_signal("entity_form_changed", &"single", false)
 	_wait(n, STEP)
-	_check(_started.size() == 2, "the run-start restore of the form is not a switch")
+	_check(_started.size() == 3, "the run-start restore of the form is not a switch")
+	_wait(n, 12.0)
 	_bus.emit_signal("entity_form_changed", &"single", true)
 	_wait(n, STEP)
-	_check(_started.size() == 3 and _started[2] == "claim_ai_one", "claim_ai_one fires on the form switch, got %s" % [_started])
-	_check(heard == [&"demonic", &"angelic", &"ai"] and ledger.call("is_armed", &"ai"), "the ai claim arms the ai trial, got %s" % [heard])
+	_check(_started.size() == 4 and _started[3] == "claim_ai_one", "claim_ai_one fires on the form switch, got %s" % [_started])
+	_check(heard == [&"demonic", &"angelic", &"alien", &"ai"] and ledger.call("is_armed", &"ai"), "the ai claim arms the ai trial, got %s" % [heard])
 	_bus.disconnect("origin_claim_heard", on_claim)
 
 	# Claims are once-only; an armed or struck nature gets no claim.

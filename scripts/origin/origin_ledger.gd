@@ -49,6 +49,13 @@ func alive_natures() -> PackedStringArray:
 	return out
 
 
+## True once the narrator has stated any claim: a trial is armed now, or a nature was struck before (strike counts are
+## never cleared, so a recanted nature still counts). Gates the "remember" menu item (task-043).
+func any_claim_heard() -> bool:
+	var progress: PersistentProgress = _progress()
+	return not progress.armed_trials.is_empty() or not progress.strike_counts.is_empty()
+
+
 func is_nature(id: StringName) -> bool:
 	var h: OriginHypothesis = config.find(id)
 	return h != null and h.is_nature()

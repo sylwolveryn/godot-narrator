@@ -21,6 +21,11 @@ const KIND_FLOOR: float = 0.0
 const KIND_WALL: float = 1.0
 const KIND_MARKER: float = 2.0
 const KIND_PANEL: float = 3.0
+## Ledger sigils (task-043): alive (lands, glows), struck (stays on the floor), recanted (lands cracked), deed (hovers).
+const KIND_SIGIL_ALIVE: float = 4.0
+const KIND_SIGIL_STRUCK: float = 5.0
+const KIND_SIGIL_RECANTED: float = 6.0
+const KIND_SIGIL_DEED: float = 7.0
 const NO_ITEM: float = -1.0
 ## Height of borrowed floor glyphs above the floor, and the in-cell scatter of their start (cell fraction).
 const FLOOR_LIFT: float = 0.03
@@ -41,6 +46,8 @@ enum State { HIDDEN, OPEN, CLOSING }
 @export var player_config: PlayerConfig
 @export var map_loader: MapLoader
 @export var world: WorldConfig
+## Read-only: its sigils are rasterised into the atlas so the ledger row can show them (task-043).
+@export var origin_config: OriginConfig
 ## The glyph-surface material of the world: its `lift_zone` uniform dims the surroundings while the glyphs are away.
 @export var surface_material: ShaderMaterial
 
@@ -70,6 +77,8 @@ var _item_centre: PackedVector2Array = PackedVector2Array()
 var _item_half: Vector2 = Vector2.ZERO
 var _cells_floor: PackedVector2Array = PackedVector2Array()
 var _cells_wall: PackedVector2Array = PackedVector2Array()
+## Ledger row: hypothesis id -> the instance kind written for its sigil (empty while the list is shown).
+var _sigil_instance: Dictionary = {}
 
 
 func _ready() -> void:
@@ -89,6 +98,7 @@ func _ready() -> void:
 	SignalBus.menu_opened.connect(_on_menu_opened)
 	SignalBus.menu_closed.connect(_on_menu_closed)
 	SignalBus.menu_selection_changed.connect(_on_selection_changed)
+	SignalBus.menu_ledger_shown.connect(_on_ledger_shown)
 
 
 func _process(delta: float) -> void:
@@ -157,6 +167,13 @@ func lift_amount() -> float:
 	return _lift
 
 
+## Kind (KIND_SIGIL_*) written for the sigil of hypothesis `id` in the current ledger row, or -1.0 when it has none.
+func sigil_kind(id: StringName) -> float:
+	if not _sigil_instance.has(id):
+		return -1.0
+	return _sigil_instance[id]
+
+
 ## Screen position of the centre of item `index` (for tools and the pointer test).
 func item_screen_position(index: int) -> Vector2:
 	var cam: Camera3D = get_viewport().get_camera_3d()
@@ -171,15 +188,27 @@ func _on_menu_opened(labels: PackedStringArray, selected: int) -> void:
 	if player == null or labels.is_empty():
 		return
 	_selected = selected
-	_hover = -1
 	_build_menu(labels)
+	_start_opening()
+
+
+func _on_ledger_shown(entries: Array) -> void:
+	if player == null or state != State.OPEN:
+		return
+	_build_ledger(entries)
+	_start_opening()
+
+
+## Replays the arrival of the glyphs just written to the buffer (the menu opening, or the page changing).
+func _start_opening() -> void:
+	_hover = -1
 	_open_t = 0.0
 	_close_t = -1.0
 	_select_t = SETTLED
 	_material.set_shader_parameter(&"open_t", 0.0)
 	_material.set_shader_parameter(&"close_t", -1.0)
-	_material.set_shader_parameter(&"selected", float(selected))
-	_material.set_shader_parameter(&"prev_selected", float(selected))
+	_material.set_shader_parameter(&"selected", float(_selected))
+	_material.set_shader_parameter(&"prev_selected", float(_selected))
 	_material.set_shader_parameter(&"select_t", SETTLED)
 	_material.set_shader_parameter(&"anchor", _anchor)
 	_material.set_shader_parameter(&"menu_centre", _centre)
@@ -251,6 +280,16 @@ func _screen_scale(cam: Camera3D) -> Vector2:
 
 ## Lays out the labels, the pointers, the frame and the panel, picks where each glyph comes from and writes the buffer.
 func _build_menu(labels: PackedStringArray) -> void:
+	_sigil_instance.clear()
+	_write_slots(_layout(labels))
+
+
+## The ledger as a row of sigils inside the same frame and panel; no labels.
+func _build_ledger(entries: Array) -> void:
+	_write_slots(_layout_ledger(entries))
+
+
+func _write_slots(slots: Array[Dictionary]) -> void:
 	var cam: Camera3D = get_viewport().get_camera_3d()
 	var right := Vector3.RIGHT
 	var up := Vector3.UP
@@ -260,7 +299,7 @@ func _build_menu(labels: PackedStringArray) -> void:
 	_anchor = player.global_position
 	_centre = _anchor + Vector3.UP * player_config.glyph_height + up * config.centre_up
 	_lift_centre = Vector2(_anchor.x, _anchor.z)
-	var slots: Array[Dictionary] = _layout(labels)
+	_sigil_instance.clear()
 	var count: int = slots.size()
 	_multimesh.instance_count = count
 	var starts: Array[Dictionary] = _pick_sources(count, right)
@@ -273,9 +312,12 @@ func _build_menu(labels: PackedStringArray) -> void:
 		var slot: Dictionary = slots[i]
 		var start: Dictionary = starts[i]
 		var kind: float = slot["kind"]
-		if kind != KIND_PANEL and start["wall"] and kind != KIND_MARKER:
+		var start_pos: Vector3 = start["pos"]
+		if kind == KIND_FLOOR and start["wall"]:
 			kind = KIND_WALL
-		var from_world: Vector3 = _anchor + (start["pos"] as Vector3)
+		if kind == KIND_SIGIL_STRUCK:
+			start_pos.y = FLOOR_LIFT
+		var from_world: Vector3 = _anchor + start_pos
 		var to_world: Vector3 = _centre + right * slot["pos"].x + up * slot["pos"].y
 		var dur: float = config.open_duration * (0.85 + _rng.randf() * 0.3)
 		var delay: float = float(slot["order"]) * config.open_stagger + _rng.randf() * config.open_jitter
@@ -283,6 +325,8 @@ func _build_menu(labels: PackedStringArray) -> void:
 		var arc: float = config.arc_height + from_world.distance_to(to_world) * config.arc_per_distance
 		var from_slot: float = float(_slot_for(start["glyph"]))
 		var to_slot: float = float(_slot_for(slot["glyph"]))
+		if kind == KIND_SIGIL_STRUCK:
+			from_slot = to_slot
 		var half: float = slot["size"] / config.glyph_fill * 0.5
 		var seed_value: float = _rng.randf()
 		var basis: Basis
@@ -294,12 +338,14 @@ func _build_menu(labels: PackedStringArray) -> void:
 			basis = Basis(Vector3(0.0, 0.0, 1.0), Vector3.ZERO, Vector3(delay, dur, 0.0))
 			origin = Vector3(panel_half.x, panel_half.y, seed_value)
 		else:
-			basis = Basis(Vector3(slot["pos"].x, slot["pos"].y, half), start["pos"], Vector3(delay, dur, spin))
+			basis = Basis(Vector3(slot["pos"].x, slot["pos"].y, half), start_pos, Vector3(delay, dur, spin))
 			origin = Vector3(from_slot, to_slot, seed_value)
 		total = maxf(total, delay + dur)
 		_multimesh.set_instance_transform(i, Transform3D(basis, origin))
 		_multimesh.set_instance_color(i, slot["color"])
 		_multimesh.set_instance_custom_data(i, Color(slot["item"], kind, arc, 0.0))
+		if slot.has("sigil_id"):
+			_sigil_instance[slot["sigil_id"]] = kind
 	_open_total = total
 
 
@@ -334,6 +380,12 @@ func _layout(labels: PackedStringArray) -> Array[Dictionary]:
 		var reach: float = label.length() * config.advance * 0.5 + config.marker_gap
 		out.append(_glyph_slot(Vector2(-reach, y), config.marker_left, config.glyph_size, config.selected_color, float(r), KIND_MARKER, order))
 		out.append(_glyph_slot(Vector2(reach, y), config.marker_right, config.glyph_size, config.selected_color, float(r), KIND_MARKER, order))
+	_add_frame(out, half_w, half_h)
+	return out
+
+
+## The frame of `half_w` x `half_h` around the content, appended to `out`.
+func _add_frame(out: Array[Dictionary], half_w: float, half_h: float) -> void:
 	var nx: int = maxi(int(roundf(half_w * 2.0 / config.frame_step)), 2)
 	var ny: int = maxi(int(roundf(half_h * 2.0 / config.frame_step)), 2)
 	var frame_order: int = 0
@@ -349,6 +401,38 @@ func _layout(labels: PackedStringArray) -> Array[Dictionary]:
 		for edge in [-1.0, 1.0]:
 			out.append(_glyph_slot(Vector2(edge * half_w, y), config.frame_vertical, config.frame_size, config.frame_color, NO_ITEM, KIND_FLOOR, frame_order))
 		frame_order += 1
+
+
+## Slots of the ledger page: the panel, one sigil per entry in a row, the same frame. No click areas, no labels.
+func _layout_ledger(entries: Array) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var n: int = entries.size()
+	var half_w: float = maxf(n - 1, 0) * 0.5 * config.sigil_spacing + config.padding.x
+	var half_h: float = config.sigil_size * 0.5 + config.padding.y
+	_item_centre.resize(0)
+	_item_half = Vector2.ZERO
+	var panel_half := Vector2(half_w, half_h) + Vector2.ONE * PANEL_MARGIN
+	out.append({"pos": Vector2.ZERO, "glyph": " ", "size": 1.0, "color": config.panel_color, "item": NO_ITEM,
+			"kind": KIND_PANEL, "order": 0, "half": panel_half})
+	for i in n:
+		var entry: Dictionary = entries[i]
+		var kind: float = KIND_SIGIL_DEED
+		var color: Color = config.sigil_deed_color
+		match entry["state"]:
+			MenuController.LEDGER_ALIVE:
+				kind = KIND_SIGIL_ALIVE
+				color = config.sigil_alive_color
+			MenuController.LEDGER_STRUCK:
+				kind = KIND_SIGIL_STRUCK
+				color = config.sigil_struck_color
+			MenuController.LEDGER_RECANTED:
+				kind = KIND_SIGIL_RECANTED
+				color = config.sigil_recanted_color
+		var x: float = (i - (n - 1) * 0.5) * config.sigil_spacing
+		var slot: Dictionary = _glyph_slot(Vector2(x, 0.0), entry["sigil"], config.sigil_size, color, NO_ITEM, kind, i)
+		slot["sigil_id"] = entry["id"]
+		out.append(slot)
+	_add_frame(out, half_w, half_h)
 	return out
 
 
@@ -424,6 +508,11 @@ func _build_atlas() -> void:
 			continue
 		for ch in item.label + item.alt_label:
 			_add_slot(glyphs, ch)
+	if origin_config != null:
+		for h in origin_config.hypotheses:
+			if h != null:
+				for ch in h.sigil:
+					_add_slot(glyphs, ch)
 	for text in [config.frame_corner, config.frame_horizontal, config.frame_vertical, config.marker_left, config.marker_right,
 			config.floor_source_glyphs, config.wall_source_glyphs, " "]:
 		for ch in text:
@@ -493,6 +582,14 @@ func _build_instance() -> void:
 	_material.set_shader_parameter(&"bob_speed", config.bob_speed)
 	_material.set_shader_parameter(&"panel_alpha", config.panel_alpha)
 	_material.set_shader_parameter(&"panel_color", _rgb(config.panel_color))
+	_material.set_shader_parameter(&"struck_color", _rgb(config.sigil_struck_color))
+	_material.set_shader_parameter(&"struck_ratio", config.sigil_struck_ratio)
+	_material.set_shader_parameter(&"sigil_glow", config.sigil_glow)
+	_material.set_shader_parameter(&"crack_width", config.crack_width)
+	_material.set_shader_parameter(&"crack_shift", config.crack_shift)
+	_material.set_shader_parameter(&"deed_drift", config.deed_drift)
+	_material.set_shader_parameter(&"deed_speed", config.deed_drift_speed)
+	_material.set_shader_parameter(&"deed_alpha", config.deed_alpha)
 	_instance = MultiMeshInstance3D.new()
 	_instance.name = "Menu"
 	_instance.multimesh = _multimesh

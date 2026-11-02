@@ -23,6 +23,15 @@ func _init() -> void:
 	ok = _save(switch_form, ITEM_DIR + "switch_form.tres") and ok
 	items.append(load(ITEM_DIR + "switch_form.tres") as MenuItemDef)
 
+	var remember := MenuItemDef.new()
+	remember.id = &"remember"
+	remember.action = MenuItemDef.ACTION_REMEMBER
+	remember.label = "remember"
+	remember.requires_claim = true
+	remember.closes_menu = false
+	ok = _save(remember, ITEM_DIR + "remember.tres") and ok
+	items.append(load(ITEM_DIR + "remember.tres") as MenuItemDef)
+
 	var close := MenuItemDef.new()
 	close.id = &"close"
 	close.action = MenuItemDef.ACTION_CLOSE

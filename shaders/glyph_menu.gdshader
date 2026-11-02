@@ -13,6 +13,9 @@
 //   COLOR = colour at the end; INSTANCE_CUSTOM = (item index or -1, kind, arc height, unused)
 //   kind: 0 glyph from the floor, 1 glyph from a wall, 2 marker (like 0, only shown on the selected item), 3 panel
 //   (the dark backing: half extents in MODEL_MATRIX[3].xy, centre offset in MODEL_MATRIX[0].xy).
+//   Ledger sigils (task-043, the "remember" row): 4 alive (lands and glows), 5 struck (stays on the floor, dim, never
+//   lifts), 6 recanted (lands with a crack: the glyph is split and the halves slide apart), 7 deed (hovers, drifts slowly
+//   and never settles).
 shader_type spatial;
 render_mode unshaded, blend_premul_alpha, depth_test_disabled, depth_draw_never, cull_disabled, fog_disabled, skip_vertex_transform;
 
@@ -52,12 +55,21 @@ uniform float bob_amount = 0.02;
 uniform float bob_speed = 2.0;
 uniform float panel_alpha = 0.55;
 uniform vec3 panel_color = vec3(0.01, 0.01, 0.03);
+uniform vec3 struck_color = vec3(0.3, 0.33, 0.5);
+uniform float struck_ratio = 0.4;
+uniform float sigil_glow = 0.9;
+uniform float crack_width = 0.05;
+uniform float crack_shift = 0.07;
+uniform float deed_drift = 0.18;
+uniform float deed_speed = 0.6;
+uniform float deed_alpha = 0.75;
 
 varying vec2 q;
 varying vec4 tint;
 varying flat float slot;
 varying flat float glow;
 varying flat float panel;
+varying flat float crack;
 varying flat vec2 panel_half;
 
 float hash11(float x) {
@@ -94,6 +106,14 @@ void vertex() {
 	float us = u * u * (3.0 - 2.0 * u);
 	float e = ease_out_back(us);
 	float hump = sin(HALF_TURN * u);
+	bool is_struck = kind > 4.5 && kind < 5.5;
+	bool is_deed = kind > 6.5;
+	if (is_struck) {
+		// Lies on the floor where it was borrowed: no flight, no arc, no spin.
+		e = 0.0;
+		us = 0.0;
+		hump = 0.0;
+	}
 
 	vec4 vs = VIEW_MATRIX * vec4(anchor + start_w, 1.0);
 	vec4 ve = VIEW_MATRIX * vec4(menu_centre, 1.0);
@@ -110,18 +130,22 @@ void vertex() {
 		hl = clamp(hl, 0.0, 1.0);
 	}
 
-	float settle = smoothstep(0.92, 1.0, u);
+	float settle = (is_deed || is_struck) ? 0.0 : smoothstep(0.92, 1.0, u);
 	vec2 bob = vec2(cos(TIME * bob_speed * 0.7 + seed * 40.0), sin(TIME * bob_speed + seed * 40.0)) * bob_amount * settle;
 	vec3 col = COLOR.rgb;
 	float alpha = smoothstep(0.0, 0.2, u);
 	float s = mix(start_ratio * size, size, us) * (1.0 + pop * hump) * (1.0 + select_swell * hl);
+	if (is_struck) {
+		s = size * struck_ratio;
+	}
 	float ang = spin * TWO_PI * us;
 	float glyph = g_to;
 	float fx = 1.0;
 	panel = 0.0;
 	panel_half = vec2(1.0);
 
-	if (kind > 2.5) {
+	crack = 0.0;
+	if (kind > 2.5 && kind < 3.5) {
 		// The dark backing: grows in place and fades, no flight.
 		panel = 1.0;
 		panel_half = MODEL_MATRIX[3].xy;
@@ -132,7 +156,18 @@ void vertex() {
 		col = panel_color;
 		glow = 0.0;
 	} else {
-		if (kind > 1.5) {
+		if (kind > 3.5) {
+			// Ledger sigils never take the selection highlight.
+			hl = 0.0;
+			if (is_deed) {
+				// Hovers: a slow calm drift around its place, a faint breath of opacity, never a landing.
+				float t = TIME * deed_speed + seed * 40.0;
+				vp.xy += vec2(sin(t), cos(t * 0.73)) * deed_drift * smoothstep(0.7, 1.0, u);
+				alpha *= deed_alpha * (0.9 + 0.1 * sin(t * 0.5));
+			}
+			crack = kind > 5.5 && kind < 6.5 ? 1.0 : 0.0;
+		}
+		if (kind > 1.5 && kind < 2.5) {
 			alpha *= hl;
 			vp.x += sin(TIME * 6.0 + item) * 0.05 * hl * (end_p.x < 0.0 ? 1.0 : -1.0);
 		}
@@ -145,6 +180,12 @@ void vertex() {
 		vec3 start_col = kind > 0.5 && kind < 1.5 ? wall_color : floor_color;
 		col = mix(start_col, mix(col, select_color, hl), smoothstep(0.1, 0.9, u)) + vec3(flash * hump);
 		glow = hl * glow_strength * smoothstep(0.7, 1.0, u);
+		if (kind > 3.5) {
+			if (is_struck) {
+				col = struck_color;
+			}
+			glow = (kind < 4.5 ? sigil_glow : (kind < 6.5 ? sigil_glow * 0.35 : 0.0)) * smoothstep(0.7, 1.0, u);
+		}
 	}
 	slot = glyph;
 	tint = vec4(col, alpha);
@@ -185,14 +226,23 @@ void fragment() {
 		ALBEDO = tint.rgb * pa;
 		ALPHA = pa;
 	} else {
-		vec2 gp = vec2(q.x, -q.y) * (0.5 / glyph_fill) + 0.5;
-		float cov = slot_cov(slot, gp);
+		vec2 qq = q;
+		float strip = 1.0;
+		if (crack > 0.5) {
+			// A jagged diagonal split: the halves slide apart and a thin gap is cut between them.
+			vec2 nrm = normalize(vec2(1.0, 0.45));
+			float d = dot(q, nrm) + 0.07 * sin(q.y * 9.0 + 1.3);
+			qq = q - sign(d) * nrm * crack_shift;
+			strip = smoothstep(crack_width * 0.5, crack_width, abs(d));
+		}
+		vec2 gp = vec2(qq.x, -qq.y) * (0.5 / glyph_fill) + 0.5;
+		float cov = slot_cov(slot, gp) * strip;
 		float back = 0.0;
 		if (outline_width > 0.0 && gp.x > -0.15 && gp.x < 1.15 && gp.y > -0.15 && gp.y < 1.15) {
 			for (int i = 0; i < 4; i++) {
 				back = max(back, slot_cov(slot, gp + OUTLINE_DIRS[i] * outline_width));
 			}
-			back *= outline_color.a;
+			back *= outline_color.a * strip;
 		}
 		vec3 rgb = tint.rgb * cov + outline_color.rgb * back * (1.0 - cov);
 		float al = cov + back * (1.0 - cov);

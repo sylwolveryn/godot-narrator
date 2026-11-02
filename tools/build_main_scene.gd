@@ -66,6 +66,7 @@ func _build() -> void:
 	menu.set("config", menu_cfg)
 	menu.set("save_service", save)
 	menu.set("entity", progression)
+	menu.set("ledger", ledger)
 	_add(root, menu)
 
 	var narrator_cfg: NarratorConfig = load(NARRATION_DIR + "narrator_config.tres")
@@ -150,6 +151,7 @@ func _build() -> void:
 	menu_view.set("player_config", player_cfg)
 	menu_view.set("map_loader", loader)
 	menu_view.set("world", load(CFG + "world_config.tres"))
+	menu_view.set("origin_config", load(CFG + "origin_config.tres"))
 	menu_view.set("surface_material", load(GLYPH_MATERIAL))
 	_add(root, menu_view)
 

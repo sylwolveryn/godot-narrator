@@ -3,7 +3,8 @@ extends SceneTree
 ## persisted after it, opens and closes on the menu_toggle action WITHOUT pausing anything (process and physics keep
 ## running, hazards still tick), takes over the movement input while open (the player stands still), navigates and
 ## confirms (the switch item changes the entity form and emits entity_form_changed), and offers the switch item only
-## once the entity is unlocked.
+## once the entity is unlocked. The "remember" item (task-043) is offered only after a claim was heard and shows the
+## ledger as a row of sigils (alive / struck / recanted / deed presentation data) in the same single MultiMesh.
 ## Usage: godot --headless --max-fps 30 --path . -s tools/test_menu.gd
 
 const Support := preload("res://tools/test_support.gd")
@@ -118,6 +119,7 @@ func _run() -> void:
 	await _scene_locked(cfg)
 	await _scene_unlocked(cfg)
 	await _scene_no_entity(cfg)
+	await _scene_remember()
 
 	if _failures.is_empty():
 		print("PASS test_menu")
@@ -330,6 +332,84 @@ func _scene_no_entity(cfg: MenuConfig) -> void:
 	var before: int = _actions.size()
 	await _tap(KEY_ENTER)
 	_check(_actions.size() == before and not controller.call("is_open"), "return closes without requesting anything")
+	var path: String = main.get_node("SaveService").get("config").save_path
+	main.queue_free()
+	await process_frame
+	Support.remove_file(path)
+
+
+## The "remember" item (task-043): absent before any claim is heard, present after; the ledger row maps every
+## hypothesis to its sigil presentation; still one MultiMesh (one draw call); nothing pauses; back returns to the list.
+func _scene_remember() -> void:
+	var seeded := PersistentProgress.new()
+	seeded.identity_glyph = "Q"
+	seeded.run_count = 4
+	seeded.death_count = 1
+	seeded.menu_unlocked = true
+	var main: Node = await _make_main(SAVE_TAG + "_remember", seeded)
+	var controller: Node = main.get_node("MenuController")
+	var view: Node = main.get_node("MenuGlyphView")
+	var ledger: Node = main.get_node("OriginLedger")
+	var bus: Node = root.get_node("SignalBus")
+	var tree := root.get_tree()
+	_check(not controller.call("current_labels").has("remember"), "remember is not offered before any claim is heard")
+	_check(not ledger.call("any_claim_heard"), "no claim heard in a fresh save")
+	bus.emit_signal("origin_claim_heard", &"ai")
+	_check(ledger.call("any_claim_heard"), "a heard claim is visible through the ledger query")
+	var labels: PackedStringArray = controller.call("current_labels")
+	_check(labels.size() == 2 and labels[0] == "remember" and labels[1] == "return", "remember offered after a claim: %s" % [labels])
+
+	# Seed the states: ai struck, demonic struck then recanted, angelic and alien alive.
+	ledger.call("arm", &"demonic")
+	_check(ledger.call("strike", &"ai", 4) and ledger.call("strike", &"demonic", 4) and ledger.call("recant", &"demonic"), "ledger seeded with a strike and a recant")
+	var entries: Array = controller.call("ledger_entries")
+	var by_id: Dictionary = {}
+	for e: Dictionary in entries:
+		by_id[e["id"]] = e["state"]
+	_check(entries.size() == 6, "one ledger entry per hypothesis (%d)" % entries.size())
+	_check(by_id.get(&"ai") == &"struck", "ai entry is struck")
+	_check(by_id.get(&"demonic") == &"recanted", "demonic entry is recanted")
+	_check(by_id.get(&"angelic") == &"alive" and by_id.get(&"alien") == &"alive", "untouched natures are alive")
+	_check(by_id.get(&"hero") == &"deed" and by_id.get(&"villain") == &"deed", "deeds are deeds")
+
+	var frames_before: int = _physics_frames
+	var tick := _physics_tick
+	tree.physics_frame.connect(tick)
+	await _tap(KEY_TAB)
+	_check(controller.call("is_open") and not controller.call("is_ledger_shown"), "menu opens on the list")
+	await _wait(0.2)
+	await _tap(KEY_ENTER)
+	_check(controller.call("is_ledger_shown") and controller.call("is_open"), "confirming remember shows the ledger, the menu stays open")
+	await _wait(0.3)
+	_check(not tree.paused and _physics_frames > frames_before + 5, "the ledger view does not pause anything")
+	_check(view.call("sigil_kind", &"angelic") == 4.0, "alive sigil presentation")
+	_check(view.call("sigil_kind", &"alien") == 4.0, "alive sigil presentation (alien)")
+	_check(view.call("sigil_kind", &"ai") == 5.0, "struck sigil stays on the floor (struck kind)")
+	_check(view.call("sigil_kind", &"demonic") == 6.0, "recanted sigil is cracked")
+	_check(view.call("sigil_kind", &"hero") == 7.0 and view.call("sigil_kind", &"villain") == 7.0, "deed sigils hover and never settle")
+	_check(view.call("glyph_count") > 10, "ledger glyphs built (%d)" % view.call("glyph_count"))
+	var multimeshes: int = 0
+	var other_geometry: int = 0
+	var stack: Array[Node] = [view]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is MultiMeshInstance3D:
+			multimeshes += 1
+		elif n is GeometryInstance3D:
+			other_geometry += 1
+		stack.append_array(n.get_children())
+	_check(multimeshes == 1 and other_geometry == 0, "the ledger row is drawn by the menu's single MultiMesh (%d, %d)" % [multimeshes, other_geometry])
+	# Up / down do nothing on the ledger page; confirm goes back to the list with remember selected.
+	await _tap(KEY_DOWN)
+	_check(controller.call("selected_index") == 0 and controller.call("is_ledger_shown"), "navigation is inert on the ledger page")
+	await _tap(KEY_ENTER)
+	_check(not controller.call("is_ledger_shown") and controller.call("is_open"), "confirm goes back to the list")
+	_check(view.call("sigil_kind", &"ai") == -1.0, "the list has no sigils")
+	await _tap(KEY_ENTER)
+	_check(controller.call("is_ledger_shown"), "remember can be opened again")
+	await _tap(KEY_TAB)
+	_check(not controller.call("is_open") and not controller.call("is_ledger_shown"), "Tab closes the whole menu from the ledger page")
+	tree.physics_frame.disconnect(tick)
 	var path: String = main.get_node("SaveService").get("config").save_path
 	main.queue_free()
 	await process_frame

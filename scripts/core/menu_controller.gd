@@ -15,11 +15,21 @@ extends Node
 @export var entity: EntityProgression
 ## Read-only: the menu only opens while a run is being played.
 @export var run_manager: RunManager
+## Read-only: decides whether "remember" is offered and what the ledger row shows (task-043).
+@export var ledger: OriginLedger
+
+## Presentation state of one hypothesis in the ledger row.
+const LEDGER_ALIVE: StringName = &"alive"
+const LEDGER_STRUCK: StringName = &"struck"
+const LEDGER_RECANTED: StringName = &"recanted"
+const LEDGER_DEED: StringName = &"deed"
 
 var _open: bool = false
 var _selected: int = 0
 ## The offered items while open, in display order.
 var _offered: Array[MenuItemDef] = []
+## True while the ledger row is shown instead of the list.
+var _ledger_shown: bool = false
 
 
 func _ready() -> void:
@@ -44,6 +54,10 @@ func _input(event: InputEvent) -> void:
 		return
 	if not _open:
 		return
+	if _ledger_shown:
+		if event.is_action_pressed(config.action_up) or event.is_action_pressed(config.action_down):
+			get_viewport().set_input_as_handled()
+			return
 	if event.is_action_pressed(config.action_up):
 		move_selection(-1)
 		get_viewport().set_input_as_handled()
@@ -51,7 +65,10 @@ func _input(event: InputEvent) -> void:
 		move_selection(1)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed(config.action_confirm):
-		confirm()
+		if _ledger_shown:
+			back_to_list()
+		else:
+			confirm()
 		get_viewport().set_input_as_handled()
 
 
@@ -95,6 +112,7 @@ func open() -> bool:
 	if _offered.is_empty():
 		return false
 	_open = true
+	_ledger_shown = false
 	_selected = 0
 	SignalBus.menu_opened.emit(current_labels(), _selected)
 	return true
@@ -104,24 +122,69 @@ func close() -> void:
 	if not _open:
 		return
 	_open = false
+	_ledger_shown = false
 	SignalBus.menu_closed.emit()
 
 
 func move_selection(step: int) -> void:
-	if not _open or _offered.is_empty():
+	if not _open or _offered.is_empty() or _ledger_shown:
 		return
 	_select(posmod(_selected + step, _offered.size()))
 
 
 ## Confirms the selected item: a close item closes the menu, anything else is requested from the data layer.
 func confirm() -> void:
-	if not _open or _selected >= _offered.size():
+	if not _open or _ledger_shown or _selected >= _offered.size():
 		return
 	var item: MenuItemDef = _offered[_selected]
+	if item.action == MenuItemDef.ACTION_REMEMBER:
+		show_ledger()
+		return
 	if item.action != MenuItemDef.ACTION_CLOSE:
 		SignalBus.menu_action_requested.emit(item.action)
 	if item.closes_menu:
 		close()
+
+
+## True while the ledger row is shown.
+func is_ledger_shown() -> bool:
+	return _ledger_shown
+
+
+## Shows the ledger row (the menu stays open, nothing is paused). Refused when the menu is closed.
+func show_ledger() -> void:
+	if not _open or _ledger_shown:
+		return
+	_ledger_shown = true
+	SignalBus.menu_ledger_shown.emit(ledger_entries())
+
+
+## Leaves the ledger row and shows the list again with "remember" selected.
+func back_to_list() -> void:
+	if not _open or not _ledger_shown:
+		return
+	_ledger_shown = false
+	SignalBus.menu_opened.emit(current_labels(), _selected)
+
+
+## One entry per hypothesis, in the ledger's order, read from the ledger's public API.
+func ledger_entries() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if ledger == null or ledger.config == null:
+		return out
+	for h in ledger.config.hypotheses:
+		if h == null:
+			continue
+		var state: StringName = LEDGER_DEED
+		if h.is_nature():
+			if not ledger.is_alive(h.id):
+				state = LEDGER_STRUCK
+			elif ledger.strike_count(h.id) > 0:
+				state = LEDGER_RECANTED
+			else:
+				state = LEDGER_ALIVE
+		out.append({"id": h.id, "sigil": h.sigil, "state": state})
+	return out
 
 
 func _select(index: int) -> void:
@@ -135,8 +198,11 @@ func _available_items() -> Array[MenuItemDef]:
 	var out: Array[MenuItemDef] = []
 	var entity_ready: bool = entity != null and entity.is_unlocked()
 	for item in config.items:
-		if item != null and (entity_ready or not item.requires_entity):
-			out.append(item)
+		if item == null or (item.requires_entity and not entity_ready):
+			continue
+		if item.requires_claim and (ledger == null or not ledger.any_claim_heard()):
+			continue
+		out.append(item)
 	return out
 
 

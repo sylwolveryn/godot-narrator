@@ -42,6 +42,9 @@ signal menu_unlocked
 signal menu_opened(labels: PackedStringArray, selected: int)
 ## Emitted by MenuController when the menu closes (toggle, an item that closes it, or the run ending).
 signal menu_closed
+## Emitted by MenuController when the "remember" item is confirmed (task-043): the ledger as a row, one entry per
+## hypothesis: {id: StringName, sigil: String, state: StringName (MenuController.LEDGER_*)}. Going back re-emits menu_opened.
+signal menu_ledger_shown(entries: Array)
 ## Emitted by MenuController when the selection moves to item `index`.
 signal menu_selection_changed(index: int)
 ## Emitted by the menu presentation when the pointer hovers (activate = false) or clicks (activate = true) item `index`.
