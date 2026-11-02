@@ -197,7 +197,7 @@ World map editor. Additional handcrafted maps and content.
 
 ## Origin Contradiction and Rule-Out System
 
-**Status: draft for user review** (task-016). This is story-core design; nothing here is decided until the user approves it. All numbers are defaults that will live in `.tres` resources.
+**Status: approved by the user on 2026-11-02** (task-016). All numbers are defaults that live in `.tres` resources. Implementation: task-039 to task-045.
 
 ### 1. Hypotheses and how beats reference them
 The existing origin tags split into two axes. A single flat list would not work: "hero" and "alien" do not exclude each other, so two survivors like {hero, alien} would still read as one answer ("a heroic alien").
