@@ -1,11 +1,11 @@
 ---
 id: TASK-019
 title: Small-object pushing for the multi-glyph entity
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:42:00Z'
-updated_date: '2026-11-02T07:21:00Z'
+updated_date: '2026-11-02T07:25:00Z'
 labels:
   - player
   - world
@@ -43,3 +43,9 @@ The grown entity must feel meaningfully different: it can move small objects, wh
 <!-- SECTION:NOTES:BEGIN -->
 IMPLEMENTED (not committed). New: scripts/world/{push_config,pushable_objects}.gd, scripts/rendering/object_glyph_view.gd, resources/config/push_config.tres (via build_resources), tools/test_pushing.gd, tools/capture_pushing.gd. Changed: map_legend/map_data/map_loader (o legend, MapData.objects), world_config (object size/height/collision), world_mesh_builder.build_object, glyph_surface.gdshader (free-standing objects COLOR.b=0.5, cell from instance origin, no cut-away, object_params), glyph_world_view, player.move_intent, signal_bus.object_moved, build_main_scene (main.tscn rebuilt), data/maps/m1_awakening.txt (5 objects: (6,3),(24,9),(35,9),(6,19),(31,20)), docs. Decisions: push axis from input intent + contact (screen-relative input is diagonal in iso, so intent+adjacency picks the axis); collision moves at push start; small objects skip the cut-away; objects do not block light occlusion. EVIDENCE: all tools/test_*.gd PASS headless (test_pushing: reachability, grown push by real input, single blocked, wall/object/void/spikes/corruption/item/spawn/player-cell blocks, signal args, collision follows, reset on run_start); boot 0 ERROR. Sheets scratchpad t019_{push,single,world}_{1366,1920}.png. PERF GTX1060 30fps grown: 1366x768 draws 6.7 GPU 0.48 opening / 0.59 worst; 1920x1061 GPU 0.67 / 0.88 (+1 draw call for objects).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Grid-based Sokoban-style pushing: 5 small stones (legend o) placed in open rooms of the M1 map; the grown entity slides a stone one cell (eased) when pressing into it along a grid axis; the single form is blocked like a wall. Pushes are blocked by walls, other stones, void, spikes, corruption, items and spawn; stones reset each run. Rendered as carved glyph-stone blocks in one MultiMesh with the glyph surface material (+1 draw call); collision moves with the stone. SignalBus.object_moved is the hook for the future alien trial (DRAFT-007). PushConfig holds all push values. Validator PASS; new tools/test_pushing.gd incl. a reachability check. Open: with the isometric camera the grid axes are screen diagonals, so a grid push needs a diagonal key combo (e.g. D+S); the grown body can overlap a stone next to it.
+<!-- SECTION:FINAL_SUMMARY:END -->
