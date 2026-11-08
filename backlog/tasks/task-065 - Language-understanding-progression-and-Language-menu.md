@@ -1,9 +1,11 @@
 ---
 id: TASK-065
 title: Language understanding progression and Language menu
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-08T15:23:00Z'
+updated_date: '2026-11-08T15:24:00Z'
 labels:
   - gameplay
   - database
