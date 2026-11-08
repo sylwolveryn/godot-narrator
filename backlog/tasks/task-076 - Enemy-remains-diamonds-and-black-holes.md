@@ -1,10 +1,11 @@
 ---
 id: TASK-076
 title: 'Enemy remains: diamonds and black holes'
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T17:21:00Z'
+updated_date: '2026-11-08T18:42:00Z'
 labels:
   - gameplay
   - world
@@ -29,3 +30,13 @@ Destroying enemies with cannon balls should pay off and change the map: the wall
 - [ ] #3 Any enemy that moves into a black hole is destroyed (and leaves its normal remains); the hole's effect on the player is defined and documented
 - [ ] #4 Tests cover both remains, collection and black-hole kills
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. EnemyRemains (data layer): diamonds scatter on enemy_destroyed (EnemyDef.diamonds), hunters (EnemyDef.black_hole) form black holes; map char O; pickups -> PersistentProgress.diamonds; reset at run start
+2. EnemySystem kills enemies arriving on a black hole (cause black_hole, normal remains)
+3. RemainsView (one MultiMesh glyph billboards: glinting diamonds with burst flight, swirling black holes), DiamondSfx synth ting
+4. Narration BLACK_HOLE_FORMED / DIAMOND_FOUND world lines (once)
+5. tools/test_remains.gd
+<!-- SECTION:PLAN:END -->
