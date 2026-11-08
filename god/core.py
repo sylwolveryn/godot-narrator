@@ -456,7 +456,7 @@ DB_DIR = "database"
 DB_TABLES = (
     "event_def", "language_def", "narration", "player_stats", "player_death",
     "player_language", "missing_narration", "glyph_anim", "movement_profile", "avatar_fx", "map_settings",
-    "config_version",
+    "enemy_def", "config_version",
 )
 # Player movement profiles (DB table movement_profile): "default" is the fallback, the others are entity forms.
 MOVEMENT_PROFILES = ("default", "single", "grown")
@@ -835,7 +835,8 @@ def movement_row(table: "SqlTable", profile: str) -> Optional[dict]:
 DB_PRIMARY_KEYS = {
     "event_def": "id", "language_def": "id", "narration": "id", "player_stats": "id", "player_death": "cause",
     "player_language": "language", "missing_narration": "key", "glyph_anim": "surface",
-    "movement_profile": "profile", "avatar_fx": "profile", "map_settings": "map_id", "config_version": "id",
+    "movement_profile": "profile", "avatar_fx": "profile", "map_settings": "map_id", "enemy_def": "kind",
+    "config_version": "id",
 }
 # Tables whose edits are not followed by a config_version bump (bumping config_version would edit itself).
 DB_NO_RELOAD_TABLES = ("config_version",)

@@ -15,4 +15,4 @@ supports = PackedStringArray()
 contradicts = PackedStringArray("angelic")
 role = 2
 event_param = &"angelic"
-order = 41
+order = 46

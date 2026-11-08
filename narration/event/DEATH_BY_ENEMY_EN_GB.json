@@ -1,0 +1,9 @@
+{
+	"event": "DEATH_BY_ENEMY",
+	"language": "EN_GB",
+	"lines": {
+		"death_enemy_world_bitten": "Bitten",
+		"death_enemy_caught": "Caught. It knew where you would be.",
+		"death_enemy_they_know": "They learn your way home. So do I."
+	}
+}

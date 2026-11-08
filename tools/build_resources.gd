@@ -85,6 +85,9 @@ func _init() -> void:
 	# Interact control (task-072) and the cannon (task-073).
 	ok = _save(InteractConfig.new(), "interact_config.tres") and ok
 	ok = _save(_cannon_config(), "cannon_config.tres") and ok
+	# Enemies (task-075) and their remains (task-076).
+	ok = _save(_enemy_config(), "enemy_config.tres") and ok
+	ok = _save(RemainsConfig.new(), "remains_config.tres") and ok
 
 	quit(0 if ok else 1)
 
@@ -168,6 +171,67 @@ func _cannon_config() -> CannonConfig:
 		PackedStringArray(["    O    ", "    H    ", "  (###)  ", "  o---o  ", "         "]),
 		PackedStringArray(["        O", "       / ", "  (###)  ", "  o---o  ", "         "]),
 	]
+	return cfg
+
+
+## The three enemy types (task-075; gameplay numbers are overridden by the DB table enemy_def):
+##  - crawler (L / R): a scuttling bug `Ж` with legs `<` `>`, amber; bursts into 3 diamonds.
+##  - hunter (H): a red `Ω` with two glowing eyes; leaves a black hole.
+##  - wanderer (W): a green `&` with a slowly orbiting tail of dots; bursts into 2 diamonds.
+func _enemy_config() -> EnemyConfig:
+	var cfg := EnemyConfig.new()
+	var crawler := EnemyDef.new()
+	crawler.kind = &"crawler"
+	crawler.movement = EnemyDef.Movement.CRAWLER
+	crawler.speed = 2.2
+	crawler.diamonds = 3
+	crawler.glyphs = "Ж<>"
+	crawler.color = Color(1.0, 0.62, 0.18)
+	crawler.accent = Color(1.0, 0.85, 0.45)
+	crawler.satellite_radius = 0.3
+	crawler.satellite_start_degrees = 180.0
+	crawler.satellite_step_degrees = 180.0
+	crawler.wiggle_amount = 0.07
+	crawler.wiggle_hz = 7.0
+	crawler.bob_amount = 0.03
+	crawler.hover = 0.36
+	var hunter := EnemyDef.new()
+	hunter.kind = &"hunter"
+	hunter.movement = EnemyDef.Movement.HUNTER
+	hunter.speed = 2.6
+	hunter.black_hole = true
+	hunter.glyphs = "Ω••"
+	hunter.color = Color(1.0, 0.2, 0.3)
+	hunter.accent = Color(1.0, 0.95, 0.4)
+	hunter.body_size = 0.36
+	hunter.satellite_scale = 0.4
+	hunter.satellite_radius = 0.2
+	hunter.satellite_start_degrees = 60.0
+	hunter.satellite_step_degrees = 60.0
+	hunter.wiggle_amount = 0.02
+	hunter.wiggle_hz = 2.0
+	hunter.bob_amount = 0.06
+	hunter.hover = 0.5
+	hunter.glow = 0.5
+	var wanderer := EnemyDef.new()
+	wanderer.kind = &"wanderer"
+	wanderer.movement = EnemyDef.Movement.WANDERER
+	wanderer.speed = 1.8
+	wanderer.diamonds = 2
+	wanderer.glyphs = "&°·°"
+	wanderer.color = Color(0.35, 1.0, 0.6)
+	wanderer.accent = Color(0.7, 1.0, 0.95)
+	wanderer.satellite_scale = 0.5
+	wanderer.satellite_radius = 0.36
+	wanderer.satellite_start_degrees = 0.0
+	wanderer.satellite_step_degrees = 120.0
+	wanderer.orbit_degrees_per_second = 90.0
+	wanderer.wiggle_amount = 0.04
+	wanderer.wiggle_hz = 1.5
+	wanderer.bob_amount = 0.08
+	wanderer.bob_hz = 0.9
+	wanderer.hover = 0.5
+	cfg.defs = [crawler, hunter, wanderer] as Array[EnemyDef]
 	return cfg
 
 

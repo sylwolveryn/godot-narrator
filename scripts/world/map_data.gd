@@ -11,6 +11,11 @@ var spawn_cell: Vector2i = Vector2i.ZERO
 var has_spawn: bool = false
 ## Start cells of the small pushable objects (legend OBJECT), row-major; the object id is the index. The cells hold floor in `types`.
 var objects: Array[Vector2i] = []
+## Enemy spawns (task-075), row-major: cells and their spawn types (MapLegend.enemy_spawns values). The cells hold floor.
+var enemies: Array[Vector2i] = []
+var enemy_types: Array[StringName] = []
+## Black holes placed in the map file (task-076), row-major. The cells hold floor.
+var black_holes: Array[Vector2i] = []
 ## Merged multi-cell props (task-058), row-major by top-left cell. Their cells hold the prop type in `types`.
 var large_objects: Array[LargeObjectPlacement] = []
 ## Working teleports (task-068), row-major by top-left cell; their cells (ring and centre) hold floor in `types`.

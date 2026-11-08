@@ -37,6 +37,16 @@ const DIRT: StringName = &"dirt"
 @export var teleport_char: String = "T"
 ## Channel characters in channel order (the trip goes to the next higher channel present, wrapping around).
 @export var teleport_channels: String = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+## Enemies (task-075): character -> spawn type (EnemyConfig maps it to an enemy kind and its handedness). The spawn cell
+## is floor; MapData.enemies records it. L = crawler following the left wall, R = the right wall, H = hunter, W = wanderer.
+@export var enemy_spawns: Dictionary[String, StringName] = {
+	"L": &"crawler_left",
+	"R": &"crawler_right",
+	"H": &"hunter",
+	"W": &"wanderer",
+}
+## Black hole (task-076): placed in a map with this character (the cell is floor; MapData.black_holes records it).
+@export var black_hole_char: String = "O"
 ## Cell type used for characters not in `entries` (a warning is logged).
 @export var unknown_type: StringName = FLOOR
 

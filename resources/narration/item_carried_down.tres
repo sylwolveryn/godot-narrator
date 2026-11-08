@@ -12,4 +12,4 @@ min_deaths = 5
 mood = &"chime"
 supports = PackedStringArray("angelic")
 contradicts = PackedStringArray("alien")
-order = 47
+order = 52

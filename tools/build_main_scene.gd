@@ -409,6 +409,51 @@ func _build() -> void:
 	teleport_view.set("surface_material", load(GLYPH_MATERIAL))
 	_add(root, teleport_view)
 
+	# Enemies (task-075): the only writer of the enemy state (moves, contact deaths, Destructibles kind "enemy") and
+	# their glyph creatures; remains (task-076): diamonds and black holes, their look and the pickup sound.
+	var enemy_cfg: EnemyConfig = load(CFG + "enemy_config.tres")
+	var remains_cfg: RemainsConfig = load(CFG + "remains_config.tres")
+	var enemies: Node = load("res://scripts/world/enemy_system.gd").new()
+	enemies.name = "EnemySystem"
+	enemies.set("config", enemy_cfg)
+	enemies.set("map_loader", loader)
+	enemies.set("player", player)
+	enemies.set("player_config", player_cfg)
+	enemies.set("run_manager", runs)
+	enemies.set("destructibles", destructibles)
+	enemies.set("pushables", pushables)
+	enemies.set("database", database)
+	_add(root, enemies)
+	var remains: Node = load("res://scripts/world/enemy_remains.gd").new()
+	remains.name = "EnemyRemains"
+	remains.set("config", remains_cfg)
+	remains.set("enemies", enemies)
+	remains.set("map_loader", loader)
+	remains.set("player", player)
+	remains.set("save_service", save)
+	remains.set("run_manager", runs)
+	_add(root, remains)
+	enemies.set("remains", remains)
+	var enemy_view: Node3D = load("res://scripts/rendering/enemy_view.gd").new()
+	enemy_view.name = "EnemyView"
+	enemy_view.set("config", enemy_cfg)
+	enemy_view.set("enemies", enemies)
+	enemy_view.set("map_loader", loader)
+	enemy_view.set("map_reveal", reveal)
+	_add(root, enemy_view)
+	var remains_view: Node3D = load("res://scripts/rendering/remains_view.gd").new()
+	remains_view.name = "RemainsView"
+	remains_view.set("config", remains_cfg)
+	remains_view.set("remains", remains)
+	remains_view.set("map_loader", loader)
+	remains_view.set("map_reveal", reveal)
+	_add(root, remains_view)
+	var ting: Node = load("res://scripts/world/diamond_sfx.gd").new()
+	ting.name = "DiamondSfx"
+	ting.set("config", remains_cfg)
+	ting.set("library", library)
+	_add(root, ting)
+
 	var hazards: Node = load("res://scripts/world/hazard_monitor.gd").new()
 	hazards.name = "HazardMonitor"
 	hazards.set("map_loader", loader)

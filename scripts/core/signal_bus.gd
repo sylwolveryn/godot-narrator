@@ -127,3 +127,21 @@ signal destructible_restored(kind: StringName, rect: Rect2i)
 signal cannon_fired(cannon_index: int, muzzle: Vector3, direction: Vector3)
 ## Emitted by CannonBalls when a ball bounced off something indestructible (world position of the bounce).
 signal cannon_ball_bounced(world_position: Vector3)
+
+## Enemies (task-075). Emitted by EnemySystem (the only writer of the enemy state) when every enemy of the map stands on
+## its spawn again (map build, run start); `count` = enemies of the map. EnemyView rebuilds from it.
+signal enemies_reset(count: int)
+## Emitted by EnemySystem when an enemy was destroyed (a cannon ball, a black hole, ...), right after the generic
+## destructible_destroyed(EnemySystem.KIND, ...): `kind` its EnemyDef.kind, `cell` the cell it was drawn in,
+## `world_position` where it was (floor level), `cause` who did it. EnemyRemains answers with diamonds or a black hole.
+signal enemy_destroyed(kind: StringName, cell: Vector2i, world_position: Vector3, cause: StringName)
+
+## Enemy remains (task-076). Emitted by EnemyRemains (the only writer of diamonds and black holes) when diamonds burst
+## out of `from_position` onto `cells` (the burst animation flies them there).
+signal diamonds_spawned(from_position: Vector3, cells: Array[Vector2i])
+## Emitted by EnemyRemains when the player walked over a diamond: `total` = diamonds collected ever (the save counter).
+signal diamond_collected(cell: Vector2i, total: int)
+## Emitted by EnemyRemains when a black hole formed in `cell` (a destroyed hunter).
+signal black_hole_formed(cell: Vector2i, world_position: Vector3)
+## Emitted by EnemyRemains when diamonds and black holes went back to the map file's picture (map build, run start).
+signal remains_reset

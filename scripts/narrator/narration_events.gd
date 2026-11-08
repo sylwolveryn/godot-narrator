@@ -42,5 +42,10 @@ const SPRINT_UNLOCKED: StringName = &"SPRINT_UNLOCKED"
 ## Dirt walls (task-070): every eaten dirt cell, and the eaten counter reaching its next random milestone.
 const WALL_EATEN: StringName = &"WALL_EATEN"
 const WALLS_DEVOURED: StringName = &"WALLS_DEVOURED"
+## Enemies (task-075): the run ended by touching an enemy (every enemy_<kind> cause).
+const DEATH_BY_ENEMY: StringName = &"DEATH_BY_ENEMY"
+## Enemy remains (task-076): a black hole formed (a destroyed hunter), a diamond was picked up.
+const BLACK_HOLE_FORMED: StringName = &"BLACK_HOLE_FORMED"
+const DIAMOND_FOUND: StringName = &"DIAMOND_FOUND"
 ## Priority key used for TIME beats (they have no event name).
 const TIME: StringName = &"TIME"

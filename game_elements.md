@@ -7,6 +7,8 @@
 - `m3_dirt.txt`: dirt map (40x30). `#` ring, lots of `D`, tunnels, pockets. Fully revealed, no fog, no darkness.
 - `m4_dirt_field.txt`: 200x200. `#` border, all `D`, `@` at (100,100). Default look (fog). Made by `python tools/generate_dirt_field.py`. Only walls + dirt + player.
   - Load ~2.5 s, ~4 ms script per frame digging (dev PC). Check: `tools/test_dirt_field.gd`.
+- `m5_shapes.txt`: 200x200 like m4, floor routes carved in the D: golden spiral from `@`, 6 rings, rose (6 petals), Lissajous 3:2, 8 spokes, plaza at centre. Made by `python tools/generate_shapes_map.py` (params in header, seeded, rerun = same file). All routes connect to `@`. 6 L, 6 R, 6 H (>= 55 from spawn), 8 W, 2 O, 2 C next to spawn. Default look (fog, no DB row).
+  - Load ~3 s; enemies ~0.2 ms per physics step. Check: `tools/test_shapes_map.gd`.
 - Pick map:
   - god window "Map" dropdown
   - run arg: `-- --map=m2_arena`
@@ -29,6 +31,11 @@
 | `D` | dirt wall | none | eatable wall | blocks move, sight, light like `#`; walk into it = eaten (crumble, dust, crunch) -> floor; back each run; events WALL_EATEN, WALLS_DEVOURED |
 | `G` | gargoyle fountain | none (not in DB) | ASCII gargoyle over animated water basin | blocks movement, sight, light; destructible (cannon ball removes whole object); def: `resources/config/large_objects/gargoyle_fountain.tres` |
 | `C` | cannon | none (not in DB) | ASCII cannon, barrel turns | merged like G (1x1, 2x2); blocks movement only; indestructible; interact = fire; see Cannon |
+| `L` | crawler, left wall | enemy_def (`crawler`) | amber bug `Ж` with legs | keeps wall on its left; touch = death; see Enemies |
+| `R` | crawler, right wall | enemy_def (`crawler`) | same bug | keeps wall on its right |
+| `H` | hunter (seeker) | enemy_def (`hunter`) | red `Ω` with eyes | paths to player inside 16 cells |
+| `W` | wanderer (random) | enemy_def (`wanderer`) | green `&`, orbiting dots | random runs |
+| `O` | black hole | none | dark core, swirling glyph rings | floor; harmless to player; kills enemies that enter; see Remains |
 
 - `-` = no DB row listed.
 
@@ -83,7 +90,7 @@ TTT     anything else made of T = broken
 - Interact: tap = 1 ball. Hold > 2 s = autofire, 1/s rising to 5/s over 4 s, until release.
 - Balls: cone +-15 deg, 11 cells/s, live 100 cells then fade. Bigger cannon = bigger balls. One MultiMesh, glyph + trail.
 - Hit:
-  - destructible (D, gargoyle, teleport pad, later enemies) -> destroyed, ball gone.
+  - destructible (D, gargoyle, teleport pad, enemies) -> destroyed, ball gone.
   - wall, map edge, cannon, pushable object, player -> bounce. Player never hurt.
   - floor, spikes, corruption, items -> fly over.
 - Destroyed things come back at run start (like dirt). Teleport pad hit = cracked, no trips.
@@ -93,8 +100,31 @@ TTT     anything else made of T = broken
 
 ### Destructibles (generic)
 - Registry node `Destructibles`: owners register `(kind, is_at(cell), destroy(cell, cause))`. Hitters ask `kind_at` / `destroy_at`.
-- Owners: DirtWalls (`dirt`), LargeObjects (`gargoyle`, any def with `destructible`), TeleportSystem (`teleport`). Enemies (TASK-075): register same way.
+- Owners: DirtWalls (`dirt`), LargeObjects (`gargoyle`, any def with `destructible`), TeleportSystem (`teleport`), EnemySystem (`enemy`).
 - Every destruction: `SignalBus.destructible_destroyed(kind, rect, world_position, cause)`. Restore: `destructible_restored`.
+
+### Enemies (L R H W)
+- Spawn cell = floor. Code: EnemySystem (only writer), EnemyView (one MultiMesh, all enemies). Config `resources/config/enemy_config.tres`, per kind override = DB `enemy_def` (key `kind`).
+- Move cell to cell (4 dirs), smooth. Speeds: crawler 2.2, hunter 2.6, wanderer 1.8 cells/s (player ~4.8).
+  - crawler: wall-follow. Wall beside -> round corners toward it, else straight, else turn away, else back. Never loses it. Open floor -> straight until wall.
+  - hunter: BFS to player in 33x33 window, repath 0.6 s, max 2 searches per step. Out of window / no path -> wanders.
+  - wanderer: random dir, run 3-9 cells, re-roll at junction (35%), blocked or run done. Back only in dead end.
+- Blocked: walls, void, dirt (never dig), props, cannons, pushables, other enemies (hold 2 cells while moving; wait 1.2 s then other way).
+- Hazards (spikes, corruption): harmless to enemies.
+- Touch player (0.3 + body radius) while playing -> run ends once. Cause `enemy_crawler` / `enemy_hunter` / `enemy_wanderer` -> DEATH_BY_ENEMY ("Bitten" world + narrator lines).
+- Cannon ball -> destroyed (Destructibles kind `enemy`). Back at run start.
+- Hidden until its cell is seen this run.
+- DB `enemy_def` cols: speed, lethal, repath_seconds, search_radius, turn_chance, run_min, run_max, diamonds, black_hole.
+- Signals: enemies_reset, enemy_destroyed(kind, cell, pos, cause).
+
+### Remains (diamonds, black holes)
+- Code: EnemyRemains (only writer), RemainsView (one MultiMesh), DiamondSfx. Config `resources/config/remains_config.tres`.
+- Enemy destroyed (any cause): crawler 3, wanderer 2 diamonds `◆` burst onto free cells near (BFS <= 3). Hunter -> black hole on its cell.
+- Diamond: walk over = collect. Save `diamonds` (all maps, ever). No other use yet. Glints. Sound `sfx/diamond_pickup.mp3` override, else synth ting.
+- Black hole `O` (map) or from hunter: player walks over it, nothing happens (no pull, no damage). Enemy that steps in = destroyed (cause `black_hole`), leaves its remains (hunter in hole = no new hole, same cell). Hunters do not avoid holes.
+- Per run: run start = diamonds gone, holes = map's `O` again.
+- Events: BLACK_HOLE_FORMED ("Collapse, fold, nothing"), DIAMOND_FOUND ("Cold, bright, yours"); world lines, once ever.
+- Signals: diamonds_spawned, diamond_collected(cell, total), black_hole_formed, remains_reset.
 
 ## Controls
 
@@ -154,6 +184,7 @@ camera:   Q / E rotate
   - DEATH, DEATH_BY_SPIKES, DEATH_BY_CORRUPTION
   - TRANSFORMED(_TO_ONE/_TO_MANY), ORIGIN_STRUCK, ORIGIN_RECANTED, TIME, SPRINT_UNLOCKED
   - WALL_EATEN, WALLS_DEVOURED (dirt)
+  - DEATH_BY_ENEMY, BLACK_HOLE_FORMED, DIAMOND_FOUND (enemies)
 - NarratorConfig.random_pick_events: equal-rank beats picked at random (WALLS_DEVOURED).
 - Layers (beat `layer` in `data/narration/*.json`), one event plays them in this order:
 
@@ -194,7 +225,7 @@ camera:   Q / E rotate
 ## Database (SpacetimeDB, local)
 - Module: `database/spacetimedb/src/lib.rs`. DB name `database-narrator`. Server `http://127.0.0.1:3000`.
 - Game talks plain HTTP. Offline -> bundled `data/db/seed.json`.
-- Tables: `event_def`, `language_def`, `narration`, `player_stats`, `player_death`, `player_language`, `missing_narration`, `glyph_anim`, `movement_profile`, `avatar_fx`, `map_settings`, `config_version`.
+- Tables: `event_def`, `language_def`, `narration`, `player_stats`, `player_death`, `player_language`, `missing_narration`, `glyph_anim`, `movement_profile`, `avatar_fx`, `map_settings`, `enemy_def`, `config_version`.
 - Live reload: game polls `config_version` every 5 s. Bump it (god "Reload game data", or auto after god cell edit) -> game re-reads tables.
 
 ## God window
@@ -216,3 +247,4 @@ Run: `python god/god.py`
   - `godot --headless --max-fps 30 --path . -s tools/test_x.gd`
   - god: `python -m unittest discover -s god/tests`
 - Tasks: backlog CLI (latest TASK-076).
+- Legend chars used: space . # @ * ^ % o G T D C L R H W O (+ teleport channels inside T rings).

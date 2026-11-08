@@ -33,6 +33,7 @@ extends Resource
 	NarrationEvents.DEATH: 5,
 	NarrationEvents.DEATH_BY_SPIKES: 5,
 	NarrationEvents.DEATH_BY_CORRUPTION: 5,
+	NarrationEvents.DEATH_BY_ENEMY: 5,
 	NarrationEvents.EROSION_HIGH: 4,
 	NarrationEvents.CORRUPTION_ENTERED: 3,
 	NarrationEvents.TRANSFORMED: 3,
@@ -49,6 +50,8 @@ extends Resource
 	NarrationEvents.HIT_UNKNOWN: 1,
 	NarrationEvents.WALL_EATEN: 1,
 	NarrationEvents.WALLS_DEVOURED: 2,
+	NarrationEvents.BLACK_HOLE_FORMED: 2,
+	NarrationEvents.DIAMOND_FOUND: 1,
 	NarrationEvents.IDLE_FOR_SHORT: 0,
 	NarrationEvents.IDLE_FOR_MID: 0,
 	NarrationEvents.IDLE_FOR_LONG: 0,
@@ -68,6 +71,10 @@ extends Resource
 @export var death_events: Dictionary[StringName, StringName] = {
 	&"spikes": NarrationEvents.DEATH_BY_SPIKES,
 	&"corruption": NarrationEvents.DEATH_BY_CORRUPTION,
+	# Task-075: EnemyDef.end_cause() of every enemy kind.
+	&"enemy_crawler": NarrationEvents.DEATH_BY_ENEMY,
+	&"enemy_hunter": NarrationEvents.DEATH_BY_ENEMY,
+	&"enemy_wanderer": NarrationEvents.DEATH_BY_ENEMY,
 }
 ## Death event for a run end cause missing from `death_events`.
 @export var default_death_event: StringName = NarrationEvents.DEATH
@@ -78,6 +85,7 @@ extends Resource
 	NarrationEvents.TRANSFORMED_TO_MANY: NarrationEvents.TRANSFORMED,
 	NarrationEvents.DEATH_BY_SPIKES: NarrationEvents.DEATH,
 	NarrationEvents.DEATH_BY_CORRUPTION: NarrationEvents.DEATH,
+	NarrationEvents.DEATH_BY_ENEMY: NarrationEvents.DEATH,
 }
 
 @export_group("Presentation")

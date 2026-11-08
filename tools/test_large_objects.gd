@@ -55,7 +55,7 @@ func _legend() -> MapLegend:
 	var legend: MapLegend = (load(LEGEND) as MapLegend).duplicate()
 	var other := LargeObjectDef.new()
 	other.type = OTHER
-	other.character = "H"
+	other.character = "Q"  # task-075: H is the hunter now
 	other.art_lines = PackedStringArray(["[H]"])
 	legend.large_objects = legend.large_objects.duplicate()
 	legend.large_objects[OTHER] = other
@@ -102,8 +102,8 @@ func _check_merging() -> void:
 	_expect(loader, "GG\nG.", ["gargoyle 0 0 2 1", "gargoyle 0 1 1 1"], "L-shape")
 	_expect(loader, ".G\nGG", ["gargoyle 1 0 1 2", "gargoyle 0 1 1 1"], "mirrored L-shape (down first, then the rest)")
 	_expect(loader, "GG.GG\n.....\nG....", ["gargoyle 0 0 2 1", "gargoyle 3 0 2 1", "gargoyle 0 2 1 1"], "separate groups")
-	_expect(loader, "GH\nGH", ["gargoyle 0 0 1 2", "test_other 1 0 1 2"], "mixed types do not merge")
-	_expect(loader, "GGH", ["gargoyle 0 0 2 1", "test_other 2 0 1 1"], "mixed run")
+	_expect(loader, "GQ\nGQ", ["gargoyle 0 0 1 2", "test_other 1 0 1 2"], "mixed types do not merge")
+	_expect(loader, "GGQ", ["gargoyle 0 0 2 1", "test_other 2 0 1 1"], "mixed run")
 	_expect(loader, "GG.\nGGG", ["gargoyle 0 0 2 2", "gargoyle 2 1 1 1"], "2x2 plus a tail")
 	var map: MapData = loader.parse_text("#GG.\n#GG@")
 	_check(map.warnings.is_empty() and map.errors.is_empty(), "G parses without warnings: %s %s" % [map.warnings, map.errors])

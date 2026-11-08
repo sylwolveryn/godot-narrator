@@ -45,3 +45,5 @@ extends Resource
 @export var walls_eaten: int = 0
 ## walls_eaten value at which WALLS_DEVOURED fires next (0 = not rolled yet).
 @export var next_devour_at: int = 0
+## Enemy remains (task-076). Written ONLY by EnemyRemains. Diamonds picked up ever, on every map.
+@export var diamonds: int = 0

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_bpxgv"]
+
+[resource]
+script = ExtResource("1_bpxgv")
+id = "death_enemy_they_know"
+text = "They learn your way home. So do I."
+event = &"DEATH_BY_ENEMY"
+min_run = 3
+min_deaths = 2
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 37

@@ -15,4 +15,4 @@ supports = PackedStringArray("alien")
 contradicts = PackedStringArray()
 role = 3
 event_param = &"alien"
-order = 46
+order = 51

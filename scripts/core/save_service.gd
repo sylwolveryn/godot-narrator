@@ -232,6 +232,7 @@ func _sanitized(loaded: PersistentProgress) -> PersistentProgress:
 	clean.language_step_remainder = maxi(0, loaded.language_step_remainder)
 	clean.walls_eaten = maxi(0, loaded.walls_eaten)
 	clean.next_devour_at = maxi(0, loaded.next_devour_at)
+	clean.diamonds = maxi(0, loaded.diamonds)
 	for key: Variant in loaded.revealed_cells:
 		var cells: Variant = loaded.revealed_cells[key]
 		if (key is StringName or key is String) and cells is PackedVector2Array:

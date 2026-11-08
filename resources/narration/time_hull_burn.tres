@@ -13,4 +13,4 @@ min_deaths = 4
 mood = &"pulse"
 supports = PackedStringArray("alien")
 contradicts = PackedStringArray("angelic")
-order = 48
+order = 53

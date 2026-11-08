@@ -283,6 +283,18 @@ class Progress(unittest.TestCase):
         self.assertIn("37.5", f["language_understanding"])
         self.assertEqual(f["death_count"], 9)
 
+    def test_counter_fields(self):
+        # Task-070 dirt counter and task-076 diamonds: plain ints in the save, shown as they are.
+        f = core.parse_progress(SAMPLE + "walls_eaten = 120\nnext_devour_at = 250\ndiamonds = 14\n")
+        self.assertEqual(f["walls_eaten"], 120)
+        self.assertEqual(f["diamonds"], 14)
+
+    def test_enemy_def_table_registered(self):
+        self.assertIn("enemy_def", core.DB_TABLES)
+        self.assertEqual(core.DB_PRIMARY_KEYS["enemy_def"], "kind")
+        self.assertTrue(core.is_editable("enemy_def", "speed", "F32"))
+        self.assertFalse(core.is_editable("enemy_def", "kind", "String"))
+
     def test_real_file_shape_with_big_dictionary(self):
         f = core.parse_progress(SAMPLE.replace("19, 11)", "19, 11, 1, 2)"))
         self.assertEqual(f["death_count"], 9)

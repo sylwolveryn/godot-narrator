@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="EnemyConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/enemy_def.gd" id="1_b5lo5"]
+[ext_resource type="Script" path="res://scripts/world/enemy_config.gd" id="2_4hgc5"]
+
+[sub_resource type="Resource" id="Resource_cfnml"]
+script = ExtResource("1_b5lo5")
+speed = 2.2
+diamonds = 3
+glyphs = "Ж<>"
+color = Color(1, 0.62, 0.18, 1)
+accent = Color(1, 0.85, 0.45, 1)
+satellite_start_degrees = 180.0
+bob_amount = 0.03
+wiggle_amount = 0.07
+wiggle_hz = 7.0
+hover = 0.36
+
+[sub_resource type="Resource" id="Resource_c21b3"]
+script = ExtResource("1_b5lo5")
+kind = &"hunter"
+movement = 1
+speed = 2.6
+black_hole = true
+glyphs = "Ω••"
+color = Color(1, 0.2, 0.3, 1)
+accent = Color(1, 0.95, 0.4, 1)
+body_size = 0.36
+satellite_scale = 0.4
+satellite_radius = 0.2
+satellite_start_degrees = 60.0
+satellite_step_degrees = 60.0
+bob_amount = 0.06
+wiggle_amount = 0.02
+wiggle_hz = 2.0
+hover = 0.5
+glow = 0.5
+
+[sub_resource type="Resource" id="Resource_1suap"]
+script = ExtResource("1_b5lo5")
+kind = &"wanderer"
+movement = 2
+speed = 1.8
+diamonds = 2
+glyphs = "&°·°"
+color = Color(0.35, 1, 0.6, 1)
+accent = Color(0.7, 1, 0.95, 1)
+satellite_scale = 0.5
+satellite_radius = 0.36
+satellite_step_degrees = 120.0
+orbit_degrees_per_second = 90.0
+bob_amount = 0.08
+bob_hz = 0.9
+wiggle_amount = 0.04
+wiggle_hz = 1.5
+hover = 0.5
+
+[resource]
+script = ExtResource("2_4hgc5")
+defs = Array[ExtResource("1_b5lo5")]([SubResource("Resource_cfnml"), SubResource("Resource_c21b3"), SubResource("Resource_1suap")])
+glyph_font_names = PackedStringArray("Consolas", "Cascadia Mono", "Segoe UI Symbol", "monospace")

@@ -109,6 +109,17 @@ func parse_text(text: String) -> MapData:
 					first_floor = Vector2i(x, y)
 				map.set_type(Vector2i(x, y), MapLegend.FLOOR)
 				continue
+			# Enemies (task-075) and black holes (task-076) stand on floor.
+			if legend.enemy_spawns.has(ch) or ch == legend.black_hole_char:
+				if legend.enemy_spawns.has(ch):
+					map.enemies.append(Vector2i(x, y))
+					map.enemy_types.append(legend.enemy_spawns[ch])
+				else:
+					map.black_holes.append(Vector2i(x, y))
+				if first_floor.x < 0:
+					first_floor = Vector2i(x, y)
+				map.set_type(Vector2i(x, y), MapLegend.FLOOR)
+				continue
 			var type: StringName = legend.type_for(ch)
 			if type == &"":
 				if not unknown_seen.has(ch):

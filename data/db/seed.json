@@ -100,6 +100,18 @@
 		{
 			"id": "WALLS_DEVOURED",
 			"description": "The eaten dirt walls reach the next random milestone"
+		},
+		{
+			"id": "DEATH_BY_ENEMY",
+			"description": "The player dies touching an enemy"
+		},
+		{
+			"id": "BLACK_HOLE_FORMED",
+			"description": "A destroyed hunter collapses into a black hole"
+		},
+		{
+			"id": "DIAMOND_FOUND",
+			"description": "The player picks up a diamond"
 		}
 	],
 	"language_def": [
@@ -1940,6 +1952,222 @@
 			"triggered": 0,
 			"text_path": "narration/event/WALLS_DEVOURED_JP_KANA.json",
 			"sound_path": "narration/event/WALLS_DEVOURED_JP_KANA.mp3"
+		},
+		{
+			"id": 226,
+			"event": "DEATH_BY_ENEMY",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_EN_GB.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_EN_GB.mp3"
+		},
+		{
+			"id": 227,
+			"event": "DEATH_BY_ENEMY",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_HU_HU.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_HU_HU.mp3"
+		},
+		{
+			"id": 228,
+			"event": "DEATH_BY_ENEMY",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_ALIEN.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_ALIEN.mp3"
+		},
+		{
+			"id": 229,
+			"event": "DEATH_BY_ENEMY",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_MATRIX.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_MATRIX.mp3"
+		},
+		{
+			"id": 230,
+			"event": "DEATH_BY_ENEMY",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_DREAM.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_DREAM.mp3"
+		},
+		{
+			"id": 231,
+			"event": "DEATH_BY_ENEMY",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_DE_DE.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_DE_DE.mp3"
+		},
+		{
+			"id": 232,
+			"event": "DEATH_BY_ENEMY",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_RU_RU.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_RU_RU.mp3"
+		},
+		{
+			"id": 233,
+			"event": "DEATH_BY_ENEMY",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_JP_HAN.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_JP_HAN.mp3"
+		},
+		{
+			"id": 234,
+			"event": "DEATH_BY_ENEMY",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_JP_KANA.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_JP_KANA.mp3"
+		},
+		{
+			"id": 235,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_EN_GB.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_EN_GB.mp3"
+		},
+		{
+			"id": 236,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_HU_HU.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_HU_HU.mp3"
+		},
+		{
+			"id": 237,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_ALIEN.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_ALIEN.mp3"
+		},
+		{
+			"id": 238,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_MATRIX.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_MATRIX.mp3"
+		},
+		{
+			"id": 239,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_DREAM.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_DREAM.mp3"
+		},
+		{
+			"id": 240,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_DE_DE.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_DE_DE.mp3"
+		},
+		{
+			"id": 241,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_RU_RU.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_RU_RU.mp3"
+		},
+		{
+			"id": 242,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_JP_HAN.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_JP_HAN.mp3"
+		},
+		{
+			"id": 243,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_JP_KANA.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_JP_KANA.mp3"
+		},
+		{
+			"id": 244,
+			"event": "DIAMOND_FOUND",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_EN_GB.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_EN_GB.mp3"
+		},
+		{
+			"id": 245,
+			"event": "DIAMOND_FOUND",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_HU_HU.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_HU_HU.mp3"
+		},
+		{
+			"id": 246,
+			"event": "DIAMOND_FOUND",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_ALIEN.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_ALIEN.mp3"
+		},
+		{
+			"id": 247,
+			"event": "DIAMOND_FOUND",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_MATRIX.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_MATRIX.mp3"
+		},
+		{
+			"id": 248,
+			"event": "DIAMOND_FOUND",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_DREAM.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_DREAM.mp3"
+		},
+		{
+			"id": 249,
+			"event": "DIAMOND_FOUND",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_DE_DE.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_DE_DE.mp3"
+		},
+		{
+			"id": 250,
+			"event": "DIAMOND_FOUND",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_RU_RU.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_RU_RU.mp3"
+		},
+		{
+			"id": 251,
+			"event": "DIAMOND_FOUND",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_JP_HAN.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_JP_HAN.mp3"
+		},
+		{
+			"id": 252,
+			"event": "DIAMOND_FOUND",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_JP_KANA.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_JP_KANA.mp3"
 		}
 	],
 	"glyph_anim": [
@@ -2104,6 +2332,44 @@
 			"line_of_sight": true,
 			"player_light_radius": -1.0,
 			"ambient_level": -1.0
+		}
+	],
+	"enemy_def": [
+		{
+			"kind": "crawler",
+			"speed": 2.2,
+			"lethal": true,
+			"repath_seconds": 0.6,
+			"search_radius": 16,
+			"turn_chance": 0.35,
+			"run_min": 3,
+			"run_max": 9,
+			"diamonds": 3,
+			"black_hole": false
+		},
+		{
+			"kind": "hunter",
+			"speed": 2.6,
+			"lethal": true,
+			"repath_seconds": 0.6,
+			"search_radius": 16,
+			"turn_chance": 0.35,
+			"run_min": 3,
+			"run_max": 9,
+			"diamonds": 0,
+			"black_hole": true
+		},
+		{
+			"kind": "wanderer",
+			"speed": 1.8,
+			"lethal": true,
+			"repath_seconds": 0.6,
+			"search_radius": 16,
+			"turn_chance": 0.35,
+			"run_min": 3,
+			"run_max": 9,
+			"diamonds": 2,
+			"black_hole": false
 		}
 	]
 }

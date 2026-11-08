@@ -203,6 +203,38 @@ const SEED_MAP_SETTINGS: &[(&str, bool, bool, bool, f32, bool, f32, f32)] = &[
     ("m3_dirt", true, false, false, -1.0, true, -1.0, -1.0),
 ];
 
+/// Enemy types (task-075/076), key `kind` (crawler, hunter, wanderer). A kind without a row plays with the game's
+/// config defaults (resources/config/enemy_config.tres).
+#[spacetimedb::table(accessor = enemy_def, public)]
+pub struct EnemyDef {
+    #[primary_key]
+    pub kind: String,
+    /// Cells per second.
+    pub speed: f32,
+    /// Touching the player ends the run.
+    pub lethal: bool,
+    /// Hunter: seconds between path searches.
+    pub repath_seconds: f32,
+    /// Hunter: search window around it in cells; a player outside it is not hunted.
+    pub search_radius: i32,
+    /// Wanderer: chance (0..1) to re-roll the direction at a junction.
+    pub turn_chance: f32,
+    /// Wanderer: straight run length range in cells before it re-rolls.
+    pub run_min: i32,
+    pub run_max: i32,
+    /// Diamonds it bursts into when destroyed.
+    pub diamonds: i32,
+    /// Leaves a black hole on its cell when destroyed.
+    pub black_hole: bool,
+}
+
+/// (kind, speed, lethal, repath_seconds, search_radius, turn_chance, run_min, run_max, diamonds, black_hole)
+const SEED_ENEMIES: &[(&str, f32, bool, f32, i32, f32, i32, i32, i32, bool)] = &[
+    ("crawler", 2.2, true, 0.6, 16, 0.35, 3, 9, 3, false),
+    ("hunter", 2.6, true, 0.6, 16, 0.35, 3, 9, 0, true),
+    ("wanderer", 1.8, true, 0.6, 16, 0.35, 3, 9, 2, false),
+];
+
 /// Bumped to tell running games to reload their tables. Single row, id = 1.
 #[spacetimedb::table(accessor = config_version, public)]
 pub struct ConfigVersion {
@@ -246,6 +278,9 @@ const SEED_EVENTS: &[(&str, &str)] = &[
     ("SPRINT_UNLOCKED", "First move of a run once sprint is available"),
     ("WALL_EATEN", "The player eats a dirt wall"),
     ("WALLS_DEVOURED", "The eaten dirt walls reach the next random milestone"),
+    ("DEATH_BY_ENEMY", "The player dies touching an enemy"),
+    ("BLACK_HOLE_FORMED", "A destroyed hunter collapses into a black hole"),
+    ("DIAMOND_FOUND", "The player picks up a diamond"),
 ];
 
 const SEED_LANGUAGES: &[(&str, &str)] = &[
@@ -434,6 +469,22 @@ fn seed(ctx: &ReducerContext) {
             });
         }
     }
+    for (kind, speed, lethal, repath, radius, turn, run_min, run_max, diamonds, hole) in SEED_ENEMIES {
+        if ctx.db.enemy_def().kind().find(kind.to_string()).is_none() {
+            ctx.db.enemy_def().insert(EnemyDef {
+                kind: kind.to_string(),
+                speed: *speed,
+                lethal: *lethal,
+                repath_seconds: *repath,
+                search_radius: *radius,
+                turn_chance: *turn,
+                run_min: *run_min,
+                run_max: *run_max,
+                diamonds: *diamonds,
+                black_hole: *hole,
+            });
+        }
+    }
     if ctx.db.avatar_fx().profile().find("default".to_string()).is_none() {
         ctx.db.avatar_fx().insert(default_avatar_fx());
     }
@@ -510,6 +561,10 @@ pub fn reset_defaults(ctx: &ReducerContext) {
     let ids: Vec<String> = ctx.db.map_settings().iter().map(|r| r.map_id).collect();
     for id in ids {
         ctx.db.map_settings().map_id().delete(id);
+    }
+    let ids: Vec<String> = ctx.db.enemy_def().iter().map(|r| r.kind).collect();
+    for id in ids {
+        ctx.db.enemy_def().kind().delete(id);
     }
     seed(ctx);
 }
