@@ -1,11 +1,11 @@
 ---
 id: TASK-059
 title: Arena test map
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T14:07:00Z'
-updated_date: '2026-11-08T14:24:00Z'
+updated_date: '2026-11-08T14:29:00Z'
 labels:
   - world
 dependencies:
@@ -23,8 +23,8 @@ The M1 map is a maze. An open antique arena with scattered obstacles is needed t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 data/maps/m2_arena.txt: open arena with gargoyles of several footprints, pillars and some hazards/items
-- [ ] #2 The map loads and plays (headless boot and test)
+- [x] #1 data/maps/m2_arena.txt: open arena with gargoyles of several footprints, pillars and some hazards/items
+- [x] #2 The map loads and plays (headless boot and test)
 <!-- AC:END -->
 
 ## Implementation Notes
