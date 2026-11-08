@@ -9,7 +9,15 @@
 - Signals travel UP only: UI never modifies data directly; data layer speaks through signals.
 - No magic numbers in gameplay code. Values live in `.tres` resources or exported vars.
 - Never reference files under `docs/art/` from code or scenes. They are reference material, not assets.
+- git: work in main, commit and push your changes.
 
+## Potato-First Rule (non-negotiable)
+Target hardware: Low-end laptop with integrated GPU that only supports OpenGL 3.3 (e.g., Intel HD Graphics 2500/4000 class). This is Godot's official minimum GPU baseline for the Compatibility renderer. The game must run at stable 30+ FPS on this class of machine.
+
+Project settings that MUST stay:
+- Renderer: Compatibility (OpenGL 3.3). Never switch to Forward+ or Mobile.
+- `physics_ticks_per_second`: 60. Never raise it.
+- `--max-fps 30` on every CLI run.
 
 # Model Routing
 - Documentation, ADR, progress reports, task breakdown → use subagent `doc-writer` (Haiku)
