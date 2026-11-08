@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:44:00Z'
-updated_date: '2026-11-08T16:45:00Z'
+updated_date: '2026-11-08T16:52:00Z'
 labels:
   - world
   - database
@@ -29,3 +29,13 @@ Maps need different visibility rules: the new dirt map is fully revealed with no
 - [ ] #3 A map can start fully revealed with no fog/darkness so everything is visible all the time
 - [ ] #4 Settings are applied when the map loads and on a DB reload; tests cover default and override
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. MapSettings (pure data: effective visibility rules, resolve(row, RevealConfig, GlyphWorldConfig); a missing row or a negative number = today's config value).
+2. MapSettingsResolver node (data layer, the one owner of the per-map row): row for MapLoader.map_id from GameDatabase table map_settings; emits settings_changed on tables_loaded.
+3. MapReveal: reveal radius / line of sight from the settings; reveal_all = every drawn cell seen at run start (no memory look). GlyphWorldView: fog (fog_strength, depth fade), darkness (ambient level/colour, memory look), player light radius from the settings; re-applied on settings_changed.
+4. DB: Rust table map_settings + seed row m3_dirt, reset_defaults; seed.json; DbConfig.tables; god DB_TABLES / DB_PRIMARY_KEYS.
+5. tools/test_map_settings.gd: no row = identical uniforms/reveal to the configs; m3_dirt row = all seen, fog/darkness off; DB reload re-applies.
+<!-- SECTION:PLAN:END -->
