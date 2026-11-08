@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T17:21:00Z'
-updated_date: '2026-11-08T18:42:00Z'
+updated_date: '2026-11-08T18:55:00Z'
 labels:
   - gameplay
   - world
@@ -40,3 +40,9 @@ Destroying enemies with cannon balls should pay off and change the map: the wall
 4. Narration BLACK_HOLE_FORMED / DIAMOND_FOUND world lines (once)
 5. tools/test_remains.gd
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+EnemyRemains (scripts/world/enemy_remains.gd) only writer of diamonds + black holes; RemainsConfig (resources/config/remains_config.tres). enemy_destroyed -> crawler 3 / wanderer 2 diamonds (BFS <= 3 free cells), hunter -> black hole. Legend O = black hole (MapData.black_holes). Diamonds collected by standing on the cell: PersistentProgress.diamonds (SaveService sanitize, test_save allowlist, god test). Black hole: harmless/walkable for the player; enemy arriving on it destroyed with cause black_hole (normal remains). Diamonds + holes reset at run start (holes back to the map's O). RemainsView (glinting diamonds with burst arc, swirling rings + dark core), DiamondSfx synth ting. Events BLACK_HOLE_FORMED / DIAMOND_FOUND with one WORLD line each (once). Tests: tools/test_remains.gd.
+<!-- SECTION:NOTES:END -->
