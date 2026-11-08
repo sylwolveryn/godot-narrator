@@ -32,3 +32,9 @@ Testing a second map needs a way to start the game on it without editing the mai
 <!-- SECTION:NOTES:BEGIN -->
 MapLoader.map_path_from_args (--map=<name|path> user arg, fallback to map_path, warning when missing). god: Map combobox, core.list_maps/game_args/settings (god/settings.json, gitignored), GameController.map_name; 61 python tests pass.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+MapLoader reads --map=<name|path> from the user args (MapLoader.map_path_from_args, falls back to the scene map with a warning). God window Map combobox lists data/maps/*.txt, remembered in god/settings.json (gitignored), used by Start new game / Continue. Verified by tests (Godot + 61 god unit tests).
+<!-- SECTION:FINAL_SUMMARY:END -->
