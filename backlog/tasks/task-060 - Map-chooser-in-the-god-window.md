@@ -1,11 +1,11 @@
 ---
 id: TASK-060
 title: Map chooser in the god window
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T14:07:00Z'
-updated_date: '2026-11-08T14:24:00Z'
+updated_date: '2026-11-08T14:29:00Z'
 labels:
   - tools
 dependencies:
@@ -23,8 +23,8 @@ Testing a second map needs a way to start the game on it without editing the mai
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 God window lists data/maps/*.txt and starts/continues the game on the chosen map
-- [ ] #2 The game takes the map from a command-line user argument and falls back to the scene's map
+- [x] #1 God window lists data/maps/*.txt and starts/continues the game on the chosen map
+- [x] #2 The game takes the map from a command-line user argument and falls back to the scene's map
 <!-- AC:END -->
 
 ## Implementation Notes
