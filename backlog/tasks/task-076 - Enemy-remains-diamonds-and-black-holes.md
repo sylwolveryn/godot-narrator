@@ -1,11 +1,11 @@
 ---
 id: TASK-076
 title: 'Enemy remains: diamonds and black holes'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T17:21:00Z'
-updated_date: '2026-11-08T18:55:00Z'
+updated_date: '2026-11-08T19:07:00Z'
 labels:
   - gameplay
   - world
@@ -25,10 +25,10 @@ Destroying enemies with cannon balls should pay off and change the map: the wall
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A cannon-ball hit on a crawler or wanderer bursts it into diamonds (count configurable) the player collects by walking over them; collected diamonds are counted in the save
-- [ ] #2 A cannon-ball hit on a hunter leaves a black hole on its cell: a new map object with its own ASCII look, also placeable in maps with its own legend char
-- [ ] #3 Any enemy that moves into a black hole is destroyed (and leaves its normal remains); the hole's effect on the player is defined and documented
-- [ ] #4 Tests cover both remains, collection and black-hole kills
+- [x] #1 A cannon-ball hit on a crawler or wanderer bursts it into diamonds (count configurable) the player collects by walking over them; collected diamonds are counted in the save
+- [x] #2 A cannon-ball hit on a hunter leaves a black hole on its cell: a new map object with its own ASCII look, also placeable in maps with its own legend char
+- [x] #3 Any enemy that moves into a black hole is destroyed (and leaves its normal remains); the hole's effect on the player is defined and documented
+- [x] #4 Tests cover both remains, collection and black-hole kills
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -46,3 +46,9 @@ Destroying enemies with cannon balls should pay off and change the map: the wall
 <!-- SECTION:NOTES:BEGIN -->
 EnemyRemains (scripts/world/enemy_remains.gd) only writer of diamonds + black holes; RemainsConfig (resources/config/remains_config.tres). enemy_destroyed -> crawler 3 / wanderer 2 diamonds (BFS <= 3 free cells), hunter -> black hole. Legend O = black hole (MapData.black_holes). Diamonds collected by standing on the cell: PersistentProgress.diamonds (SaveService sanitize, test_save allowlist, god test). Black hole: harmless/walkable for the player; enemy arriving on it destroyed with cause black_hole (normal remains). Diamonds + holes reset at run start (holes back to the map's O). RemainsView (glinting diamonds with burst arc, swirling rings + dark core), DiamondSfx synth ting. Events BLACK_HOLE_FORMED / DIAMOND_FOUND with one WORLD line each (once). Tests: tools/test_remains.gd.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+EnemyRemains (only writer): crawler -> 3 diamonds, wanderer -> 2, hunter -> black hole (legend O, walkable and harmless for the player; enemies entering are destroyed with cause black_hole and leave remains). Diamonds counted in the save (diamonds), pickup ting (override sfx/diamond_pickup.mp3). Reset each run. World lines once: BLACK_HOLE_FORMED 'Collapse, fold, nothing', DIAMOND_FOUND 'Cold, bright, yours'. Tests: test_remains.
+<!-- SECTION:FINAL_SUMMARY:END -->
