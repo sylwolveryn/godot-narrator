@@ -1,10 +1,11 @@
 ---
 id: TASK-072
 title: Interact control (Space / left click)
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:54:00Z'
+updated_date: '2026-11-08T17:48:00Z'
 labels:
   - input
   - gameplay
