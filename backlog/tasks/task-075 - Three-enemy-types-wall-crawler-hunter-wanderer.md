@@ -5,6 +5,7 @@ status: To Do
 assignee:
   - '@claude'
 created_date: '2026-11-08T17:10:00Z'
+updated_date: '2026-11-08T17:21:00Z'
 labels:
   - gameplay
   - world
@@ -30,3 +31,9 @@ First enemies. Each type moves its own way: the crawler always follows a wall (l
 - [ ] #3 Touching the player ends the run (cause per enemy type, death narration event); cannon balls destroy enemies
 - [ ] #4 Enemy speeds and lethality per type in a DB table with defaults; tests cover each movement rule, contact death and destruction
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+User 2026-11-08: names used by the user: 'autofollow' = wall crawler (L/R), 'random' = wanderer (W), 'seeker' = hunter (H, follows the player). What each leaves behind when destroyed is TASK-076.
+<!-- SECTION:NOTES:END -->
