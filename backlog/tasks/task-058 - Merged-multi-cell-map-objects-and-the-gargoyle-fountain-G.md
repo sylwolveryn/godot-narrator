@@ -1,9 +1,11 @@
 ---
 id: TASK-058
 title: Merged multi-cell map objects and the gargoyle fountain (G)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-08T14:07:00Z'
+updated_date: '2026-11-08T14:07:00Z'
 labels:
   - world
   - rendering
