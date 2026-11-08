@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_g5j4d"]
+
+[resource]
+script = ExtResource("1_g5j4d")
+id = "brain_narrator_dreaming"
+text = "The brain. Was it always you, dreaming the rest?"
+event = &"TRANSFORMED_TO_BRAIN"
+mood = &"low_drone"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 64

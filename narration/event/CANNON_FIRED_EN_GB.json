@@ -1,0 +1,8 @@
+{
+	"event": "CANNON_FIRED",
+	"language": "EN_GB",
+	"lines": {
+		"cannon_world_thunder": "Thunder, iron, far",
+		"cannon_narrator_polite": "Distance makes killing so polite."
+	}
+}

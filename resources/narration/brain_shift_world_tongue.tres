@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_3mq26"]
+
+[resource]
+script = ExtResource("1_3mq26")
+id = "brain_shift_world_tongue"
+text = "Turn, tongue, other"
+event = &"BRAIN_LANGUAGE_SHIFT"
+mood = &"chime"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 65
+layer = 0

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_4lfx7"]
+
+[resource]
+script = ExtResource("1_4lfx7")
+id = "craft_narrator_never_enough"
+text = "Not enough. There is never enough."
+event = &"CRAFT_REFUSED"
+mood = &"low_drone"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 58

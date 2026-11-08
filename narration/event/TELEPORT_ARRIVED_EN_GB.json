@@ -1,0 +1,8 @@
+{
+	"event": "TELEPORT_ARRIVED",
+	"language": "EN_GB",
+	"lines": {
+		"arrive_world_stitched": "Stitched, again, elsewhere",
+		"arrive_narrator_doors": "Every door you open was left open for you."
+	}
+}

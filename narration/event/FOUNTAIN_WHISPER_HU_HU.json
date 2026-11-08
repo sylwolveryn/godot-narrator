@@ -1,0 +1,7 @@
+{
+	"event": "FOUNTAIN_WHISPER",
+	"language": "HU_HU",
+	"lines": {
+		"fountain_narrator_hidden": "There is a hidden message, you haven't seen it before. Is this just a hallucination, a dream?"
+	}
+}

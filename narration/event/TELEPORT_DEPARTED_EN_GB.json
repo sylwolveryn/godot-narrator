@@ -1,0 +1,8 @@
+{
+	"event": "TELEPORT_DEPARTED",
+	"language": "EN_GB",
+	"lines": {
+		"teleport_world_unthread": "Unthread, unstitch, away",
+		"teleport_own_was_here": "I was here. Then I was not."
+	}
+}

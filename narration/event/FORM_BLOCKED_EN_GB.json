@@ -1,0 +1,8 @@
+{
+	"event": "FORM_BLOCKED",
+	"language": "EN_GB",
+	"lines": {
+		"blocked_world_narrow": "Narrow, tight, no",
+		"blocked_own_room": "Too many of me. Not enough room."
+	}
+}

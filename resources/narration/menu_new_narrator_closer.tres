@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_ccobd"]
+
+[resource]
+script = ExtResource("1_ccobd")
+id = "menu_new_narrator_closer"
+text = "Something new remembers you. Look closer."
+event = &"MENU_ITEM_NEW"
+mood = &"chime"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 52

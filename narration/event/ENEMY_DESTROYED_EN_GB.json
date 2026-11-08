@@ -1,0 +1,9 @@
+{
+	"event": "ENEMY_DESTROYED",
+	"language": "EN_GB",
+	"lines": {
+		"enemy_world_shatter": "Shatter, silence, scatter",
+		"enemy_own_like_me": "It looked like me, for a moment.",
+		"enemy_narrator_name": "One less shape that knows your name."
+	}
+}

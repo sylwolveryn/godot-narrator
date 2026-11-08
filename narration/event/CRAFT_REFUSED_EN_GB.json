@@ -1,0 +1,7 @@
+{
+	"event": "CRAFT_REFUSED",
+	"language": "EN_GB",
+	"lines": {
+		"craft_narrator_never_enough": "Not enough. There is never enough."
+	}
+}

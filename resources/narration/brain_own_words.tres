@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_afgcr"]
+
+[resource]
+script = ExtResource("1_afgcr")
+id = "brain_own_words"
+text = "So many words. All of them mine."
+event = &"TRANSFORMED_TO_BRAIN"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 63
+layer = 1

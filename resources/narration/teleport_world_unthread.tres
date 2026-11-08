@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_kakg2"]
+
+[resource]
+script = ExtResource("1_kakg2")
+id = "teleport_world_unthread"
+text = "Unthread, unstitch, away"
+event = &"TELEPORT_DEPARTED"
+mood = &"static"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 43
+layer = 0

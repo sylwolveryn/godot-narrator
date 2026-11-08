@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_mmcqs"]
+
+[resource]
+script = ExtResource("1_mmcqs")
+id = "research_world_sift"
+text = "Sift, sort, understand"
+event = &"RESEARCH_DONE"
+mood = &"static"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 53
+layer = 0

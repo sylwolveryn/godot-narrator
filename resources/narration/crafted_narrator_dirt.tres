@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_66ckn"]
+
+[resource]
+script = ExtResource("1_66ckn")
+id = "crafted_narrator_dirt"
+text = "From dirt you came. From dirt you make."
+event = &"CRAFTED"
+mood = &"low_drone"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 57

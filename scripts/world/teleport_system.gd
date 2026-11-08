@@ -136,6 +136,7 @@ func start_trip(from: int) -> bool:
 	for i in targets:
 		centres.append(map_loader.cell_to_world(pads[i].centre))
 	SignalBus.teleport_started.emit(map_loader.cell_to_world(pads[from].centre), centres, chosen, config.trip_seconds)
+	SignalBus.narration_event.emit(NarrationEvents.TELEPORT_DEPARTED)
 	return true
 
 
@@ -147,6 +148,7 @@ func _step(delta: float) -> void:
 		player.place_at(centre)
 		_blocked = _dest
 		SignalBus.teleport_arrived.emit(centre, _candidates.size())
+		SignalBus.narration_event.emit(NarrationEvents.TELEPORT_ARRIVED)
 	if _t >= config.trip_seconds:
 		_active = false
 		SignalBus.teleport_finished.emit()

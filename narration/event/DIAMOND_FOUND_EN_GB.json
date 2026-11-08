@@ -2,6 +2,8 @@
 	"event": "DIAMOND_FOUND",
 	"language": "EN_GB",
 	"lines": {
-		"diamond_world_cold": "Cold, bright, yours"
+		"diamond_world_cold": "Cold, bright, yours",
+		"diamond_own_thought": "Hard and clear. Like a thought I almost had.",
+		"diamond_narrator_pockets": "Pretty things. Pockets full of light, and still nowhere to go."
 	}
 }

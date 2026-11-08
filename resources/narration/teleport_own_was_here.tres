@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_7um5l"]
+
+[resource]
+script = ExtResource("1_7um5l")
+id = "teleport_own_was_here"
+text = "I was here. Then I was not."
+event = &"TELEPORT_DEPARTED"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 44
+layer = 1

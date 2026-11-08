@@ -81,8 +81,7 @@ func fire(c: Cannon) -> void:
 		balls.launch(muzzle, dir, config.ball_size_for(c.footprint.size))
 		fired += 1
 		SignalBus.cannon_fired.emit(c.index, muzzle, dir)
-	if is_many():
-		SignalBus.narration_event.emit(NarrationEvents.MANY_FIRED_CANNON)
+	SignalBus.narration_event.emit(NarrationEvents.MANY_FIRED_CANNON if is_many() else NarrationEvents.CANNON_FIRED)
 
 
 ## Launch point of cannon `c`: on the footprint edge along its facing plus the muzzle margin, at the flight height.

@@ -132,7 +132,8 @@ func _test_data() -> void:
 	# 54 = 26 M1 + 3 sprint layers + 6 dirt (task-070: 1 WALL_EATEN world line + 5 WALLS_DEVOURED variants)
 	# + 5 enemies (task-075/076: 3 DEATH_BY_ENEMY, 1 BLACK_HOLE_FORMED and 1 DIAMOND_FOUND world line) + 14 origin.
 	# + 2 many-form cannon lines (task-077: own + narrator on MANY_FIRED_CANNON) = 56
-	_check(config.beats.size() == 56, "expected 56 beats (26 M1 + 3 sprint layers + 6 dirt + 5 enemies + 2 many cannon + 14 origin), got %d" % config.beats.size())
+	# + 27 lines of the task-088..092 events (fountain, teleport, enemies, cannon, menu, crafting, form, brain, diamonds) = 83
+	_check(config.beats.size() == 83, "expected 83 beats (26 M1 + 3 sprint layers + 6 dirt + 5 enemies + 2 many cannon + 27 task-088..092 + 14 origin), got %d" % config.beats.size())
 	var supports: Dictionary = {}
 	var contradicts: Dictionary = {}
 	var neutral: int = 0

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_l1j2o"]
+
+[resource]
+script = ExtResource("1_l1j2o")
+id = "diamond_own_thought"
+text = "Hard and clear. Like a thought I almost had."
+event = &"DIAMOND_FOUND"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 66
+layer = 1

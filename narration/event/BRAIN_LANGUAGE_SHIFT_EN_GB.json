@@ -1,0 +1,7 @@
+{
+	"event": "BRAIN_LANGUAGE_SHIFT",
+	"language": "EN_GB",
+	"lines": {
+		"brain_shift_world_tongue": "Turn, tongue, other"
+	}
+}

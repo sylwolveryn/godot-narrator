@@ -1,0 +1,8 @@
+{
+	"event": "RESEARCH_DONE",
+	"language": "EN_GB",
+	"lines": {
+		"research_world_sift": "Sift, sort, understand",
+		"research_narrator_grammar": "Dust has a grammar, if you are patient enough."
+	}
+}

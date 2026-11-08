@@ -236,6 +236,7 @@ func _kill(i: int, cause: StringName) -> void:
 	var world: Vector3 = _pos[i]
 	SignalBus.destructible_destroyed.emit(KIND, Rect2i(at, Vector2i.ONE), world, cause)
 	SignalBus.enemy_destroyed.emit(_def[i].kind, at, world, cause)
+	SignalBus.narration_event.emit(NarrationEvents.ENEMY_DESTROYED)
 
 
 # --------------------------------------------------------------------------- stepping

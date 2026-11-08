@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_8w5hy"]
+
+[resource]
+script = ExtResource("1_8w5hy")
+id = "enemy_own_like_me"
+text = "It looked like me, for a moment."
+event = &"ENEMY_DESTROYED"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 48
+layer = 1

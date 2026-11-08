@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_kw3wv"]
+
+[resource]
+script = ExtResource("1_kw3wv")
+id = "blocked_own_room"
+text = "Too many of me. Not enough room."
+event = &"FORM_BLOCKED"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 60
+layer = 1

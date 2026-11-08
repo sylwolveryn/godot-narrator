@@ -470,6 +470,14 @@ func _build() -> void:
 	trials.set("map_loader", loader)
 	_add(root, trials)
 
+	# Gargoyle fountain hidden message (task-092): a language-dependent line near a standing fountain.
+	var whisper: Node = load("res://scripts/world/fountain_whisper.gd").new()
+	whisper.name = "FountainWhisper"
+	whisper.set("map_loader", loader)
+	whisper.set("player", player)
+	whisper.set("language", language)
+	_add(root, whisper)
+
 	var packed := PackedScene.new()
 	var pack_err := packed.pack(root)
 	root.free()

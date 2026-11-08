@@ -358,8 +358,12 @@ func _update_new_items() -> void:
 				pending = true
 				break
 	if pending != _new_pending:
+		var was: Variant = _new_pending
 		_new_pending = pending
 		SignalBus.menu_new_items_changed.emit(pending)
+		# A newly offered item (not the state found at start) is announced.
+		if pending and was != null:
+			SignalBus.narration_event.emit(NarrationEvents.MENU_ITEM_NEW)
 
 
 func _check_unlock() -> void:

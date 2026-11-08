@@ -315,6 +315,21 @@ const SEED_EVENTS: &[(&str, &str)] = &[
     ("BLACK_HOLE_FORMED", "A destroyed hunter collapses into a black hole"),
     ("DIAMOND_FOUND", "The player picks up a diamond"),
     ("MANY_FIRED_CANNON", "The many form fires a cannon"),
+    ("FOUNTAIN_WHISPER", "Near a gargoyle fountain with a language other than English (and not DREAM) selected"),
+    ("FOUNTAIN_SECRET", "Near a gargoyle fountain with DREAM selected: the fountain's own message"),
+    ("TELEPORT_DEPARTED", "The player steps into a teleport and leaves"),
+    ("TELEPORT_ARRIVED", "The player arrives on a teleport pad"),
+    ("ENEMY_DESTROYED", "An enemy is destroyed"),
+    ("CANNON_FIRED", "A cannon fires (single form)"),
+    ("MENU_ITEM_NEW", "The in-world menu offers something the player has not seen yet"),
+    ("RESEARCH_DONE", "Research in the crafting menu spends dirt and teaches a new craft"),
+    ("CRAFT_LEARNED", "A new craft is known"),
+    ("CRAFTED", "Something is crafted from dirt"),
+    ("CRAFT_REFUSED", "Research or a craft needs more dirt than the player has"),
+    ("FORM_BLOCKED", "Switching to the many form is refused: the grown body does not fit here"),
+    ("BRAIN_UNLOCKED", "A map was fully discovered and two teleports were made: the brain form is offered"),
+    ("TRANSFORMED_TO_BRAIN", "The player becomes the brain"),
+    ("BRAIN_LANGUAGE_SHIFT", "The brain changes the language with the interact button"),
 ];
 
 const SEED_LANGUAGES: &[(&str, &str)] = &[

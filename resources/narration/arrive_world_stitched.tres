@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_ur52j"]
+
+[resource]
+script = ExtResource("1_ur52j")
+id = "arrive_world_stitched"
+text = "Stitched, again, elsewhere"
+event = &"TELEPORT_ARRIVED"
+mood = &"chime"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 45
+layer = 0

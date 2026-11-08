@@ -1,0 +1,8 @@
+{
+	"event": "CRAFTED",
+	"language": "EN_GB",
+	"lines": {
+		"crafted_world_pressed": "Pressed, shaped, made",
+		"crafted_narrator_dirt": "From dirt you came. From dirt you make."
+	}
+}

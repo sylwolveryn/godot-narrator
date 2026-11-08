@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_qgv7i"]
+
+[resource]
+script = ExtResource("1_qgv7i")
+id = "arrive_narrator_doors"
+text = "Every door you open was left open for you."
+event = &"TELEPORT_ARRIVED"
+mood = &"low_drone"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 46

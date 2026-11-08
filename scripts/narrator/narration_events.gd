@@ -50,4 +50,34 @@ const DIAMOND_FOUND: StringName = &"DIAMOND_FOUND"
 ## The many form fires a cannon (task-077, CannonSystem; every shot, the beats are once-only).
 const MANY_FIRED_CANNON: StringName = &"MANY_FIRED_CANNON"
 ## Priority key used for TIME beats (they have no event name).
+## Near a gargoyle fountain with a language other than English (and not DREAM) selected (task-088..092).
+const FOUNTAIN_WHISPER: StringName = &"FOUNTAIN_WHISPER"
+## Near a gargoyle fountain with DREAM selected: the fountain's own message (task-088..092).
+const FOUNTAIN_SECRET: StringName = &"FOUNTAIN_SECRET"
+## The player steps into a teleport and leaves (task-088..092).
+const TELEPORT_DEPARTED: StringName = &"TELEPORT_DEPARTED"
+## The player arrives on a teleport pad (task-088..092).
+const TELEPORT_ARRIVED: StringName = &"TELEPORT_ARRIVED"
+## An enemy is destroyed (task-088..092).
+const ENEMY_DESTROYED: StringName = &"ENEMY_DESTROYED"
+## A cannon fires (single form) (task-088..092).
+const CANNON_FIRED: StringName = &"CANNON_FIRED"
+## The in-world menu offers something the player has not seen yet (task-088..092).
+const MENU_ITEM_NEW: StringName = &"MENU_ITEM_NEW"
+## Research in the crafting menu spends dirt and teaches a new craft (task-088..092).
+const RESEARCH_DONE: StringName = &"RESEARCH_DONE"
+## A new craft is known (task-088..092).
+const CRAFT_LEARNED: StringName = &"CRAFT_LEARNED"
+## Something is crafted from dirt (task-088..092).
+const CRAFTED: StringName = &"CRAFTED"
+## Research or a craft needs more dirt than the player has (task-088..092).
+const CRAFT_REFUSED: StringName = &"CRAFT_REFUSED"
+## Switching to the many form is refused: the grown body does not fit here (task-088..092).
+const FORM_BLOCKED: StringName = &"FORM_BLOCKED"
+## A map was fully discovered and two teleports were made: the brain form is offered (task-088..092).
+const BRAIN_UNLOCKED: StringName = &"BRAIN_UNLOCKED"
+## The player becomes the brain (task-088..092).
+const TRANSFORMED_TO_BRAIN: StringName = &"TRANSFORMED_TO_BRAIN"
+## The brain changes the language with the interact button (task-088..092).
+const BRAIN_LANGUAGE_SHIFT: StringName = &"BRAIN_LANGUAGE_SHIFT"
 const TIME: StringName = &"TIME"
