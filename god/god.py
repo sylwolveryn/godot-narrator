@@ -14,6 +14,8 @@ import core  # noqa: E402
 import seeds  # noqa: E402
 import palette  # noqa: E402
 from palette_dialog import PaletteDialog  # noqa: E402
+import mods  # noqa: E402
+from mods_dialog import ModsDialog  # noqa: E402
 
 
 class GodApp:
@@ -57,10 +59,11 @@ class GodApp:
         row = ttk.Frame(self.win)
         row.pack(fill="x", **pad)
         self.btn_new = ttk.Button(row, text="Start new game", command=lambda: self._act(self.ctl.new_game, "Started a new game."))
+        self.btn_mods = ttk.Button(row, text="New game with mods...", command=self._new_game_mods)
         self.btn_cont = ttk.Button(row, text="Continue game", command=self._continue)
         self.btn_reveal = ttk.Button(row, text="Reveal map", command=self._reveal)
         self.btn_fps = ttk.Button(row, text="FPS: off", command=self._toggle_fps)
-        for b in (self.btn_new, self.btn_cont, self.btn_reveal, self.btn_fps):
+        for b in (self.btn_new, self.btn_mods, self.btn_cont, self.btn_reveal, self.btn_fps):
             b.pack(side="left", padx=(0, 6))
         self._build_map_pick(row)
         spikes = ttk.Frame(self.win)
@@ -334,6 +337,7 @@ class GodApp:
         self.btn_cont.config(text=st.continue_text, state="normal" if st.continue_enabled and not self.busy else "disabled")
         self.btn_reveal.config(state="normal" if st.reveal_enabled and not self.busy else "disabled")
         self.btn_new.config(state="disabled" if self.busy else "normal")
+        self.btn_mods.config(state="disabled" if self.busy else "normal")
         self.btn_fps.config(text="FPS: on" if core.read_perf_overlay(self.fps_flags) else "FPS: off")
         self.message.config(text=st.hint or self.notice)
         self._render_seed()
@@ -406,6 +410,25 @@ class GodApp:
                 raise RuntimeError(line)
 
         self._act_note(run, "Map %s revealed in the save." % (map_name or "m1_awakening"))
+
+    def _new_game_mods(self) -> None:
+        """Start new game with mods (task-078): the popup, then a fresh save written with the mods, then the game."""
+        if self.busy:
+            return
+        settings = core.load_settings(self.settings_file)
+
+        def start(choices: dict) -> None:
+            fresh = core.load_settings(self.settings_file)
+            fresh[mods.SETTING_MODS] = choices
+            try:
+                core.save_settings(self.settings_file, fresh)
+            except OSError as e:
+                self._log("Could not save settings: %s" % e, error=True)
+            args = mods.tool_args(choices)
+            self._act(lambda: self.ctl.new_game_with_mods(args),
+                      "Started a new game with mods: %s." % mods.summary(choices))
+
+        ModsDialog(self.win, mods.merged(settings.get(mods.SETTING_MODS)), start)
 
     def _toggle_fps(self) -> None:
         """FPS / frametime / CPU / GPU graphs on or off; applies live to a running game (and to later starts)."""
@@ -579,7 +602,7 @@ class GodApp:
             child.destroy()
         cols = list(table.columns)
         rows = core.format_table(table)
-        tree = ttk.Treeview(frame, columns=cols, show="headings")
+        tree = ttk.Treeview(frame, columns=cols, show="headings", selectmode="extended")
         ys = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
         xs = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
         tree.configure(yscrollcommand=ys.set, xscrollcommand=xs.set)
@@ -589,12 +612,23 @@ class GodApp:
         key = core.DB_PRIMARY_KEYS.get(name)
         key_index = cols.index(key) if key in cols else -1
         items = {}
-        for r in rows:
+        raw = {}
+        for r, values in zip(rows, table.rows):
             item = tree.insert("", "end", values=r)
+            raw[item] = list(values)
             if key_index >= 0:
                 items[str(r[key_index])] = item
-        self.table_meta[name] = {"tree": tree, "table": table, "key_index": key_index, "items": items}
+        # raw: item -> the row's DB values (kept current by saved edits); order: the selection in click order.
+        self.table_meta[name] = {"tree": tree, "table": table, "key_index": key_index, "items": items,
+                                 "raw": raw, "order": []}
         tree.bind("<Double-1>", lambda e, n=name: self._begin_edit(n, e))
+        tree.bind("<<TreeviewSelect>>", lambda _e, n=name: self._track_selection(n))
+        for seq in ("<Control-c>", "<Control-C>"):
+            tree.bind(seq, lambda _e, n=name: self._copy_rows(n))
+        for seq in ("<Control-a>", "<Control-A>"):
+            tree.bind(seq, lambda _e, t=tree: (t.selection_set(t.get_children()), "break")[1])
+        tree.bind("<Shift-Up>", lambda _e, n=name: self._extend_selection(n, -1))
+        tree.bind("<Shift-Down>", lambda _e, n=name: self._extend_selection(n, 1))
         note = "" if key_index >= 0 else "  (read only)"
         ttk.Label(frame, text="%d row(s)%s" % (len(rows), note)).pack(side="bottom", anchor="w")
         xs.pack(side="bottom", fill="x")
@@ -603,6 +637,51 @@ class GodApp:
         self.tabs.tab(frame, text="%s (%d)" % (name, len(rows)))
         self.tabs.select(frame)
 
+
+    # ---------------------------------------------------------------- selection and copy (task-078)
+    def _track_selection(self, name: str) -> None:
+        """Keeps the selection in the order rows were picked (several at once, e.g. a Shift range, in grid order)."""
+        meta = self.table_meta.get(name)
+        if meta is None:
+            return
+        tree = meta["tree"]
+        chosen = set(tree.selection())
+        order = [i for i in meta["order"] if i in chosen]
+        order += [i for i in tree.selection() if i not in order]
+        meta["order"] = order
+
+    def _extend_selection(self, name: str, step: int) -> str:
+        """Shift+Up / Shift+Down: moves the focus row and adds it to the selection."""
+        meta = self.table_meta.get(name)
+        if meta is None:
+            return "break"
+        tree = meta["tree"]
+        children = tree.get_children()
+        if not children:
+            return "break"
+        focus = tree.focus() or (tree.selection()[-1] if tree.selection() else children[0])
+        index = max(0, min(len(children) - 1, children.index(focus) + step))
+        target = children[index]
+        tree.selection_add(target)
+        tree.focus(target)
+        tree.see(target)
+        return "break"
+
+    def _copy_rows(self, name: str) -> str:
+        """Ctrl+C: the selected rows (in pick order) as JSON with column names and current values."""
+        meta = self.table_meta.get(name)
+        if meta is None:
+            return "break"
+        self._track_selection(name)
+        items = meta["order"]
+        if not items:
+            self._log("Nothing selected in %s to copy." % name)
+            return "break"
+        text = core.rows_json(name, list(meta["table"].columns), [meta["raw"][i] for i in items])
+        self.win.clipboard_clear()
+        self.win.clipboard_append(text)
+        self._log("Copied %d %s row(s) as JSON." % (len(items), name))
+        return "break"
 
     # ---------------------------------------------------------------- table editing (task-061)
     def _begin_edit(self, name: str, event) -> None:
@@ -746,8 +825,11 @@ class GodApp:
             return
         tree, item = meta["tree"], meta["items"][key_text]
         values = list(tree.item(item, "values"))
-        values[meta["table"].columns.index(column)] = value
+        index = meta["table"].columns.index(column)
+        values[index] = value
         tree.item(item, values=values)
+        if item in meta.get("raw", {}):
+            meta["raw"][item][index] = core.cell_value(value, meta["table"].types[index])
 
 
 class _Note(Exception):

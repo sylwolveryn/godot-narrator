@@ -349,6 +349,24 @@ class GameController:
             pass
         self.start()
 
+    def new_game_with_mods(self, tool_args: list, run_tool: Optional[Callable] = None) -> str:
+        """Like new_game, but the new save is written first by tools/dev_new_game.gd with the mods (task-078).
+        Returns the tool's line. Raises RuntimeError when Godot is missing or the tool fails (nothing is started)."""
+        if not self.godot:
+            raise RuntimeError("Godot not found: put `godot` on PATH or set GODOT_BIN")
+        import mods  # local: keeps core importable on its own
+        run_tool = run_tool or mods.run_tool
+        self.close_game()
+        try:
+            self.save.unlink()
+        except FileNotFoundError:
+            pass
+        ok, line = run_tool(self.godot, self.root, tool_args)
+        if not ok:
+            raise RuntimeError("new game tool failed: %s" % line)
+        self.start()
+        return line
+
     def continue_game(self) -> str:
         """'no_save', 'started', 'warned' (already running, first click) or 'restarted'."""
         if not self.save_exists():
@@ -912,6 +930,26 @@ HISTORY_LIMIT = 200
 DB_INDICATOR_COLORS = {"running": "#2ecc71", "stopped": "#e74c3c", "unknown": "#9e9e9e"}
 _TRUE_WORDS = ("true", "1", "yes", "y", "on")
 _FALSE_WORDS = ("false", "0", "no", "n", "off")
+
+
+def cell_value(text: str, type_name: str):
+    """The JSON value of a cell text typed in god (after a saved edit): bool, int, float or the text."""
+    word = text.strip()
+    if type_name == "Bool":
+        return word.lower() in _TRUE_WORDS
+    try:
+        if type_name in ("F32", "F64"):
+            return float(word)
+        if type_name[:1] in ("U", "I") and type_name[1:].isdigit():
+            return int(word)
+    except ValueError:
+        return text
+    return text
+
+
+def rows_json(table: str, columns: list, rows: list) -> str:
+    """The copy format of selected grid rows (task-078): {"<table>": [{"<column>": value, ...}, ...]}."""
+    return json.dumps({table: [dict(zip(columns, r)) for r in rows]}, indent=2, ensure_ascii=False)
 
 
 def is_editable(table: str, column: str, type_name: str) -> bool:

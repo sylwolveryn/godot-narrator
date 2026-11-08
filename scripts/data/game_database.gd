@@ -20,6 +20,9 @@ const VERSION_TABLE: String = "config_version"
 ## Current copy of the lookup tables (table name -> Array[Dictionary]).
 var tables: Dictionary = {}
 var online: bool = false
+## Complete table reads from the server so far: 1 = the first (startup) read, more = reloads after a config_version
+## bump (the god tool changed something). Listeners use it to tell god's edits from the startup state.
+var server_loads: int = 0
 
 var _token: String = ""
 var _version: int = -1
@@ -262,4 +265,5 @@ func _on_table_read(table: String, result: Array, ok: bool) -> void:
 	var version_rows: Array = tables.get(VERSION_TABLE, [])
 	if not version_rows.is_empty():
 		_version = int((version_rows[0] as Dictionary).get("version", 0))
+	server_loads += 1
 	tables_loaded.emit(tables)

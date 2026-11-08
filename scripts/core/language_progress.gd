@@ -10,6 +10,10 @@ extends Node
 ## Sits right after SaveService and before the Narrator so its run-start announcement comes first.
 ## Top limit (task-077): the DB column player_language.max (>= 0) caps a language below LanguageConfig.max_percent;
 ## a value already over it is brought down to it at once (saved and mirrored). -1 / missing = no extra limit.
+## Live god edits (task-078): on a DB reload after the startup read (GameDatabase.server_loads > 1, i.e. the god tool
+## bumped config_version), an understanding in player_language that this game never sent is a god edit: it is adopted
+## for an unlocked language (clamped to the cap), saved and announced. Values the game sent itself (also stale ones
+## still on their way) are ignored.
 
 @export var config: LanguageConfig
 @export var save_service: SaveService
@@ -28,6 +32,10 @@ const MAX_COLUMN: String = "max"
 var _pushed: Dictionary = {}
 ## Language id (String) -> top limit in percent from the DB (only languages with a limit set).
 var _limits: Dictionary = {}
+## Language id (String) -> every understanding value sent to the DB this session (to tell god's edits from echoes).
+var _sent: Dictionary = {}
+## Two percents closer than this are the same value (the DB stores f32).
+const SAME_PERCENT: float = 0.01
 
 
 func _ready() -> void:
@@ -209,6 +217,7 @@ func _push(language: StringName, force: bool) -> void:
 	if not force and _pushed.get(language, -1) == whole:
 		return
 	_pushed[language] = whole
+	_remember_sent(String(language), value)
 	database.call_reducer(REDUCER, [String(language), value])
 
 
@@ -229,6 +238,47 @@ func _discovery_type(cell: Vector2i) -> StringName:
 func _on_tables_loaded(tables: Dictionary) -> void:
 	_read_limits(tables)
 	apply_limits()
+	if database != null and database.online and database.server_loads > 1:
+		adopt_db_values(tables)
+
+
+## Takes understanding values the god tool wrote into player_language (see the class notes). Returns the adopted ids.
+func adopt_db_values(tables: Dictionary) -> PackedStringArray:
+	var adopted := PackedStringArray()
+	if save_service == null:
+		return adopted
+	var values: Dictionary = _progress().language_understanding
+	for row in tables.get(LANGUAGE_TABLE, []):
+		if not row is Dictionary:
+			continue
+		var id: String = str(row.get("language", ""))
+		if not is_unlocked(StringName(id)) or not row.has("understanding"):
+			continue
+		var value: float = clampf(float(row["understanding"]), 0.0, cap(StringName(id)))
+		if absf(value - float(values.get(id, 0.0))) < SAME_PERCENT or _was_sent(id, value):
+			continue
+		values[id] = value
+		_remember_sent(id, value)
+		_pushed[StringName(id)] = floori(value)
+		adopted.append(id)
+	if adopted.is_empty():
+		return adopted
+	save_service.commit_progress()
+	SignalBus.language_understanding_changed.emit(selected_language(), understanding())
+	return adopted
+
+
+func _was_sent(id: String, value: float) -> bool:
+	for v: float in _sent.get(id, []):
+		if absf(v - value) < SAME_PERCENT:
+			return true
+	return false
+
+
+func _remember_sent(id: String, value: float) -> void:
+	if not _sent.has(id):
+		_sent[id] = []
+	(_sent[id] as Array).append(value)
 
 
 func _read_limits(tables: Dictionary) -> void:

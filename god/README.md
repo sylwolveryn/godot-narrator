@@ -14,6 +14,11 @@ Godot is found via the `GODOT_BIN` environment variable, else `godot` on PATH. T
 
 - **Start new game**: closes the running game (if any), deletes `%APPDATA%/Godot/app_userdata/Narrator/progress.tres`
   (no error if missing), then starts the game.
+- **New game with mods...** (task-078): a popup with tweaks, then a new game. **All languages expert**: every
+  language unlocked at 80 %. **Resources**: start with 10000 dirt and 10000 diamonds. Each mod has an on switch and
+  editable numbers, and the choices are remembered in `god/settings.json`. It closes the game, deletes the save, writes
+  a fresh save with the mods through `tools/dev_new_game.gd` (the game's own SaveService), then starts the game.
+  New mods go in `god/mods.py` (plus their argument in the tool).
 - **Continue game**: disabled while the save does not exist (checked every 3 s). If the game is not running it starts it.
   If it is already running, the first click shows a warning and the second click closes and restarts it.
 - **Reveal map**: if the game is running, it reveals the map currently in play right away, without a restart.
@@ -75,6 +80,13 @@ the HTTP API (token from `/v1/identity`, cached and refreshed on a 401).
   the Log tab. Each save runs an SQL `UPDATE` with the database owner's token (the identity the `spacetime` CLI is
   logged in with, read via `spacetime login show --token`; anonymous callers may not run DML) and then calls
   `bump_config_version`, so a running game picks the change up within a few seconds.
+- **Selecting and copying rows (task-078)**: click, Ctrl+click and Shift+click select rows; Shift+Up / Shift+Down
+  extend the selection and Ctrl+A selects all. **Ctrl+C** copies the selected rows, in the order you picked them, as
+  JSON with column names and current values: `{"language_def": [{"id": "RU_RU", "name": "Russian"}, ...]}`.
+- **Edits reach a running game**: every saved edit bumps `config_version`, and the game reloads its tables within a
+  few seconds. `player_language.understanding` is applied too: the game takes a value it did not send itself as
+  your edit (unlocked languages only, capped by `max`). `language_def.name` is not shown in the game (menu names come
+  from `LanguageConfig.display_names`).
 - **Palette editor (task-077)**: double-clicking a colour cell opens a palette editor instead of the text entry. A
   colour cell is any String column named `*palette*` or holding `#rrggbb[,#rrggbb...]` (`glyph_anim.palette`,
   `avatar_fx.crystal_palette`, `trail_color`, ...). It shows swatches and the colour cycle as a strip. You can Add...,

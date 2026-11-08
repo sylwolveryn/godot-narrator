@@ -158,6 +158,22 @@ func _check_scene() -> void:
 	lang.add_percent(10.0)
 	_check(is_equal_approx(lang.percent(StringName(id)), 40.0), "no limit again with max -1")
 
+	# --- Live god edits (task-078): only reloads after the startup read, and never the game's own values. ---
+	db.online = true
+	db.server_loads = 1
+	db.tables_loaded.emit({"player_language": [{"language": id, "understanding": 66.0, "max": -1.0}]})
+	_check(is_equal_approx(lang.percent(StringName(id)), 40.0), "the startup read does not overwrite the save")
+	db.server_loads = 2
+	db.tables_loaded.emit({"player_language": [{"language": id, "understanding": 66.0, "max": -1.0}]})
+	_check(is_equal_approx(lang.percent(StringName(id)), 66.0), "a god edit is adopted (%s)" % lang.percent(StringName(id)))
+	_check(is_equal_approx(float(save.progress.language_understanding[id]), 66.0), "the adopted value is in the save")
+	lang.add_percent(1.0)
+	db.tables_loaded.emit({"player_language": [{"language": id, "understanding": 66.0, "max": -1.0}]})
+	_check(is_equal_approx(lang.percent(StringName(id)), 67.0), "a stale value the game sent is not adopted")
+	db.tables_loaded.emit({"player_language": [{"language": "JP_KANA", "understanding": 50.0, "max": -1.0}]})
+	_check(lang.percent(&"JP_KANA") == 0.0 or lang.is_unlocked(&"JP_KANA"), "locked languages are left alone")
+	db.online = false
+
 	main.queue_free()
 	await process_frame
 	Support.remove_file(save_path)
