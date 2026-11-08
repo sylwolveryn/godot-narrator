@@ -1,10 +1,11 @@
 ---
 id: TASK-073
 title: 'Cannon C: turning, firing and destructive bouncing balls'
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:54:00Z'
+updated_date: '2026-11-08T18:01:00Z'
 labels:
   - world
   - gameplay
