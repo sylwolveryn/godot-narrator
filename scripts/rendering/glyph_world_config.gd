@@ -135,6 +135,19 @@ extends Resource
 ## Seconds the player light takes to adapt its shadows after the player changes cell.
 @export var occlusion_blend_time: float = 0.18
 
+@export_group("Layered clarity")
+## Task-066: the language understanding (0..1) becomes the share of glyph cells drawn "layered" (one clean glyph per
+## screen cell, owned by the highest surface): share = understanding ^ clarity_exponent (1 = linear, > 1 = most of the
+## change near 100%). 0 understanding keeps the old interleaved look.
+@export var clarity_exponent: float = 1.0
+## Layer order per surface type (GlyphSurfaceType order: wall = pushable objects, floor, spikes, corruption, item).
+## Higher covers lower on screen; 0 = floor level (not layered as a box).
+@export var layer_order: PackedInt32Array = PackedInt32Array([2, 0, 1, 1, 2])
+## Samples along the view ray of a glyph cell when it looks for its owner (the shader holds at most 6).
+@export_range(2, 6) var layer_ray_samples: int = 5
+## Cells around a layered box that run the owner search (must cover the screen-up reach of the tallest box).
+@export_range(1, 4) var layer_reach_cells: int = 2
+
 @export_group("Static light fade")
 ## Seconds a static light takes to fade in when it is revealed or comes into range, and to fade out again.
 @export var static_light_fade_in: float = 0.9

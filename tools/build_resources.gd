@@ -74,6 +74,8 @@ func _init() -> void:
 	ok = _save(NarrationLibraryConfig.new(), "narration_library_config.tres") and ok
 	ok = _save(GlyphAnimConfig.new(), "glyph_anim_config.tres") and ok
 	ok = _save(AvatarFxConfig.new(), "avatar_fx_config.tres") and ok
+	# Language understanding progression (task-065).
+	ok = _save(LanguageConfig.new(), "language_config.tres") and ok
 
 	quit(0 if ok else 1)
 

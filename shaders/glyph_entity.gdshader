@@ -52,6 +52,10 @@ uniform float flash = 0.18;
 uniform float overshoot = 1.35;
 uniform vec3 gather_color = vec3(0.45, 0.62, 0.78);
 uniform float opacity = 1.0;              // 0 hides the whole body
+// Understanding look (task-066, same rule as glyph_actor): 1 = edge band only; colour grade (1, 1 = plain).
+uniform float hollow = 0.0;
+uniform float face_saturation = 1.0;
+uniform float face_brightness = 1.0;
 
 varying vec2 q;
 varying vec4 tint;
@@ -191,11 +195,17 @@ void fragment() {
 		for (int i = 0; i < 4; i++) {
 			back = max(back, glyph_cov(gp + OUTLINE_DIRS[i] * outline_width));
 		}
+		if (hollow > 0.0) {
+			cov = mix(cov, clamp(back - cov, 0.0, 1.0), hollow);
+			back *= 1.0 - hollow;
+		}
 		back *= outline_color.a;
 	}
 	vec3 rgb = outline_color.rgb * back;
 	float al = back;
-	rgb = tint.rgb * cov + rgb * (1.0 - cov);
+	float grey = dot(tint.rgb, vec3(0.3, 0.59, 0.11));
+	vec3 face = max(mix(vec3(grey), tint.rgb, face_saturation) * face_brightness, vec3(0.0));
+	rgb = face * cov + rgb * (1.0 - cov);
 	al = cov + al * (1.0 - cov);
 	ALBEDO = rgb * tint.a;
 	ALPHA = al * tint.a;

@@ -9,6 +9,12 @@ extends Resource
 ## Items in display order. Items that need the entity are left out until it is unlocked.
 @export var items: Array[MenuItemDef] = []
 
+@export_group("Language list")
+## The last entry of the Language list (task-065): goes back to the item list.
+@export var language_back_label: String = "back"
+## Extra characters rasterised into the menu atlas for the Language entries (names and whole percents).
+@export var extra_glyphs: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789%"
+
 @export_group("Input actions")
 ## InputMap action names (defined by tools/build_input_map.gd).
 @export var action_toggle: StringName = &"menu_toggle"

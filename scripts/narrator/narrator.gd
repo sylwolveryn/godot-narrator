@@ -47,6 +47,10 @@ var current_text: String = ""
 var current_voice: AudioStream
 ## Understanding (0..1) of the narration language, for OWN lines (NarrationLibrary.understanding()). Set before beat_started.
 var current_understanding: float = 1.0
+## Latest understanding of the selected language from SignalBus.language_understanding_changed (task-065); before the
+## first signal the library's value (DB player_language) is used.
+var _understanding: float = 1.0
+var _has_understanding: bool = false
 var queued: NarrationBeat
 ## Run bookkeeping; refreshed on every run_started.
 var run_count: int = 1
@@ -87,6 +91,7 @@ func _ready() -> void:
 	SignalBus.origin_struck.connect(_on_origin_struck)
 	SignalBus.origin_recanted.connect(_on_origin_recanted)
 	SignalBus.entity_form_changed.connect(_on_entity_form_changed)
+	SignalBus.language_understanding_changed.connect(_on_language_understanding_changed)
 
 
 func _process(delta: float) -> void:
@@ -314,7 +319,10 @@ func _start(beat: NarrationBeat, chained: bool = false) -> void:
 	_timer = config.morph_in_seconds + config.beat_hold_seconds
 	current_doubt = doubt_fraction(beat)
 	current_text = library.line_for(beat) if library != null else beat.text
-	current_understanding = library.understanding() if library != null else 1.0
+	if _has_understanding:
+		current_understanding = _understanding
+	else:
+		current_understanding = library.understanding() if library != null else 1.0
 	current_voice = null
 	if library != null and beat.layer == NarrationBeat.Layer.NARRATOR:
 		current_voice = library.audio_for(NarrationLibrary.event_of(beat))
@@ -437,6 +445,11 @@ func _check_idle() -> void:
 	if _idle_step < thresholds.size() and _still_time >= thresholds[_idle_step]:
 		trigger_event(events[_idle_step])
 		_idle_step += 1
+
+
+func _on_language_understanding_changed(_language: StringName, understanding: float) -> void:
+	_understanding = clampf(understanding, 0.0, 1.0)
+	_has_understanding = true
 
 
 func _on_player_motion_changed(moving: bool) -> void:

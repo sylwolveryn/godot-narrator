@@ -269,6 +269,20 @@ class Progress(unittest.TestCase):
         self.assertNotIn("revealed_cells", f)
         self.assertNotIn("script", f)
 
+    def test_language_fields(self):
+        text = SAMPLE + ('language_understanding = {\n"EN_GB": 37.5,\n"HU_HU": 1.0\n}\n'
+                         'selected_language = "EN_GB"\n'
+                         'unlocked_languages = PackedStringArray("EN_GB", "HU_HU")\n'
+                         'discovered_types = PackedStringArray("floor", "wall")\n'
+                         'language_step_remainder = 7\n')
+        f = core.parse_progress(text)
+        self.assertEqual(f["selected_language"], "EN_GB")
+        self.assertEqual(f["unlocked_languages"], ["EN_GB", "HU_HU"])
+        self.assertEqual(f["discovered_types"], ["floor", "wall"])
+        self.assertEqual(f["language_step_remainder"], 7)
+        self.assertIn("37.5", f["language_understanding"])
+        self.assertEqual(f["death_count"], 9)
+
     def test_real_file_shape_with_big_dictionary(self):
         f = core.parse_progress(SAMPLE.replace("19, 11)", "19, 11, 1, 2)"))
         self.assertEqual(f["death_count"], 9)

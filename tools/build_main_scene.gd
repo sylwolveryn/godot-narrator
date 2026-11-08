@@ -63,6 +63,16 @@ func _build() -> void:
 	ledger.set("save_service", save)
 	_add(root, ledger)
 
+	# Language understanding (task-065): the only writer of the language progress; after SaveService (repairs the loaded
+	# save) and before Narrator / MenuController so its run-start announcement comes first. The player is wired below.
+	var language: Node = load("res://scripts/core/language_progress.gd").new()
+	language.name = "LanguageProgress"
+	language.set("config", load(CFG + "language_config.tres"))
+	language.set("save_service", save)
+	language.set("map_loader", loader)
+	language.set("database", database)
+	_add(root, language)
+
 	# Narrator sits right after SaveService and before Player/MapReveal: signal handlers run in tree
 	# order, so counters are updated and run_started is seen before the first reveal events.
 	# Entity growth (task-017): unlocks and owns the active form; sits right after SaveService so its unlock
@@ -83,6 +93,7 @@ func _build() -> void:
 	menu.set("save_service", save)
 	menu.set("entity", progression)
 	menu.set("ledger", ledger)
+	menu.set("language", language)
 	_add(root, menu)
 
 	var narrator_cfg: NarratorConfig = load(NARRATION_DIR + "narrator_config.tres")
@@ -124,6 +135,7 @@ func _build() -> void:
 	player.add_child(body)
 	_add(root, player)
 	rig.set("follow_target", player)
+	language.set("player", player)
 	player.set("camera_rig", rig)
 
 	# Reveal comes after the player so run-start handlers run in spawn-then-reveal order.
@@ -279,6 +291,8 @@ func _build() -> void:
 	object_view.set("map_loader", loader)
 	object_view.set("config", push_cfg)
 	_add(root, object_view)
+	# Layered clarity (task-066): pushable objects are layered boxes of the world view.
+	glyph_view.set("pushables", pushables)
 
 	var hazards: Node = load("res://scripts/world/hazard_monitor.gd").new()
 	hazards.name = "HazardMonitor"

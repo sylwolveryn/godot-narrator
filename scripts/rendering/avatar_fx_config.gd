@@ -22,6 +22,24 @@ extends Resource
 ## Most palette colours the shader holds (its CRYSTAL_MAX).
 @export var crystal_max_colors: int = 6
 
+@export_group("Understanding look")
+## Task-066: the player glyph follows the selected language's understanding (0..1). Config only (no DB columns yet;
+## with_row reads them when a row has them).
+## Below this understanding the glyph is hollow (outline only, no filled body).
+@export_range(0.0, 1.0) var hollow_below: float = 0.06
+## Understanding span over which the body fills in after hollow_below.
+@export_range(0.0, 1.0) var fill_fade: float = 0.03
+## The glow (halo, crystal shimmer and sparkle) is off below this understanding and rises to the full look at 1.
+@export_range(0.0, 1.0) var glow_start: float = 0.06
+## Shape of that rise (1 = linear).
+@export var glow_exponent: float = 1.0
+## Colour at 0 understanding: saturation and brightness multipliers (blunt, darker).
+@export var blunt_saturation: float = 0.35
+@export var blunt_brightness: float = 0.72
+## Colour at full understanding: a bit more vivid than the plain look (1, 1).
+@export var vivid_saturation: float = 1.15
+@export var vivid_brightness: float = 1.12
+
 @export_group("Ink trail")
 @export var trail_enabled: bool = true
 @export var trail_chars: String = ".,:;'`"
@@ -69,7 +87,9 @@ func with_row(row: Dictionary) -> AvatarFxConfig:
 	if not palette.is_empty():
 		out.crystal_palette = palette
 	for key: String in ["crystal_speed", "crystal_strength", "crystal_facets", "crystal_sparkle", "trail_lifetime",
-			"trail_spacing", "trail_size", "trail_spread", "trail_jitter", "lean_amount", "stretch_amount", "feel_smoothing"]:
+			"trail_spacing", "trail_size", "trail_spread", "trail_jitter", "lean_amount", "stretch_amount", "feel_smoothing",
+			"hollow_below", "fill_fade", "glow_start", "glow_exponent", "blunt_saturation", "blunt_brightness",
+			"vivid_saturation", "vivid_brightness"]:
 		if row.has(key):
 			out.set(key, float(row[key]))
 	if row.has("trail_enabled"):
@@ -80,6 +100,24 @@ func with_row(row: Dictionary) -> AvatarFxConfig:
 		if Color.html_is_valid(str(row.get(key, "")).strip_edges()):
 			out.set(key, Color.html(str(row[key]).strip_edges()))
 	return out
+
+
+## Hollow amount (1 = outline only) at an understanding.
+func hollow_at(understanding: float) -> float:
+	return 1.0 - smoothstep(hollow_below, hollow_below + maxf(fill_fade, 0.0001), understanding)
+
+
+## Glow share (0 = none, 1 = the full look) at an understanding.
+func glow_at(understanding: float) -> float:
+	if understanding < glow_start:
+		return 0.0
+	return pow(clampf((understanding - glow_start) / maxf(1.0 - glow_start, 0.0001), 0.0, 1.0), maxf(glow_exponent, 0.001))
+
+
+## (saturation, brightness) multipliers of the glyph colour at an understanding.
+func colour_grade_at(understanding: float) -> Vector2:
+	var u: float = clampf(understanding, 0.0, 1.0)
+	return Vector2(lerpf(blunt_saturation, vivid_saturation, u), lerpf(blunt_brightness, vivid_brightness, u))
 
 
 ## The config for a DB copy: the `avatar_fx` row of `profile`, applied over this config.

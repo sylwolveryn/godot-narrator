@@ -29,6 +29,7 @@ func _run() -> void:
 	_test_layers()
 	_test_overlay_layers()
 	_test_paths()
+	_test_obfuscation()
 	if _failures.is_empty():
 		print("PASS test_narration_library")
 		quit(0)
@@ -56,7 +57,7 @@ func _test_lookup() -> void:
 	DirAccess.make_dir_recursive_absolute(root_abs.path_join("narration/event"))
 	var cfg := NarrationLibraryConfig.new()
 	cfg.override_root = root_abs
-	var library := NarrationLibrary.new()
+	var library = load("res://scripts/narrator/narration_library.gd").new()
 	library.config = cfg
 	root.add_child(library)
 
@@ -85,7 +86,7 @@ func _test_lookup() -> void:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(log_path))
 	_check(parsed is Dictionary and (parsed["errors"] as Array).has("NO_SUCH_EVENT_EN_GB_AUDIO"), "missing log written to %s: %s" % [log_path, parsed])
 	# A new library reads the stored set back (duplicates across sessions are dropped too).
-	var again := NarrationLibrary.new()
+	var again = load("res://scripts/narrator/narration_library.gd").new()
 	again.config = cfg
 	root.add_child(again)
 	_check(again.missing().has("NO_SUCH_EVENT_EN_GB_TEXT"), "the missing set survives a restart")
@@ -110,7 +111,7 @@ func _test_narrator_events() -> void:
 	root.add_child(n)
 	# Transformations: the specific direction falls back to TRANSFORMED beats.
 	var claim: NarrationBeat = n.call("pick_for_event", NarrationEvents.TRANSFORMED_TO_ONE)
-	_check(claim == null or NarrationLibrary.event_of(claim) == NarrationEvents.TRANSFORMED, "fallback picks a TRANSFORMED beat")
+	_check(claim == null or (NarrationEvents.TIME if claim.trigger == NarrationBeat.Trigger.TIME else claim.event) == NarrationEvents.TRANSFORMED, "fallback picks a TRANSFORMED beat")
 	n.set("run_count", 4)
 	n.set("death_count", 3)
 	var one: NarrationBeat = n.call("pick_for_event", NarrationEvents.TRANSFORMED_TO_ONE)
@@ -278,20 +279,20 @@ func _test_overlay_layers() -> void:
 			glitched = true
 	_check(glitched, "world lines glitch")
 	beat.layer = NarrationBeat.Layer.NARRATOR
-	overlay.call("show_beat", beat, 0.0, "", 0.0)
+	overlay.call("show_beat", beat, 0.0, "", 1.0)
 	var steady: bool = true
 	for i in 60:
 		overlay.call("advance", 0.05)
 		if String(overlay.call("shown_text")) != "Iwasaliveandmoving":
 			steady = false
-	_check(steady and overlay.call("_letter_color", 0) == cfg.text_color, "narrator lines never change letters")
+	_check(steady and overlay.call("_letter_color", 0) == cfg.text_color, "narrator lines at full understanding never change letters")
 	overlay.queue_free()
 
 
 ## Dev runs: the override folder is <project>/override (not the bundled folder itself); the missing log stays under the
 ## game root; understanding comes from player_language.
 func _test_paths() -> void:
-	var library := NarrationLibrary.new()
+	var library = load("res://scripts/narrator/narration_library.gd").new()
 	library.config = NarrationLibraryConfig.new()
 	root.add_child(library)
 	var game: String = library.game_root()
@@ -312,4 +313,87 @@ func _test_paths() -> void:
 	_check(is_equal_approx(library.understanding(), 0.4), "understanding from player_language")
 	library.queue_free()
 	db.queue_free()
+
+
+## Narrator / world obfuscation by understanding (task-067): stable stand-ins below 10%, wild spin up to 30%, near
+## characters converging after, every character past its threshold always right; own lines are never obfuscated.
+func _test_obfuscation() -> void:
+	var overlay: CanvasLayer = load("res://scripts/narrator/narration_overlay.gd").new()
+	var cfg: NarratorConfig = (load(CONFIG_PATH) as NarratorConfig).duplicate()
+	overlay.set("config", cfg)
+	root.add_child(overlay)
+	var text: String = "Did you see the wall"
+	var plain: String = text.replace(" ", "")
+	var beat := NarrationBeat.new()
+	beat.text = text
+	beat.layer = NarrationBeat.Layer.NARRATOR
+
+	overlay.call("show_beat", beat, 0.0, "", 0.05)
+	var first: String = overlay.call("shown_text")
+	var same: bool = true
+	for i in 40:
+		overlay.call("advance", 0.05)
+		if String(overlay.call("shown_text")) != first:
+			same = false
+	var all_hidden: bool = true
+	for k in plain.length():
+		if first[k] == plain[k]:
+			all_hidden = false
+	_check(same, "below 10%: a stable obfuscated line ('%s')" % first)
+	_check(all_hidden, "below 10%: no character readable yet ('%s')" % first)
+	_check(overlay.call("_is_animated"), "an obfuscated narrator line keeps redrawing (waves)")
+
+	overlay.call("show_beat", beat, 0.0, "", 0.2)
+	var seen: Dictionary = {}
+	var wild_only: bool = true
+	for i in 40:
+		overlay.call("advance", 0.05)
+		var shown: String = overlay.call("shown_text")
+		seen[shown] = true
+		for k in shown.length():
+			if not cfg.obf_wild_glyphs.contains(shown[k]):
+				wild_only = false
+	_check(seen.size() > 3, "10-30%: the stand-ins spin (%d variants)" % seen.size())
+	_check(wild_only, "10-30%: stand-ins come from the wild set")
+
+	overlay.call("show_beat", beat, 0.0, "", 0.6)
+	var right: int = 0
+	var total: int = 0
+	var near_ok: bool = true
+	for i in 60:
+		overlay.call("advance", 0.05)
+		var shown: String = overlay.call("shown_text")
+		for k in shown.length():
+			total += 1
+			if shown[k] == plain[k]:
+				right += 1
+			elif plain[k] >= "a" and plain[k] <= "z" and not (shown[k] >= "a" and shown[k] <= "z"):
+				near_ok = false
+	_check(right * 2 > total, "60%%: mostly readable (%d / %d right)" % [right, total])
+	_check(near_ok, "30%+: stand-ins of lower-case letters stay lower-case letters")
+
+	# A character past its threshold is always right, in every word, while others may still spin.
+	var d_threshold: float = overlay.call("threshold_of", "d")
+	var probe := NarrationBeat.new()
+	probe.text = "Did odd dad"
+	probe.layer = NarrationBeat.Layer.WORLD
+	overlay.call("show_beat", probe, 0.0, "", d_threshold)
+	var d_always: bool = true
+	for i in 60:
+		overlay.call("advance", 0.05)
+		var shown: String = overlay.call("shown_text")
+		var src: String = "Didodddad"
+		for k in src.length():
+			if src[k].to_lower() == "d" and shown[k] != src[k] and not cfg.glitch_glyphs.contains(shown[k]):
+				d_always = false
+	_check(d_always, "an understood character never shows a stand-in (only the world style glitch may touch it)")
+	_check(overlay.call("is_understood", "D", d_threshold), "understanding is case-insensitive")
+
+	overlay.call("show_beat", beat, 0.0, "", cfg.obf_found_max)
+	_check(String(overlay.call("shown_text")) == plain and not overlay.call("_is_animated"), "at the top threshold every character is found and the line rests")
+
+	beat.layer = NarrationBeat.Layer.OWN
+	overlay.call("show_beat", beat, 0.0, "", 0.0)
+	_check(not overlay.call("_obfuscates"), "own lines are never obfuscated")
+	overlay.queue_free()
 

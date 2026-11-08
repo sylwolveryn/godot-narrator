@@ -120,6 +120,7 @@ func _run() -> void:
 	await _scene_unlocked(cfg)
 	await _scene_no_entity(cfg)
 	await _scene_remember()
+	await _scene_language()
 
 	if _failures.is_empty():
 		print("PASS test_menu")
@@ -200,7 +201,7 @@ func _scene_unlocked(cfg: MenuConfig) -> void:
 	_check(_physics_frames > frames_before + 5, "physics keeps running while the menu is open")
 	_check(view.call("is_shown") and view.call("glyph_count") > 30, "menu glyphs are shown (%d)" % view.call("glyph_count"))
 	var labels: PackedStringArray = controller.call("current_labels")
-	_check(labels.size() == 2 and labels[0] == "become many" and labels[1] == "return", "labels offer the form switch and return: %s" % [labels])
+	_check(labels.size() == 3 and labels[0] == "become many" and labels[1] == "language" and labels[2] == "return", "labels offer the form switch, language and return: %s" % [labels])
 
 	# --- hazards still tick while the menu is open ---
 	var loader: MapLoader = main.get_node("World/MapLoader")
@@ -229,25 +230,28 @@ func _scene_unlocked(cfg: MenuConfig) -> void:
 	_key(KEY_D, false)
 	_check(player.global_position.distance_to(start) < 0.05, "the player stands still while the menu is open (moved %.2f)" % player.global_position.distance_to(start))
 
-	# --- navigation: down wraps to return, up goes back to the switch ---
+	# --- navigation: down walks to return and wraps, up goes back to the switch ---
 	_check(controller.call("selected_index") == 0, "starts on the first item")
 	await _tap(KEY_DOWN)
 	_check(controller.call("selected_index") == 1, "down selects the next item")
 	await _tap(KEY_DOWN)
+	_check(controller.call("selected_index") == 2, "down selects return")
+	await _tap(KEY_DOWN)
 	_check(controller.call("selected_index") == 0, "selection wraps")
 	await _tap(KEY_UP)
-	_check(controller.call("selected_index") == 1, "up wraps back")
+	_check(controller.call("selected_index") == 2, "up wraps back")
+	await _tap(KEY_UP)
 	await _tap(KEY_UP)
 	_check(controller.call("selected_index") == 0, "up selects the switch item")
 
 	# --- the pointer: hover selects, click on an item confirms ---
-	var return_pos: Vector2 = view.call("item_screen_position", 1)
+	var return_pos: Vector2 = view.call("item_screen_position", 2)
 	var motion := InputEventMouseMotion.new()
 	motion.position = return_pos
 	motion.global_position = return_pos
 	Input.parse_input_event(motion)
 	await _wait(0.1)
-	_check(controller.call("selected_index") == 1, "hovering an item selects it")
+	_check(controller.call("selected_index") == 2, "hovering an item selects it")
 	var up_pos: Vector2 = view.call("item_screen_position", 0)
 	motion = InputEventMouseMotion.new()
 	motion.position = up_pos
@@ -291,6 +295,7 @@ func _scene_unlocked(cfg: MenuConfig) -> void:
 	_check(not controller.call("is_open"), "Tab closes")
 	await _tap(KEY_TAB)
 	await _tap(KEY_DOWN)
+	await _tap(KEY_DOWN)
 	await _tap(KEY_ENTER)
 	_check(not controller.call("is_open"), "the return item closes the menu")
 	_check(progression.call("current_form") == EntityForm.SINGLE, "return left the form alone")
@@ -331,8 +336,9 @@ func _scene_no_entity(cfg: MenuConfig) -> void:
 	_check(not main.get_node("EntityProgression").call("is_unlocked"), "entity still locked in this scene")
 	await _tap(KEY_TAB)
 	var labels: PackedStringArray = controller.call("current_labels")
-	_check(controller.call("is_open") and labels.size() == 1 and labels[0] == "return", "without the entity only return is offered: %s" % [labels])
+	_check(controller.call("is_open") and labels.size() == 2 and labels[0] == "language" and labels[1] == "return", "without the entity only language and return are offered: %s" % [labels])
 	var before: int = _actions.size()
+	await _tap(KEY_DOWN)
 	await _tap(KEY_ENTER)
 	_check(_actions.size() == before and not controller.call("is_open"), "return closes without requesting anything")
 	var path: String = main.get_node("SaveService").get("config").save_path
@@ -360,7 +366,7 @@ func _scene_remember() -> void:
 	bus.emit_signal("origin_claim_heard", &"ai")
 	_check(ledger.call("any_claim_heard"), "a heard claim is visible through the ledger query")
 	var labels: PackedStringArray = controller.call("current_labels")
-	_check(labels.size() == 2 and labels[0] == "remember" and labels[1] == "return", "remember offered after a claim: %s" % [labels])
+	_check(labels.size() == 3 and labels[0] == "remember" and labels[1] == "language" and labels[2] == "return", "remember offered after a claim: %s" % [labels])
 
 	# Seed the states: ai struck, demonic struck then recanted, angelic and alien alive.
 	ledger.call("arm", &"demonic")
@@ -413,6 +419,84 @@ func _scene_remember() -> void:
 	await _tap(KEY_TAB)
 	_check(not controller.call("is_open") and not controller.call("is_ledger_shown"), "Tab closes the whole menu from the ledger page")
 	tree.physics_frame.disconnect(tick)
+	var path: String = main.get_node("SaveService").get("config").save_path
+	main.queue_free()
+	await process_frame
+	Support.remove_file(path)
+
+
+## The Language item (task-065): confirming it shows one entry per unlocked language ("English 59%") plus back; at
+## unlock_at_percent the opening unlocks the next language at 1% (one per opening) and asks for a glyph storm; confirming
+## a language selects it and closes the menu; back returns to the item list with language selected.
+func _scene_language() -> void:
+	var lang_cfg := load("res://resources/config/language_config.tres") as LanguageConfig
+	var menu_cfg := load("res://resources/config/menu_config.tres") as MenuConfig
+	var seeded := PersistentProgress.new()
+	seeded.identity_glyph = "Q"
+	seeded.run_count = 4
+	seeded.death_count = 1
+	seeded.menu_unlocked = true
+	seeded.selected_language = String(lang_cfg.start_language)
+	seeded.unlocked_languages = PackedStringArray([String(lang_cfg.start_language)])
+	seeded.language_understanding = {String(lang_cfg.start_language): lang_cfg.unlock_at_percent - 1.0}
+	# Every type already discovered, so the spawn reveal adds nothing.
+	seeded.discovered_types = PackedStringArray(["floor", "wall", "item", "spikes", "corrupt", "object", "gargoyle_fountain"])
+	var main: Node = await _make_main(SAVE_TAG + "_language", seeded)
+	var controller: Node = main.get_node("MenuController")
+	var language: Node = main.get_node("LanguageProgress")
+	var player: Node3D = main.get_node("Player")
+	var bus: Node = root.get_node("SignalBus")
+	var storms: Array = []
+	var unlocked: Array = []
+	var selected: Array = []
+	var on_storm := func(c: Vector3, _r: float, _d: float, _t: Color) -> void: storms.append(c)
+	var on_unlock := func(l: StringName) -> void: unlocked.append(l)
+	var on_select := func(l: StringName) -> void: selected.append(l)
+	bus.connect("glyph_storm_requested", on_storm)
+	bus.connect("language_unlocked", on_unlock)
+	bus.connect("language_selected", on_select)
+	var labels: PackedStringArray = controller.call("current_labels")
+	_check(labels.size() == 2 and labels[0] == "language", "language offered once the menu is unlocked: %s" % [labels])
+
+	# Below the unlock threshold: the list shows the start language only, no storm.
+	var base: float = language.call("percent", lang_cfg.start_language)
+	await _tap(KEY_TAB)
+	await _tap(KEY_ENTER)
+	_check(controller.call("is_language_shown") and controller.call("is_open"), "confirming language shows the language list")
+	var lang_labels: PackedStringArray = controller.call("language_labels")
+	var english: String = lang_cfg.entry_format % [lang_cfg.display_name(lang_cfg.start_language), floori(base)]
+	_check(lang_labels.size() == 2 and lang_labels[0] == english and lang_labels[1] == menu_cfg.language_back_label, "list = start language + back: %s" % [lang_labels])
+	_check(unlocked.is_empty() and storms.is_empty(), "no unlock and no storm below the threshold")
+	_check(controller.call("selected_index") == 0, "the selected language is highlighted")
+	await _tap(KEY_DOWN)
+	_check(controller.call("selected_index") == 1, "down moves to back")
+	await _tap(KEY_ENTER)
+	_check(controller.call("is_open") and not controller.call("is_language_shown"), "back returns to the item list")
+	_check(controller.call("selected_index") == 0, "back keeps language selected")
+	await _tap(KEY_TAB)
+	_check(not controller.call("is_open"), "Tab closes")
+
+	# At the threshold: the opening unlocks the next language at 1% and asks for one storm around the player.
+	language.call("add_percent", lang_cfg.unlock_at_percent - base)
+	var next: StringName = StringName(lang_cfg.unlock_order[0])
+	await _tap(KEY_TAB)
+	await _tap(KEY_ENTER)
+	lang_labels = controller.call("language_labels")
+	var hungarian: String = lang_cfg.entry_format % [lang_cfg.display_name(next), floori(lang_cfg.unlocked_start_percent)]
+	_check(unlocked == [next] and language.call("is_unlocked", next), "opening at the threshold unlocks %s once: %s" % [next, unlocked])
+	_check(storms.size() == 1, "one glyph storm requested (%d)" % storms.size())
+	_check(storms.size() == 1 and (storms[0] as Vector3).distance_to(player.global_position) < 0.5, "the storm is centred on the player")
+	_check(lang_labels.size() == 3 and lang_labels[1] == hungarian, "the new language is listed at 1%%: %s" % [lang_labels])
+	# Pick it: selection requested, applied by LanguageProgress, the menu closes.
+	selected.clear()
+	await _tap(KEY_DOWN)
+	await _tap(KEY_ENTER)
+	_check(selected == [next] and language.call("selected_language") == next, "confirming a language selects it: %s" % [selected])
+	_check(not controller.call("is_open"), "selecting a language closes the menu")
+
+	bus.disconnect("glyph_storm_requested", on_storm)
+	bus.disconnect("language_unlocked", on_unlock)
+	bus.disconnect("language_selected", on_select)
 	var path: String = main.get_node("SaveService").get("config").save_path
 	main.queue_free()
 	await process_frame

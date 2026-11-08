@@ -10,6 +10,9 @@
 // facets sparkle; the halo follows the palette. Lean / stretch (task-057): the transform's Y column carries
 // (lean, stretch, 0) * size for the player glyph (a plain uniform scale gives lean 0, stretch 1), pivoting at the
 // glyph's foot so the glyph leans into its motion and stretches / squashes with the acceleration.
+// Understanding look (task-066, PlayerGlyphView): `hollow` 1 draws only the glyph's edge band (no filled body, no dark
+// backing), the face colour is graded by `face_saturation` / `face_brightness` (1, 1 = plain); the glow is scaled on the
+// CPU (halo_intensity, crystal_strength, crystal_sparkle). Defaults reproduce the look before.
 shader_type spatial;
 render_mode unshaded, blend_premul_alpha, depth_draw_never, cull_disabled, fog_disabled;
 
@@ -44,6 +47,9 @@ uniform float crystal_speed = 0.08;             // palette cycles per second
 uniform float crystal_strength = 0.45;
 uniform float crystal_facets = 5.0;
 uniform float crystal_sparkle = 0.04;
+uniform float hollow = 0.0;
+uniform float face_saturation = 1.0;
+uniform float face_brightness = 1.0;
 uniform float halo_ref_size = 1.5;              // quad half-size of the player glyph; the halo of smaller quads (fragments) shrinks with its cube
 
 varying vec2 q;
@@ -139,6 +145,11 @@ void fragment() {
 		for (int i = 0; i < 4; i++) {
 			back = max(back, glyph_cov(wp + OUTLINE_DIRS[i] * outline_width, blend));
 		}
+		if (hollow > 0.0) {
+			// Hollow: the edge band around the glyph becomes the drawn glyph, the body and its dark backing go.
+			cov = mix(cov, clamp(back - cov, 0.0, 1.0), hollow);
+			back *= 1.0 - hollow;
+		}
 		back *= outline_color.a;
 	}
 	// glyph over ghost over dark backing, all premultiplied
@@ -157,6 +168,8 @@ void fragment() {
 		face = mix(tint.rgb, cc, k) + cc * spark * 0.6 * (1.0 - level);
 		halo_tint = mix(halo_tint, crystal_at(TIME * crystal_speed), k * 0.6);
 	}
+	float grey = dot(face, vec3(0.3, 0.59, 0.11));
+	face = max(mix(vec3(grey), face, face_saturation) * face_brightness, vec3(0.0));
 	rgb = face * cov + rgb * (1.0 - cov);
 	al = cov + al * (1.0 - cov);
 	rgb *= tint.a;

@@ -228,8 +228,22 @@ func _corruption() -> void:
 			_box(o.x + (sx + 0.5) * s / n, o.z + (sz + 0.5) * s / n, 0.0, height, half, half, GlyphSurfaceType.CORRUPT, true, true)
 
 
+## Height of the tallest corruption column of a map cell (0 when every column is a gap); the layered clarity
+## (task-066, GlyphWorldView) uses it as the cell's box height. Same hash as _corruption().
+static func corruption_height(cell: Vector2i, config: WorldConfig) -> float:
+	var n: int = config.corrupt_grid
+	var best: float = 0.0
+	for sx in n:
+		for sz in n:
+			var sub := Vector2i(cell.x * n + sx, cell.y * n + sz)
+			if _hash(sub, 0.0) < config.corrupt_gap_chance:
+				continue
+			best = maxf(best, config.corrupt_column_min + config.corrupt_column_span * _hash(sub, 1.0) * _hash(sub, 2.0))
+	return best
+
+
 ## Deterministic hash in 0..1 of a sub-cell (stable across builds and runs).
-func _hash(c: Vector2i, salt: float) -> float:
+static func _hash(c: Vector2i, salt: float) -> float:
 	return fposmod(sin(float(c.x) * CORRUPT_SEED_A + float(c.y) * CORRUPT_SEED_B + salt * CORRUPT_SEED_SALT) * CORRUPT_HASH_MUL, 1.0)
 
 

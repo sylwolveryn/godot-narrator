@@ -32,6 +32,15 @@ func _init() -> void:
 	ok = _save(remember, ITEM_DIR + "remember.tres") and ok
 	items.append(load(ITEM_DIR + "remember.tres") as MenuItemDef)
 
+	# Language list (task-065): offered whenever the menu is (needs a LanguageProgress in the scene).
+	var language := MenuItemDef.new()
+	language.id = &"language"
+	language.action = MenuItemDef.ACTION_LANGUAGE
+	language.label = "language"
+	language.closes_menu = false
+	ok = _save(language, ITEM_DIR + "language.tres") and ok
+	items.append(load(ITEM_DIR + "language.tres") as MenuItemDef)
+
 	var close := MenuItemDef.new()
 	close.id = &"close"
 	close.action = MenuItemDef.ACTION_CLOSE

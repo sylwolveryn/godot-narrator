@@ -9,6 +9,9 @@ extends Node3D
 ## violet ghost, tint, fade); death breaks it into fragments that fly outward and fade. Erosion and death arrive
 ## by SignalBus signals; this node only presents, it never writes data. No per-frame allocations.
 ## Crystal glow and lean / stretch (task-056/057) come from AvatarFxConfig, refreshed from the DB table avatar_fx.
+## Understanding look (task-066): the selected language's understanding (SignalBus.language_understanding_changed,
+## 0 until it arrives) makes the glyph hollow and glow-less at first, blunt in colour at 0 and a bit more vivid than the
+## plain look at 1; the glow (halo, crystal shimmer and sparkle) rises to the full AvatarFxConfig / GlyphFxConfig values.
 
 const ACTOR_SHADER: String = "res://shaders/glyph_actor.gdshader"
 const PLAYER_INSTANCE: int = 0
@@ -68,6 +71,8 @@ var _lean: float = 0.0
 var _stretch: float = 1.0
 var _prev_speed: float = 0.0
 var _form: StringName = EntityForm.SINGLE
+## Language understanding (0..1) of the selected language.
+var _understanding: float = 0.0
 
 var _frag_age: PackedFloat32Array = PackedFloat32Array()
 var _frag_life: PackedFloat32Array = PackedFloat32Array()
@@ -135,6 +140,7 @@ func _ready() -> void:
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.entity_form_changed.connect(set_form)
+	SignalBus.language_understanding_changed.connect(_on_understanding_changed)
 	if player != null:
 		player.identity_changed.connect(_on_identity_changed)
 		if player.identity_glyph != "":
@@ -386,9 +392,35 @@ func apply_avatar_fx(fx: AvatarFxConfig) -> void:
 	_material.set_shader_parameter(&"crystal_palette", colours)
 	_material.set_shader_parameter(&"crystal_count", float(mini(fx.crystal_palette.size(), fx.crystal_max_colors)))
 	_material.set_shader_parameter(&"crystal_speed", fx.crystal_speed)
-	_material.set_shader_parameter(&"crystal_strength", fx.crystal_strength)
 	_material.set_shader_parameter(&"crystal_facets", fx.crystal_facets)
-	_material.set_shader_parameter(&"crystal_sparkle", fx.crystal_sparkle)
+	_apply_understanding_look()
+
+
+## The language understanding the look follows (0..1).
+func understanding() -> float:
+	return _understanding
+
+
+func _on_understanding_changed(_language: StringName, value: float) -> void:
+	_understanding = clampf(value, 0.0, 1.0)
+	_apply_understanding_look()
+
+
+## Hollow body, glow share and colour grade of the current understanding (task-066).
+func _apply_understanding_look() -> void:
+	if _fx == null or _material == null:
+		return
+	var glow: float = _fx.glow_at(_understanding)
+	var hollow: float = _fx.hollow_at(_understanding)
+	var grade: Vector2 = _fx.colour_grade_at(_understanding)
+	_material.set_shader_parameter(&"crystal_strength", _fx.crystal_strength * glow)
+	_material.set_shader_parameter(&"crystal_sparkle", _fx.crystal_sparkle * glow)
+	_material.set_shader_parameter(&"halo_intensity", fx_config.halo_intensity * glow)
+	_material.set_shader_parameter(&"hollow", hollow)
+	_material.set_shader_parameter(&"face_saturation", grade.x)
+	_material.set_shader_parameter(&"face_brightness", grade.y)
+	if _entity != null:
+		_entity.set_understanding_look(hollow, grade.x, grade.y)
 
 
 ## The avatar look in effect.

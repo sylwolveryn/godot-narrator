@@ -1,69 +1,71 @@
 [gd_scene format=3 uid="uid://cd1bjpboqyi2w"]
 
-[ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="1_abqjc"]
-[ext_resource type="Resource" path="res://resources/config/map_legend.tres" id="2_6iyjs"]
-[ext_resource type="Resource" path="res://resources/config/world_config.tres" id="3_4w656"]
-[ext_resource type="Material" path="res://resources/glyphs/glyph_surface_material.tres" id="4_e71vb"]
-[ext_resource type="Script" path="res://scripts/data/game_database.gd" id="5_rnkwl"]
-[ext_resource type="Resource" path="res://resources/config/db_config.tres" id="6_vke2r"]
-[ext_resource type="Script" path="res://scripts/narrator/narration_library.gd" id="7_uit24"]
-[ext_resource type="Resource" path="res://resources/config/narration_library_config.tres" id="8_ruth0"]
-[ext_resource type="Script" path="res://scripts/core/player_record.gd" id="9_rm4vd"]
-[ext_resource type="Script" path="res://scripts/core/save_service.gd" id="10_pjyto"]
-[ext_resource type="Resource" path="res://resources/config/save_config.tres" id="11_sm6fg"]
-[ext_resource type="Script" path="res://scripts/origin/origin_ledger.gd" id="12_b17eg"]
-[ext_resource type="Resource" path="res://resources/config/origin_config.tres" id="13_ntx8l"]
-[ext_resource type="Script" path="res://scripts/core/entity_progression.gd" id="14_uatky"]
-[ext_resource type="Resource" path="res://resources/config/entity_growth_config.tres" id="15_rqtf5"]
-[ext_resource type="Script" path="res://scripts/core/menu_controller.gd" id="16_1vm84"]
-[ext_resource type="Resource" path="res://resources/config/menu_config.tres" id="17_wu3dr"]
-[ext_resource type="Script" path="res://scripts/narrator/narrator.gd" id="18_cyx1q"]
-[ext_resource type="Resource" path="res://resources/narration/narrator_config.tres" id="19_0dhbp"]
-[ext_resource type="Script" path="res://scripts/rendering/camera_rig.gd" id="20_jx0wj"]
-[ext_resource type="Resource" path="res://resources/config/camera_isometric.tres" id="21_kkkcx"]
-[ext_resource type="Script" path="res://scripts/player/player.gd" id="22_34ol3"]
-[ext_resource type="Resource" path="res://resources/config/player_config.tres" id="23_c2n8d"]
-[ext_resource type="Script" path="res://scripts/world/map_reveal.gd" id="24_wy5fy"]
-[ext_resource type="Resource" path="res://resources/config/reveal_config.tres" id="25_gx4rg"]
-[ext_resource type="Script" path="res://scripts/player/input_discovery.gd" id="26_5dllo"]
-[ext_resource type="Script" path="res://scripts/rendering/glyph_world_view.gd" id="27_phcyf"]
-[ext_resource type="Resource" path="res://resources/config/glyph_world_config.tres" id="28_birbe"]
-[ext_resource type="Script" path="res://scripts/rendering/player_glyph_view.gd" id="29_f1p13"]
-[ext_resource type="Resource" path="res://resources/config/glyph_fx_config.tres" id="30_4obbf"]
-[ext_resource type="Resource" path="res://resources/config/avatar_fx_config.tres" id="31_ovcoh"]
-[ext_resource type="Script" path="res://scripts/rendering/ink_trail_view.gd" id="32_ppx11"]
-[ext_resource type="Script" path="res://scripts/rendering/menu_glyph_view.gd" id="33_1yv1y"]
-[ext_resource type="Script" path="res://scripts/rendering/glyph_storm_view.gd" id="34_5yh34"]
-[ext_resource type="Resource" path="res://resources/config/storm_config.tres" id="35_pjuso"]
-[ext_resource type="Script" path="res://scripts/rendering/glyph_anim_view.gd" id="36_23xmf"]
-[ext_resource type="Resource" path="res://resources/config/glyph_anim_config.tres" id="37_swlj1"]
-[ext_resource type="Script" path="res://scripts/rendering/glyph_halo_field.gd" id="38_yysqy"]
-[ext_resource type="Script" path="res://scripts/rendering/large_object_view.gd" id="39_n5t1e"]
-[ext_resource type="Script" path="res://scripts/narrator/narration_overlay.gd" id="40_h6isl"]
-[ext_resource type="Resource" path="res://resources/config/display_config.tres" id="41_53bls"]
-[ext_resource type="Script" path="res://scripts/narrator/narration_sfx.gd" id="42_lwnsi"]
-[ext_resource type="Script" path="res://scripts/ui/intro_sequence.gd" id="43_41lik"]
-[ext_resource type="Resource" path="res://resources/config/intro_config.tres" id="44_jbvwl"]
-[ext_resource type="Shader" path="res://shaders/intro_wave.gdshader" id="45_sn1fb"]
-[ext_resource type="Script" path="res://scripts/ui/fullscreen_toggle.gd" id="46_yvsr8"]
-[ext_resource type="Script" path="res://scripts/core/run_manager.gd" id="47_vieuh"]
-[ext_resource type="Resource" path="res://resources/config/run_config.tres" id="48_yjja3"]
-[ext_resource type="Script" path="res://scripts/world/pushable_objects.gd" id="49_l0gw7"]
-[ext_resource type="Resource" path="res://resources/config/push_config.tres" id="50_inymm"]
-[ext_resource type="Script" path="res://scripts/rendering/object_glyph_view.gd" id="51_jcxqu"]
-[ext_resource type="Script" path="res://scripts/world/hazard_monitor.gd" id="52_0arob"]
-[ext_resource type="Script" path="res://scripts/origin/origin_trial_monitor.gd" id="53_dij0e"]
+[ext_resource type="Script" path="res://scripts/world/map_loader.gd" id="1_4w656"]
+[ext_resource type="Resource" path="res://resources/config/map_legend.tres" id="2_e71vb"]
+[ext_resource type="Resource" path="res://resources/config/world_config.tres" id="3_rnkwl"]
+[ext_resource type="Material" path="res://resources/glyphs/glyph_surface_material.tres" id="4_vke2r"]
+[ext_resource type="Script" path="res://scripts/data/game_database.gd" id="5_uit24"]
+[ext_resource type="Resource" path="res://resources/config/db_config.tres" id="6_ruth0"]
+[ext_resource type="Script" path="res://scripts/narrator/narration_library.gd" id="7_rm4vd"]
+[ext_resource type="Resource" path="res://resources/config/narration_library_config.tres" id="8_pjyto"]
+[ext_resource type="Script" path="res://scripts/core/player_record.gd" id="9_sm6fg"]
+[ext_resource type="Script" path="res://scripts/core/save_service.gd" id="10_b17eg"]
+[ext_resource type="Resource" path="res://resources/config/save_config.tres" id="11_ntx8l"]
+[ext_resource type="Script" path="res://scripts/origin/origin_ledger.gd" id="12_uatky"]
+[ext_resource type="Resource" path="res://resources/config/origin_config.tres" id="13_rqtf5"]
+[ext_resource type="Script" path="res://scripts/core/language_progress.gd" id="14_1vm84"]
+[ext_resource type="Resource" path="res://resources/config/language_config.tres" id="15_wu3dr"]
+[ext_resource type="Script" path="res://scripts/core/entity_progression.gd" id="16_cyx1q"]
+[ext_resource type="Resource" path="res://resources/config/entity_growth_config.tres" id="17_0dhbp"]
+[ext_resource type="Script" path="res://scripts/core/menu_controller.gd" id="18_jx0wj"]
+[ext_resource type="Resource" path="res://resources/config/menu_config.tres" id="19_kkkcx"]
+[ext_resource type="Script" path="res://scripts/narrator/narrator.gd" id="20_34ol3"]
+[ext_resource type="Resource" path="res://resources/narration/narrator_config.tres" id="21_c2n8d"]
+[ext_resource type="Script" path="res://scripts/rendering/camera_rig.gd" id="22_wy5fy"]
+[ext_resource type="Resource" path="res://resources/config/camera_isometric.tres" id="23_gx4rg"]
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="24_5dllo"]
+[ext_resource type="Resource" path="res://resources/config/player_config.tres" id="25_phcyf"]
+[ext_resource type="Script" path="res://scripts/world/map_reveal.gd" id="26_birbe"]
+[ext_resource type="Resource" path="res://resources/config/reveal_config.tres" id="27_f1p13"]
+[ext_resource type="Script" path="res://scripts/player/input_discovery.gd" id="28_4obbf"]
+[ext_resource type="Script" path="res://scripts/rendering/glyph_world_view.gd" id="29_ovcoh"]
+[ext_resource type="Resource" path="res://resources/config/glyph_world_config.tres" id="30_ppx11"]
+[ext_resource type="Script" path="res://scripts/rendering/player_glyph_view.gd" id="31_1yv1y"]
+[ext_resource type="Resource" path="res://resources/config/glyph_fx_config.tres" id="32_5yh34"]
+[ext_resource type="Resource" path="res://resources/config/avatar_fx_config.tres" id="33_pjuso"]
+[ext_resource type="Script" path="res://scripts/rendering/ink_trail_view.gd" id="34_23xmf"]
+[ext_resource type="Script" path="res://scripts/rendering/menu_glyph_view.gd" id="35_swlj1"]
+[ext_resource type="Script" path="res://scripts/rendering/glyph_storm_view.gd" id="36_yysqy"]
+[ext_resource type="Resource" path="res://resources/config/storm_config.tres" id="37_n5t1e"]
+[ext_resource type="Script" path="res://scripts/rendering/glyph_anim_view.gd" id="38_h6isl"]
+[ext_resource type="Resource" path="res://resources/config/glyph_anim_config.tres" id="39_53bls"]
+[ext_resource type="Script" path="res://scripts/rendering/glyph_halo_field.gd" id="40_lwnsi"]
+[ext_resource type="Script" path="res://scripts/rendering/large_object_view.gd" id="41_41lik"]
+[ext_resource type="Script" path="res://scripts/narrator/narration_overlay.gd" id="42_jbvwl"]
+[ext_resource type="Resource" path="res://resources/config/display_config.tres" id="43_sn1fb"]
+[ext_resource type="Script" path="res://scripts/narrator/narration_sfx.gd" id="44_yvsr8"]
+[ext_resource type="Script" path="res://scripts/ui/intro_sequence.gd" id="45_vieuh"]
+[ext_resource type="Resource" path="res://resources/config/intro_config.tres" id="46_yjja3"]
+[ext_resource type="Shader" path="res://shaders/intro_wave.gdshader" id="47_l0gw7"]
+[ext_resource type="Script" path="res://scripts/ui/fullscreen_toggle.gd" id="48_inymm"]
+[ext_resource type="Script" path="res://scripts/core/run_manager.gd" id="49_jcxqu"]
+[ext_resource type="Resource" path="res://resources/config/run_config.tres" id="50_0arob"]
+[ext_resource type="Script" path="res://scripts/world/pushable_objects.gd" id="51_dij0e"]
+[ext_resource type="Resource" path="res://resources/config/push_config.tres" id="52_k1udn"]
+[ext_resource type="Script" path="res://scripts/rendering/object_glyph_view.gd" id="53_wat4s"]
+[ext_resource type="Script" path="res://scripts/world/hazard_monitor.gd" id="54_ywjan"]
+[ext_resource type="Script" path="res://scripts/origin/origin_trial_monitor.gd" id="55_m74q3"]
 
-[sub_resource type="Environment" id="Environment_k1udn"]
+[sub_resource type="Environment" id="Environment_tko6h"]
 background_mode = 1
 background_color = Color(0.008, 0.01, 0.018, 1)
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wat4s"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_am8a1"]
 radius = 0.35
 height = 0.9
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ywjan"]
-shader = ExtResource("45_sn1fb")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8dc3g"]
+shader = ExtResource("47_l0gw7")
 shader_parameter/veil = null
 shader_parameter/envelope = null
 shader_parameter/time = null
@@ -78,208 +80,218 @@ shader_parameter/cell_px = null
 shader_parameter/glow_strength = null
 shader_parameter/glow_width = null
 
-[node name="Main" type="Node3D" unique_id=720209641]
+[node name="Main" type="Node3D" unique_id=1850348114]
 
-[node name="World" type="Node3D" parent="." unique_id=812490]
+[node name="World" type="Node3D" parent="." unique_id=105583993]
 
-[node name="MapLoader" type="Node3D" parent="World" unique_id=239844094]
-script = ExtResource("1_abqjc")
-legend = ExtResource("2_6iyjs")
-world_config = ExtResource("3_4w656")
-surface_material = ExtResource("4_e71vb")
+[node name="MapLoader" type="Node3D" parent="World" unique_id=675371296]
+script = ExtResource("1_4w656")
+legend = ExtResource("2_e71vb")
+world_config = ExtResource("3_rnkwl")
+surface_material = ExtResource("4_vke2r")
 map_path = "res://data/maps/m1_awakening.txt"
 
-[node name="GameDatabase" type="Node" parent="." unique_id=1223403158]
-script = ExtResource("5_rnkwl")
-config = ExtResource("6_vke2r")
+[node name="GameDatabase" type="Node" parent="." unique_id=2121986860]
+script = ExtResource("5_uit24")
+config = ExtResource("6_ruth0")
 
-[node name="NarrationLibrary" type="Node" parent="." unique_id=1882176497 node_paths=PackedStringArray("database")]
-script = ExtResource("7_uit24")
-config = ExtResource("8_ruth0")
+[node name="NarrationLibrary" type="Node" parent="." unique_id=621667793 node_paths=PackedStringArray("database")]
+script = ExtResource("7_rm4vd")
+config = ExtResource("8_pjyto")
 database = NodePath("../GameDatabase")
 
-[node name="PlayerRecord" type="Node" parent="." unique_id=812834885 node_paths=PackedStringArray("database")]
-script = ExtResource("9_rm4vd")
+[node name="PlayerRecord" type="Node" parent="." unique_id=921768667 node_paths=PackedStringArray("database")]
+script = ExtResource("9_sm6fg")
 database = NodePath("../GameDatabase")
 
-[node name="SaveService" type="Node" parent="." unique_id=722610572]
-script = ExtResource("10_pjyto")
-config = ExtResource("11_sm6fg")
+[node name="SaveService" type="Node" parent="." unique_id=220423021]
+script = ExtResource("10_b17eg")
+config = ExtResource("11_ntx8l")
 
-[node name="OriginLedger" type="Node" parent="." unique_id=1384185951 node_paths=PackedStringArray("save_service")]
-script = ExtResource("12_b17eg")
-config = ExtResource("13_ntx8l")
+[node name="OriginLedger" type="Node" parent="." unique_id=788069779 node_paths=PackedStringArray("save_service")]
+script = ExtResource("12_uatky")
+config = ExtResource("13_rqtf5")
 save_service = NodePath("../SaveService")
 
-[node name="EntityProgression" type="Node" parent="." unique_id=496600624 node_paths=PackedStringArray("save_service")]
-script = ExtResource("14_uatky")
-config = ExtResource("15_rqtf5")
+[node name="LanguageProgress" type="Node" parent="." unique_id=178625619 node_paths=PackedStringArray("save_service", "map_loader", "database", "player")]
+script = ExtResource("14_1vm84")
+config = ExtResource("15_wu3dr")
+save_service = NodePath("../SaveService")
+map_loader = NodePath("../World/MapLoader")
+database = NodePath("../GameDatabase")
+player = NodePath("../Player")
+
+[node name="EntityProgression" type="Node" parent="." unique_id=542368721 node_paths=PackedStringArray("save_service")]
+script = ExtResource("16_cyx1q")
+config = ExtResource("17_0dhbp")
 save_service = NodePath("../SaveService")
 
-[node name="MenuController" type="Node" parent="." unique_id=437415357 node_paths=PackedStringArray("save_service", "entity", "run_manager", "ledger")]
-script = ExtResource("16_1vm84")
-config = ExtResource("17_wu3dr")
+[node name="MenuController" type="Node" parent="." unique_id=770862270 node_paths=PackedStringArray("save_service", "entity", "run_manager", "ledger", "language")]
+script = ExtResource("18_jx0wj")
+config = ExtResource("19_kkkcx")
 save_service = NodePath("../SaveService")
 entity = NodePath("../EntityProgression")
 run_manager = NodePath("../RunManager")
 ledger = NodePath("../OriginLedger")
+language = NodePath("../LanguageProgress")
 
-[node name="Narrator" type="Node" parent="." unique_id=878995536 node_paths=PackedStringArray("save_service", "ledger", "library")]
-script = ExtResource("18_cyx1q")
-config = ExtResource("19_0dhbp")
+[node name="Narrator" type="Node" parent="." unique_id=708264431 node_paths=PackedStringArray("save_service", "ledger", "library")]
+script = ExtResource("20_34ol3")
+config = ExtResource("21_c2n8d")
 save_service = NodePath("../SaveService")
 ledger = NodePath("../OriginLedger")
 library = NodePath("../NarrationLibrary")
 
-[node name="CameraRig" type="Node3D" parent="." unique_id=331954729 node_paths=PackedStringArray("follow_target")]
-script = ExtResource("20_jx0wj")
-view_config = ExtResource("21_kkkcx")
+[node name="CameraRig" type="Node3D" parent="." unique_id=957146279 node_paths=PackedStringArray("follow_target")]
+script = ExtResource("22_wy5fy")
+view_config = ExtResource("23_gx4rg")
 follow_target = NodePath("../Player")
 
-[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=1800814543]
-environment = SubResource("Environment_k1udn")
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=1323134151]
+environment = SubResource("Environment_tko6h")
 
-[node name="Player" type="CharacterBody3D" parent="." unique_id=1938757244 node_paths=PackedStringArray("map_loader", "save_service", "run_manager", "camera_rig", "database")]
-script = ExtResource("22_34ol3")
-config = ExtResource("23_c2n8d")
+[node name="Player" type="CharacterBody3D" parent="." unique_id=2045451145 node_paths=PackedStringArray("map_loader", "save_service", "run_manager", "camera_rig", "database")]
+script = ExtResource("24_5dllo")
+config = ExtResource("25_phcyf")
 map_loader = NodePath("../World/MapLoader")
 save_service = NodePath("../SaveService")
 run_manager = NodePath("../RunManager")
 camera_rig = NodePath("../CameraRig")
 database = NodePath("../GameDatabase")
 
-[node name="Collision" type="CollisionShape3D" parent="Player" unique_id=832156056]
+[node name="Collision" type="CollisionShape3D" parent="Player" unique_id=966972318]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
-shape = SubResource("CapsuleShape3D_wat4s")
+shape = SubResource("CapsuleShape3D_am8a1")
 
-[node name="MapReveal" type="Node" parent="." unique_id=115417543 node_paths=PackedStringArray("map_loader", "player", "save_service")]
-script = ExtResource("24_wy5fy")
-config = ExtResource("25_gx4rg")
+[node name="MapReveal" type="Node" parent="." unique_id=729715852 node_paths=PackedStringArray("map_loader", "player", "save_service")]
+script = ExtResource("26_birbe")
+config = ExtResource("27_f1p13")
 map_loader = NodePath("../World/MapLoader")
 player = NodePath("../Player")
 save_service = NodePath("../SaveService")
 
-[node name="InputDiscovery" type="Node" parent="." unique_id=861091060]
-script = ExtResource("26_5dllo")
-config = ExtResource("23_c2n8d")
+[node name="InputDiscovery" type="Node" parent="." unique_id=380802265]
+script = ExtResource("28_4obbf")
+config = ExtResource("25_phcyf")
 
-[node name="GlyphWorldView" type="Node" parent="." unique_id=1609650288 node_paths=PackedStringArray("map_loader", "player", "map_reveal")]
-script = ExtResource("27_phcyf")
-config = ExtResource("28_birbe")
+[node name="GlyphWorldView" type="Node" parent="." unique_id=1902823314 node_paths=PackedStringArray("map_loader", "player", "map_reveal", "pushables")]
+script = ExtResource("29_ovcoh")
+config = ExtResource("30_ppx11")
 map_loader = NodePath("../World/MapLoader")
 player = NodePath("../Player")
 map_reveal = NodePath("../MapReveal")
+pushables = NodePath("../PushableObjects")
 
-[node name="PlayerGlyphView" type="Node3D" parent="." unique_id=442310545 node_paths=PackedStringArray("player", "database")]
-script = ExtResource("29_f1p13")
+[node name="PlayerGlyphView" type="Node3D" parent="." unique_id=736002446 node_paths=PackedStringArray("player", "database")]
+script = ExtResource("31_1yv1y")
 player = NodePath("../Player")
-player_config = ExtResource("23_c2n8d")
-fx_config = ExtResource("30_4obbf")
-world_config = ExtResource("28_birbe")
-world = ExtResource("3_4w656")
-entity_config = ExtResource("15_rqtf5")
-avatar_config = ExtResource("31_ovcoh")
+player_config = ExtResource("25_phcyf")
+fx_config = ExtResource("32_5yh34")
+world_config = ExtResource("30_ppx11")
+world = ExtResource("3_rnkwl")
+entity_config = ExtResource("17_0dhbp")
+avatar_config = ExtResource("33_pjuso")
 database = NodePath("../GameDatabase")
 
-[node name="InkTrailView" type="Node3D" parent="." unique_id=2027256016 node_paths=PackedStringArray("database", "player", "run_manager")]
-script = ExtResource("32_ppx11")
-config = ExtResource("31_ovcoh")
+[node name="InkTrailView" type="Node3D" parent="." unique_id=396399878 node_paths=PackedStringArray("database", "player", "run_manager")]
+script = ExtResource("34_23xmf")
+config = ExtResource("33_pjuso")
 database = NodePath("../GameDatabase")
 player = NodePath("../Player")
 run_manager = NodePath("../RunManager")
 
-[node name="MenuGlyphView" type="Node3D" parent="." unique_id=1675656946 node_paths=PackedStringArray("player", "map_loader")]
-script = ExtResource("33_1yv1y")
-config = ExtResource("17_wu3dr")
-fx_config = ExtResource("30_4obbf")
+[node name="MenuGlyphView" type="Node3D" parent="." unique_id=147742402 node_paths=PackedStringArray("player", "map_loader")]
+script = ExtResource("35_swlj1")
+config = ExtResource("19_kkkcx")
+fx_config = ExtResource("32_5yh34")
 player = NodePath("../Player")
-player_config = ExtResource("23_c2n8d")
+player_config = ExtResource("25_phcyf")
 map_loader = NodePath("../World/MapLoader")
-world = ExtResource("3_4w656")
-origin_config = ExtResource("13_ntx8l")
-surface_material = ExtResource("4_e71vb")
+world = ExtResource("3_rnkwl")
+origin_config = ExtResource("13_rqtf5")
+surface_material = ExtResource("4_vke2r")
 
-[node name="GlyphStormView" type="Node3D" parent="." unique_id=399754426 node_paths=PackedStringArray("player", "map_loader")]
-script = ExtResource("34_5yh34")
-config = ExtResource("35_pjuso")
-fx_config = ExtResource("30_4obbf")
+[node name="GlyphStormView" type="Node3D" parent="." unique_id=165756850 node_paths=PackedStringArray("player", "map_loader")]
+script = ExtResource("36_yysqy")
+config = ExtResource("37_n5t1e")
+fx_config = ExtResource("32_5yh34")
 player = NodePath("../Player")
 map_loader = NodePath("../World/MapLoader")
-world = ExtResource("3_4w656")
-surface_material = ExtResource("4_e71vb")
+world = ExtResource("3_rnkwl")
+surface_material = ExtResource("4_vke2r")
 
-[node name="GlyphAnimView" type="Node" parent="." unique_id=1566980375 node_paths=PackedStringArray("database", "map_loader")]
-script = ExtResource("36_23xmf")
-config = ExtResource("37_swlj1")
+[node name="GlyphAnimView" type="Node" parent="." unique_id=842597602 node_paths=PackedStringArray("database", "map_loader")]
+script = ExtResource("38_h6isl")
+config = ExtResource("39_53bls")
 database = NodePath("../GameDatabase")
 map_loader = NodePath("../World/MapLoader")
 
-[node name="GlyphHaloField" type="Node3D" parent="." unique_id=2044183704 node_paths=PackedStringArray("map_loader")]
-script = ExtResource("38_yysqy")
-config = ExtResource("28_birbe")
+[node name="GlyphHaloField" type="Node3D" parent="." unique_id=52024562 node_paths=PackedStringArray("map_loader")]
+script = ExtResource("40_lwnsi")
+config = ExtResource("30_ppx11")
 map_loader = NodePath("../World/MapLoader")
 
-[node name="LargeObjectView" type="Node3D" parent="." unique_id=1750650214 node_paths=PackedStringArray("map_loader", "map_reveal")]
-script = ExtResource("39_n5t1e")
+[node name="LargeObjectView" type="Node3D" parent="." unique_id=72524471 node_paths=PackedStringArray("map_loader", "map_reveal")]
+script = ExtResource("41_41lik")
 map_loader = NodePath("../World/MapLoader")
 map_reveal = NodePath("../MapReveal")
 
-[node name="NarrationOverlay" type="CanvasLayer" parent="." unique_id=1900824269 node_paths=PackedStringArray("narrator")]
+[node name="NarrationOverlay" type="CanvasLayer" parent="." unique_id=1688156997 node_paths=PackedStringArray("narrator")]
 layer = Callable()
-script = ExtResource("40_h6isl")
+script = ExtResource("42_jbvwl")
 narrator = NodePath("../Narrator")
-config = ExtResource("19_0dhbp")
-display_config = ExtResource("41_53bls")
-player_config = ExtResource("23_c2n8d")
+config = ExtResource("21_c2n8d")
+display_config = ExtResource("43_sn1fb")
+player_config = ExtResource("25_phcyf")
 
-[node name="NarrationSfx" type="Node" parent="." unique_id=1483918181 node_paths=PackedStringArray("narrator")]
-script = ExtResource("42_lwnsi")
+[node name="NarrationSfx" type="Node" parent="." unique_id=1656537063 node_paths=PackedStringArray("narrator")]
+script = ExtResource("44_yvsr8")
 narrator = NodePath("../Narrator")
-config = ExtResource("19_0dhbp")
+config = ExtResource("21_c2n8d")
 
-[node name="IntroSequence" type="CanvasLayer" parent="." unique_id=580871610]
+[node name="IntroSequence" type="CanvasLayer" parent="." unique_id=1406973339]
 layer = 20
-script = ExtResource("43_41lik")
-config = ExtResource("44_jbvwl")
-display_config = ExtResource("41_53bls")
+script = ExtResource("45_vieuh")
+config = ExtResource("46_yjja3")
+display_config = ExtResource("43_sn1fb")
 
-[node name="Veil" type="ColorRect" parent="IntroSequence" unique_id=1203703708]
-material = SubResource("ShaderMaterial_ywjan")
+[node name="Veil" type="ColorRect" parent="IntroSequence" unique_id=1685263505]
+material = SubResource("ShaderMaterial_8dc3g")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="FullscreenToggle" type="Node" parent="." unique_id=668561892]
-script = ExtResource("46_yvsr8")
-config = ExtResource("41_53bls")
+[node name="FullscreenToggle" type="Node" parent="." unique_id=1450528347]
+script = ExtResource("48_inymm")
+config = ExtResource("43_sn1fb")
 
-[node name="RunManager" type="Node" parent="." unique_id=989286186]
-script = ExtResource("47_vieuh")
-config = ExtResource("48_yjja3")
+[node name="RunManager" type="Node" parent="." unique_id=289148900]
+script = ExtResource("49_jcxqu")
+config = ExtResource("50_0arob")
 
-[node name="PushableObjects" type="Node3D" parent="." unique_id=102733303 node_paths=PackedStringArray("map_loader", "player", "entity", "run_manager")]
-script = ExtResource("49_l0gw7")
-config = ExtResource("50_inymm")
+[node name="PushableObjects" type="Node3D" parent="." unique_id=1361310219 node_paths=PackedStringArray("map_loader", "player", "entity", "run_manager")]
+script = ExtResource("51_dij0e")
+config = ExtResource("52_k1udn")
 map_loader = NodePath("../World/MapLoader")
 player = NodePath("../Player")
 entity = NodePath("../EntityProgression")
 run_manager = NodePath("../RunManager")
 
-[node name="ObjectGlyphView" type="Node3D" parent="." unique_id=1691488552 node_paths=PackedStringArray("pushables", "map_loader")]
-script = ExtResource("51_jcxqu")
+[node name="ObjectGlyphView" type="Node3D" parent="." unique_id=822150737 node_paths=PackedStringArray("pushables", "map_loader")]
+script = ExtResource("53_wat4s")
 pushables = NodePath("../PushableObjects")
 map_loader = NodePath("../World/MapLoader")
-config = ExtResource("50_inymm")
+config = ExtResource("52_k1udn")
 
-[node name="HazardMonitor" type="Node" parent="." unique_id=1402625998 node_paths=PackedStringArray("map_loader", "player", "run_manager")]
-script = ExtResource("52_0arob")
+[node name="HazardMonitor" type="Node" parent="." unique_id=622363703 node_paths=PackedStringArray("map_loader", "player", "run_manager")]
+script = ExtResource("54_ywjan")
 map_loader = NodePath("../World/MapLoader")
 player = NodePath("../Player")
 run_manager = NodePath("../RunManager")
 
-[node name="OriginTrialMonitor" type="Node" parent="." unique_id=1694955365 node_paths=PackedStringArray("ledger", "run_manager", "player", "map_loader")]
-script = ExtResource("53_dij0e")
+[node name="OriginTrialMonitor" type="Node" parent="." unique_id=195797255 node_paths=PackedStringArray("ledger", "run_manager", "player", "map_loader")]
+script = ExtResource("55_m74q3")
 ledger = NodePath("../OriginLedger")
 run_manager = NodePath("../RunManager")
 player = NodePath("../Player")

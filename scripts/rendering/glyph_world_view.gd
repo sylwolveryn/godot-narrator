@@ -5,6 +5,10 @@ extends Node
 ## patches whose cells have been seen; they fade in and out), the light occlusion textures
 ## (GlyphVisibilityMap, filled from GlyphLightOcclusion). There is no wall cut-away (task-052): the player rotates
 ## and zooms the camera to find a hidden avatar.
+## Layered clarity (task-066): the selected language's understanding (SignalBus.language_understanding_changed) sets
+## the share of glyph cells drawn layered (floor < hazards < items / objects, see glyph_surface.gdshader); the per-cell
+## layer map (order, type, box height and half extent of items, hazards and pushable objects) is a tiny texture built
+## here on map build and patched when an object is pushed.
 ## Read-only towards the game: it never writes data, it only sets shader uniforms.
 
 const MAX_LIGHTS: int = 8
@@ -12,12 +16,17 @@ const PLAYER_LIGHT_SLOT: int = 0
 ## A player move of more than this many cells in one step (a teleport) replaces the occlusion of the
 ## player light at once instead of blending it.
 const JUMP_CELLS: int = 2
+## Layer map encoding (glyph_surface.gdshader LAYER_TYPES / LAYER_CODE): r = (order * LAYER_TYPES + type) / LAYER_CODE.
+const LAYER_TYPES: int = 8
+const LAYER_CODE: float = 255.0
 
 @export var config: GlyphWorldConfig
 @export var map_loader: MapLoader
 @export var player: Node3D
 ## Optional. Static lights of cells that were never seen are left out, so hidden items do not glow through walls.
 @export var map_reveal: MapReveal
+## Optional. Pushable objects take part in the layered clarity as items / objects do.
+@export var pushables: PushableObjects
 
 ## The material being fed (the loader's surface material).
 var material: ShaderMaterial
@@ -35,6 +44,12 @@ var _light_col: PackedVector4Array = PackedVector4Array()
 var _light_count: int = 1
 var _last_cell: Vector2i = Vector2i(-1000000, -1000000)
 var _dirty: bool = true
+## Language understanding (0..1) of the selected language; 0 = the old interleaved look.
+var _understanding: float = 0.0
+var _layer_image: Image
+var _layer_texture: ImageTexture
+## Ray height of the layer search (the tallest layered box), world units.
+var _layer_height: float = 1.0
 
 
 func _ready() -> void:
@@ -43,6 +58,10 @@ func _ready() -> void:
 	_light_pos.resize(MAX_LIGHTS)
 	_light_col.resize(MAX_LIGHTS)
 	SignalBus.player_spawned.connect(_on_player_spawned)
+	SignalBus.language_understanding_changed.connect(_on_understanding_changed)
+	SignalBus.object_moved.connect(_on_object_moved)
+	if pushables != null:
+		pushables.objects_reset.connect(_rebuild_layer_map)
 	if map_reveal != null:
 		map_reveal.cells_seen.connect(_on_cells_seen)
 	if map_loader != null:
@@ -120,7 +139,23 @@ func apply_static() -> void:
 	var player_col := Vector3(config.player_light_color.r, config.player_light_color.g, config.player_light_color.b)
 	_light_col[PLAYER_LIGHT_SLOT] = Vector4(player_col.x, player_col.y, player_col.z, 1.0) * config.player_light_intensity
 	_apply_visibility_params()
+	_apply_clarity()
 	_dirty = true
+
+
+## Share of glyph cells drawn layered (the shader's `clarity`), from the language understanding.
+func clarity() -> float:
+	return pow(clampf(_understanding, 0.0, 1.0), maxf(config.clarity_exponent, 0.001)) if _understanding > 0.0 else 0.0
+
+
+## The per-cell layer map texture (null before a map is built).
+func layer_texture() -> ImageTexture:
+	return _layer_texture
+
+
+## The CPU image behind the layer map texture (null before a map is built).
+func layer_image() -> Image:
+	return _layer_image
 
 
 ## Number of lights the shader currently loops over (player light included).
@@ -160,6 +195,7 @@ func _on_map_built(map: MapData) -> void:
 	_visibility = GlyphVisibilityMap.new()
 	_visibility.setup(map, config.occlusion_blend_time)
 	_player_vis_cell = Vector2i(-1000000, -1000000)
+	_rebuild_layer_map()
 	apply_static()
 
 
@@ -170,6 +206,79 @@ func _on_player_spawned(_world_position: Vector3) -> void:
 ## Cells were seen: the set of known static lights may have changed.
 func _on_cells_seen() -> void:
 	_dirty = true
+
+
+func _on_understanding_changed(_language: StringName, understanding: float) -> void:
+	_understanding = understanding
+	_apply_clarity()
+
+
+func _apply_clarity() -> void:
+	if material == null:
+		return
+	material.set_shader_parameter(&"clarity", clarity())
+	material.set_shader_parameter(&"layer_params", Vector2(_layer_height, float(config.layer_ray_samples)))
+	if _layer_texture != null:
+		material.set_shader_parameter(&"layer_map", _layer_texture)
+
+
+func _on_object_moved(_object_id: int, _from_cell: Vector2i, _to_cell: Vector2i, _form: StringName) -> void:
+	_rebuild_layer_map()
+
+
+## Per map cell: r = (order * LAYER_TYPES + surface type) / LAYER_CODE of its box (0 = none), g = box height /
+## _layer_height, b = box half extent * 2 (cell fraction), a = 1 within layer_reach_cells of a box.
+func _rebuild_layer_map() -> void:
+	if _map == null or map_loader == null or map_loader.world_config == null:
+		return
+	var world: WorldConfig = map_loader.world_config
+	var size := Vector2i(maxi(_map.width, 1), maxi(_map.height, 1))
+	var boxes: Dictionary[Vector2i, Vector3] = {}   # cell -> (type, height, half extent)
+	var spike_half: float = 0.5 - 0.5 / float(world.spike_pyramid_grid) + world.spike_pyramid_half
+	var corrupt_half: float = 0.5 - 0.5 / float(world.corrupt_grid) + world.corrupt_column_half
+	for y in _map.height:
+		for x in _map.width:
+			var c := Vector2i(x, y)
+			match _map.type_at(c):
+				MapLegend.ITEM:
+					boxes[c] = Vector3(GlyphSurfaceType.ITEM, world.item_pillar_height, world.item_pillar_half)
+				MapLegend.SPIKES:
+					boxes[c] = Vector3(GlyphSurfaceType.SPIKES, world.spike_pyramid_height, spike_half)
+				MapLegend.CORRUPT:
+					var ch: float = WorldMeshBuilder.corruption_height(c, world)
+					if ch > 0.0:
+						boxes[c] = Vector3(GlyphSurfaceType.CORRUPT, ch, corrupt_half)
+	if pushables != null:
+		for id in pushables.count():
+			boxes[pushables.cell_of(id)] = Vector3(GlyphSurfaceType.WALL, world.object_height, world.object_size_ratio * 0.5)
+	_layer_height = maxf(maxf(world.item_pillar_height, world.spike_pyramid_height),
+			maxf(world.corrupt_column_min + world.corrupt_column_span, world.object_height))
+	if _layer_image == null or _layer_image.get_size() != size:
+		_layer_image = Image.create_empty(size.x, size.y, false, Image.FORMAT_RGBA8)
+	_layer_image.fill(Color(0.0, 0.0, 0.0, 0.0))
+	var reach: int = config.layer_reach_cells
+	for c: Vector2i in boxes:
+		var box: Vector3 = boxes[c]
+		var order: int = config.layer_order[int(box.x)] if int(box.x) < config.layer_order.size() else 0
+		if order <= 0:
+			continue
+		for dy in range(-reach, reach + 1):
+			for dx in range(-reach, reach + 1):
+				var n := Vector2i(c.x + dx, c.y + dy)
+				if n.x < 0 or n.y < 0 or n.x >= size.x or n.y >= size.y:
+					continue
+				var px: Color = _layer_image.get_pixelv(n)
+				px.a = 1.0
+				_layer_image.set_pixelv(n, px)
+		if c.x < 0 or c.y < 0 or c.x >= size.x or c.y >= size.y:
+			continue
+		var code: float = float(order * LAYER_TYPES + int(box.x)) / LAYER_CODE
+		_layer_image.set_pixelv(c, Color(code, clampf(box.y / _layer_height, 0.0, 1.0), clampf(box.z * 2.0, 0.0, 1.0), 1.0))
+	if _layer_texture == null or Vector2i(_layer_texture.get_size()) != size:
+		_layer_texture = ImageTexture.create_from_image(_layer_image)
+	else:
+		_layer_texture.update(_layer_image)
+	_apply_clarity()
 
 
 ## Picks the nearest known static lights and gives each a slot (a new light fades in from 0).

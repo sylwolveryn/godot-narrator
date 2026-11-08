@@ -1,12 +1,13 @@
 [gd_resource type="Resource" script_class="MenuConfig" format=3]
 
-[ext_resource type="Script" path="res://scripts/core/menu_item_def.gd" id="1_h74dy"]
-[ext_resource type="Resource" path="res://resources/config/menu_items/switch_form.tres" id="2_m1lex"]
-[ext_resource type="Resource" path="res://resources/config/menu_items/remember.tres" id="3_rd1ul"]
-[ext_resource type="Resource" path="res://resources/config/menu_items/close.tres" id="4_vo6j5"]
-[ext_resource type="Script" path="res://scripts/core/menu_config.gd" id="5_v444t"]
+[ext_resource type="Script" path="res://scripts/core/menu_item_def.gd" id="1_m1lex"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/switch_form.tres" id="2_rd1ul"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/remember.tres" id="3_vo6j5"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/language.tres" id="4_v444t"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/close.tres" id="5_o672j"]
+[ext_resource type="Script" path="res://scripts/core/menu_config.gd" id="6_m6gvc"]
 
 [resource]
-script = ExtResource("5_v444t")
-items = Array[ExtResource("1_h74dy")]([ExtResource("2_m1lex"), ExtResource("3_rd1ul"), ExtResource("4_vo6j5")])
+script = ExtResource("6_m6gvc")
+items = Array[ExtResource("1_m1lex")]([ExtResource("2_rd1ul"), ExtResource("3_vo6j5"), ExtResource("4_v444t"), ExtResource("5_o672j")])
 font_names = PackedStringArray("Consolas", "Lucida Console", "Courier New", "monospace")

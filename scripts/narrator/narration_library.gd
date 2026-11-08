@@ -23,7 +23,10 @@ var _missing: Dictionary[String, bool] = {}
 func _ready() -> void:
 	if config == null:
 		config = NarrationLibraryConfig.new()
+	# The language changes at run time (task-065); keep the shared resource untouched.
+	config = config.duplicate() as NarrationLibraryConfig
 	_load_missing()
+	SignalBus.language_selected.connect(set_language)
 	if database != null:
 		database.tables_loaded.connect(_on_tables_loaded)
 		_on_tables_loaded(database.tables)
@@ -31,6 +34,14 @@ func _ready() -> void:
 
 func language() -> StringName:
 	return config.language
+
+
+## Switches the narration language: from now on events read <EVENT>_<language> files.
+func set_language(language: StringName) -> void:
+	if language == &"" or language == config.language:
+		return
+	config.language = language
+	clear_cache()
 
 
 ## The game's own folder: next to the executable in an exported build, the project folder in dev runs.

@@ -80,6 +80,8 @@ extends Resource
 @export var overlay_layer: int = 25
 @export var font_names: PackedStringArray = PackedStringArray(["Consolas", "Cascadia Mono", "Courier New", "monospace"])
 @export var font_size: int = 60
+## Fonts tried, in order, for characters the main font lacks (CJK and emoji stand-ins of the obfuscation).
+@export var fallback_font_names: PackedStringArray = PackedStringArray(["Yu Gothic", "MS Gothic", "Microsoft YaHei", "Segoe UI Symbol", "Segoe UI Emoji"])
 @export var text_color: Color = Color("#EAF2FF")
 @export var outline_color: Color = Color(0.012, 0.016, 0.035, 0.95)
 @export var outline_size: int = 16
@@ -135,6 +137,8 @@ extends Resource
 @export var world_ghost_alpha: float = 0.7
 @export var world_glitch_hz: float = 7.0
 @export_range(0.0, 1.0) var world_glitch_share: float = 0.12
+## Share kept at full understanding (the glitch share falls from world_glitch_share at 0% to this at 100%).
+@export_range(0.0, 1.0) var world_glitch_min_share: float = 0.03
 @export var world_jitter_px: float = 6.0
 @export var glitch_glyphs: String = "#%&@$*+=?!/|<>~^01"
 ## Own lines: the character's own glyph colour (PlayerConfig.glyph_color when the overlay has it, else this). Words the
@@ -150,6 +154,30 @@ extends Resource
 ## Narrator lines keep text_color and the mood glow, pulled towards a gloomy blue by narrator_glow_tint.
 @export var narrator_glow_color: Color = Color("#5B8CFF")
 @export_range(0.0, 1.0) var narrator_glow_tint: float = 0.55
+
+@export_group("Obfuscation")
+## Narrator and world lines (never own lines) by understanding of the selected language (task-067). Every character has
+## a threshold between obf_found_min and obf_found_max (hashed from the character, case-insensitive): from that
+## understanding on it is always shown right, in every word. Below that it is a stand-in:
+##   understanding < obf_spin_start: a stable stand-in from obf_static_glyphs (the first obfuscated version);
+##   < obf_near_start: it spins through obf_wild_glyphs (symbols, CJK, emoji);
+##   above: it spins through characters near the right one (distance shrinking from obf_near_max_dist), showing the
+##   right one more and more often as the threshold comes closer.
+@export_range(0.0, 1.0) var obf_found_min: float = 0.45
+@export_range(0.0, 1.0) var obf_found_max: float = 0.92
+@export_range(0.0, 1.0) var obf_spin_start: float = 0.10
+@export_range(0.0, 1.0) var obf_near_start: float = 0.30
+## Stand-in changes per second while spinning.
+@export var obf_spin_hz: float = 6.0
+@export var obf_static_glyphs: String = "őŐűŰøØ.¤§þÞðÐ"
+@export var obf_wild_glyphs: String = "HXxó+ˇ3{8}#@%&¥ж字書夢光闇の気ア◊☼♠✦✧🌀👁🔥💀"
+## Code point distance of the near stand-ins at obf_near_start (shrinks to 1 at the threshold).
+@export var obf_near_max_dist: int = 12
+## Words with unresolved characters pulse: a slow wave runs along them (reference px, Hz, phase per letter, alpha dip).
+@export var obf_wave_px: float = 6.0
+@export var obf_wave_hz: float = 0.6
+@export var obf_wave_letter_phase: float = 0.6
+@export_range(0.0, 1.0) var obf_wave_alpha: float = 0.25
 
 @export_group("Audio")
 @export var sfx_volume_db: float = -14.0

@@ -84,6 +84,13 @@ func commit_progress() -> void:
 	save_progress()
 
 
+## Marks progress changed by its owner without writing at once (frequent small changes, e.g. the language step
+## counter); the next save (run end, quit or a commit) writes it.
+func mark_dirty() -> void:
+	_dirty = true
+	progress_changed.emit()
+
+
 ## Writes the progress only when something changed since the last write.
 func save_if_dirty() -> void:
 	if _dirty and config != null:
@@ -214,6 +221,15 @@ func _sanitized(loaded: PersistentProgress) -> PersistentProgress:
 		var count: Variant = loaded.strike_counts[key]
 		if (key is StringName or key is String) and count is int:
 			clean.strike_counts[String(key)] = maxi(0, count)
+	# Language (task-065): only types are fixed here; LanguageProgress clamps, drops unknown ids and fills defaults.
+	for key: Variant in loaded.language_understanding:
+		var percent: Variant = loaded.language_understanding[key]
+		if (key is StringName or key is String) and (percent is float or percent is int):
+			clean.language_understanding[String(key)] = float(percent)
+	clean.selected_language = loaded.selected_language
+	clean.unlocked_languages = _unique(loaded.unlocked_languages)
+	clean.discovered_types = _unique(loaded.discovered_types)
+	clean.language_step_remainder = maxi(0, loaded.language_step_remainder)
 	for key: Variant in loaded.revealed_cells:
 		var cells: Variant = loaded.revealed_cells[key]
 		if (key is StringName or key is String) and cells is PackedVector2Array:

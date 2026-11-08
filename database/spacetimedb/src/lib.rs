@@ -188,7 +188,8 @@ pub struct ConfigVersion {
 
 const SINGLETON_ID: u32 = 1;
 const FULL_UNDERSTANDING: f32 = 100.0;
-const DEFAULT_LANGUAGE: &str = "EN_GB";
+/// A new game starts with no understanding of any language (task-065); the game pushes its saved values on load.
+const SEED_UNDERSTANDING: f32 = 0.0;
 
 const SEED_EVENTS: &[(&str, &str)] = &[
     ("RUN_STARTED", "A new run begins"),
@@ -343,7 +344,7 @@ fn seed(ctx: &ReducerContext) {
             });
         }
         if ctx.db.player_language().language().find(id.to_string()).is_none() {
-            let understanding = if *id == DEFAULT_LANGUAGE { FULL_UNDERSTANDING } else { 0.0 };
+            let understanding = SEED_UNDERSTANDING;
             ctx.db.player_language().insert(PlayerLanguage {
                 language: id.to_string(),
                 understanding,

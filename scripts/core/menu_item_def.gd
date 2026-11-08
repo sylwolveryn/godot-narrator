@@ -9,6 +9,8 @@ const ACTION_CLOSE: StringName = &"close"
 const ACTION_SWITCH_FORM: StringName = &"switch_form"
 ## Shows the origin ledger as a row of sigils (task-043); handled by MenuController itself, nothing is requested upward.
 const ACTION_REMEMBER: StringName = &"remember"
+## Shows the Language list (task-065); handled by MenuController, which asks LanguageProgress through SignalBus.
+const ACTION_LANGUAGE: StringName = &"language"
 
 @export var id: StringName = &""
 @export var action: StringName = ACTION_CLOSE

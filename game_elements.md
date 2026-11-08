@@ -47,7 +47,7 @@ camera:   Q / E rotate
 
 - Menu (in-world, unlocks after some deaths): Tab or gamepad Start.
   - Nav: W/S or arrows. Confirm: Enter / Space / gamepad A.
-  - Items: switch form (one <-> many), "remember" (origin ledger).
+  - Items: switch form (one <-> many), "remember" (origin ledger), "language" (pick language).
 - Intro skip: Esc, Space, mouse click, gamepad A / Start.
 - Fullscreen: F11 or Alt+Enter.
 - No wall cut-away: if a wall hides you, rotate / zoom.
@@ -106,6 +106,23 @@ camera:   Q / E rotate
   - dev: override = `override/` in project (`override/narration/event/RUN_STARTED_EN_GB.mp3` = read 1st, `narration/event/RUN_STARTED_EN_GB.mp3` = read 2nd)
 - Missing file -> `logs/missing-narrations.json` (`{"errors": [...]}`, no duplicates) + DB `missing_narration`.
 - Beat logic: `data/narration/*.json` -> `tools/build_narration.gd` -> `.tres`.
+
+## Language (understanding)
+- Core progress meter. Per save. New game = English (EN_GB) 0%, selected.
+- Gains go to SELECTED language, max 100%:
+  - +1% per 20 tiles walked
+  - +1% per death (run end)
+  - +3% first time ever a new cell type seen (floor, wall, item, spikes, corrupt, object, gargoyle...). Void never.
+- Unlock: open menu "language" while selected >= 60% -> next language unlocks at 1% + small glyph storm. One per opening.
+  - Order: HU_HU, ALIEN, MATRIX, DREAM, DE_DE, RU_RU, JP_HAN, JP_KANA.
+- Menu "language": list "English 37%" per unlocked language + "back". Confirm = select (narration language), menu closes.
+- Code: `LanguageProgress` (only writer) + `resources/config/language_config.tres` (all numbers).
+- Signals: language_understanding_changed (0..1), language_selected, language_unlocked.
+- DB `player_language` mirrors the save (pushed on load and each whole % change). God "Start new game" -> 0%.
+- Look follows the selected language's understanding (task-066):
+  - World: 0% = old look (glyph grids of floor / hazards / props interleave). Rising % = more glyph cells drawn "layered": one whole glyph per screen cell, owner order floor < spikes / corruption < items / pushable objects. 100% = clean. Config `glyph_world_config` group "Layered clarity".
+  - Gargoyles: dark silhouette behind the art fades in with % (no floor glyphs in the gaps at 100%).
+  - Player glyph: < 6% hollow outline, no glow; glow (halo, crystal, sparkle) rises from 6% to today's at 100%; colour blunt at 0%, a bit more vivid at 100%. Grown body: same hollow / colour rule. Config `avatar_fx_config` group "Understanding look" (no DB columns).
 
 ## Database (SpacetimeDB, local)
 - Module: `database/spacetimedb/src/lib.rs`. DB name `database-narrator`. Server `http://127.0.0.1:3000`.

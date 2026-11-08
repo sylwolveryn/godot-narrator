@@ -72,3 +72,18 @@ signal origin_ledger_changed(alive: PackedStringArray, struck: PackedStringArray
 ## position) lift off, swirl for `duration` seconds and settle. `radius` <= 0 / `duration` <= 0 use the StormConfig defaults,
 ## `tint` with alpha 0 uses the default tint. The origin ledger's strike already starts one by itself (origin_struck).
 signal glyph_storm_requested(centre: Vector3, radius: float, duration: float, tint: Color)
+
+## Language understanding (task-065). Emitted by LanguageProgress (the only writer) whenever the understanding of the
+## selected language changes, and right after a selection or a load: `understanding` is 0..1. Presentation (world
+## clarity, player glyph, narration obfuscation) and the narration library follow it.
+signal language_understanding_changed(language: StringName, understanding: float)
+## Emitted by LanguageProgress when the selected (narration) language changes, and once after the save is loaded.
+signal language_selected(language: StringName)
+## Emitted by LanguageProgress when a new language becomes available (at 1%).
+signal language_unlocked(language: StringName)
+## Emitted by MenuController right before it shows the Language list; LanguageProgress may unlock the next language
+## (and start a glyph storm) so the list already contains it.
+signal language_list_requested
+## Emitted by MenuController when a language was confirmed in the Language list; LanguageProgress applies it.
+signal language_select_requested(language: StringName)
+

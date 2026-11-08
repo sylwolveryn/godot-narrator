@@ -17,6 +17,9 @@ extends Node
 @export var run_manager: RunManager
 ## Read-only: decides whether "remember" is offered and what the ledger row shows (task-043).
 @export var ledger: OriginLedger
+## Read-only: the Language list (task-065) shows its unlocked languages and their understanding. Without it the
+## Language item is not offered.
+@export var language: LanguageProgress
 
 ## Presentation state of one hypothesis in the ledger row.
 const LEDGER_ALIVE: StringName = &"alive"
@@ -30,6 +33,11 @@ var _selected: int = 0
 var _offered: Array[MenuItemDef] = []
 ## True while the ledger row is shown instead of the list.
 var _ledger_shown: bool = false
+## True while the Language list is shown instead of the item list; its language ids (the back entry follows them).
+var _language_shown: bool = false
+var _language_ids: PackedStringArray = PackedStringArray()
+## Selection of the item list while a sub view is shown (restored on going back).
+var _list_selected: int = 0
 
 
 func _ready() -> void:
@@ -67,6 +75,8 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed(config.action_confirm):
 		if _ledger_shown:
 			back_to_list()
+		elif _language_shown:
+			confirm_language()
 		else:
 			confirm()
 		get_viewport().set_input_as_handled()
@@ -113,6 +123,7 @@ func open() -> bool:
 		return false
 	_open = true
 	_ledger_shown = false
+	_language_shown = false
 	_selected = 0
 	SignalBus.menu_opened.emit(current_labels(), _selected)
 	return true
@@ -123,22 +134,26 @@ func close() -> void:
 		return
 	_open = false
 	_ledger_shown = false
+	_language_shown = false
 	SignalBus.menu_closed.emit()
 
 
 func move_selection(step: int) -> void:
 	if not _open or _offered.is_empty() or _ledger_shown:
 		return
-	_select(posmod(_selected + step, _offered.size()))
+	_select(posmod(_selected + step, _page_size()))
 
 
 ## Confirms the selected item: a close item closes the menu, anything else is requested from the data layer.
 func confirm() -> void:
-	if not _open or _ledger_shown or _selected >= _offered.size():
+	if not _open or _ledger_shown or _language_shown or _selected >= _offered.size():
 		return
 	var item: MenuItemDef = _offered[_selected]
 	if item.action == MenuItemDef.ACTION_REMEMBER:
 		show_ledger()
+		return
+	if item.action == MenuItemDef.ACTION_LANGUAGE:
+		show_languages()
 		return
 	if item.action != MenuItemDef.ACTION_CLOSE:
 		SignalBus.menu_action_requested.emit(item.action)
@@ -159,12 +174,54 @@ func show_ledger() -> void:
 	SignalBus.menu_ledger_shown.emit(ledger_entries())
 
 
-## Leaves the ledger row and shows the list again with "remember" selected.
+## Leaves the ledger row or the Language list and shows the item list again with its item selected.
 func back_to_list() -> void:
-	if not _open or not _ledger_shown:
+	if not _open or not (_ledger_shown or _language_shown):
 		return
+	if _language_shown:
+		_language_shown = false
+		_selected = _list_selected
 	_ledger_shown = false
 	SignalBus.menu_opened.emit(current_labels(), _selected)
+
+
+## True while the Language list is shown.
+func is_language_shown() -> bool:
+	return _language_shown
+
+
+## Shows the Language list (task-065): asks the data layer first (it may unlock the next language), then lists one
+## entry per unlocked language plus the back entry, with the selected language highlighted.
+func show_languages() -> void:
+	if not _open or _ledger_shown or _language_shown or language == null:
+		return
+	SignalBus.language_list_requested.emit()
+	_list_selected = _selected
+	_language_shown = true
+	_language_ids = language.unlocked_languages().duplicate()
+	_selected = maxi(0, _language_ids.find(String(language.selected_language())))
+	SignalBus.menu_opened.emit(language_labels(), _selected)
+
+
+## The Language list text: "English 37%" per unlocked language, then the back entry.
+func language_labels() -> PackedStringArray:
+	var labels := PackedStringArray()
+	if language != null:
+		labels = language.entry_labels()
+	labels.append(config.language_back_label)
+	return labels
+
+
+## Confirms the selected Language entry: a language is requested from the data layer and the menu closes; the back
+## entry returns to the item list.
+func confirm_language() -> void:
+	if not _open or not _language_shown:
+		return
+	if _selected >= _language_ids.size():
+		back_to_list()
+		return
+	SignalBus.language_select_requested.emit(StringName(_language_ids[_selected]))
+	close()
 
 
 ## One entry per hypothesis, in the ledger's order, read from the ledger's public API.
@@ -202,6 +259,8 @@ func _available_items() -> Array[MenuItemDef]:
 			continue
 		if item.requires_claim and (ledger == null or not ledger.any_claim_heard()):
 			continue
+		if item.action == MenuItemDef.ACTION_LANGUAGE and language == null:
+			continue
 		out.append(item)
 	return out
 
@@ -215,11 +274,19 @@ func _check_unlock() -> void:
 
 
 func _on_item_pointed(index: int, activate: bool) -> void:
-	if not _open or index < 0 or index >= _offered.size():
+	if not _open or _ledger_shown or index < 0 or index >= _page_size():
 		return
 	_select(index)
 	if activate:
-		confirm()
+		if _language_shown:
+			confirm_language()
+		else:
+			confirm()
+
+
+## Entries of the page shown right now (the item list, or the Language list with its back entry).
+func _page_size() -> int:
+	return _language_ids.size() + 1 if _language_shown else _offered.size()
 
 
 func _on_run_started(_run_index: int) -> void:

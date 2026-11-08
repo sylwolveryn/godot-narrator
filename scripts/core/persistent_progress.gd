@@ -30,3 +30,14 @@ extends Resource
 @export var strike_counts: Dictionary = {}
 ## Persistent run number (run_count) of the last strike; 0 = never. Enforces the per-run strike cap.
 @export var last_strike_run: int = 0
+## Language understanding (task-065). Written ONLY by LanguageProgress.
+## Language id (String) -> understanding in percent (float, 0..LanguageConfig.max_percent).
+@export var language_understanding: Dictionary = {}
+## The selected (narration) language id. Empty = not set yet (a new save; LanguageProgress fills the defaults).
+@export var selected_language: String = ""
+## Language ids available in the Language menu, in unlock order.
+@export var unlocked_languages: PackedStringArray = PackedStringArray()
+## Cell types (MapLegend names) ever discovered; the first discovery of a type gives understanding once.
+@export var discovered_types: PackedStringArray = PackedStringArray()
+## Cells walked since the last step gain (0..LanguageConfig.tiles_per_percent - 1).
+@export var language_step_remainder: int = 0

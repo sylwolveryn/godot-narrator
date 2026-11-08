@@ -514,7 +514,7 @@ func _build_atlas() -> void:
 				for ch in h.sigil:
 					_add_slot(glyphs, ch)
 	for text in [config.frame_corner, config.frame_horizontal, config.frame_vertical, config.marker_left, config.marker_right,
-			config.floor_source_glyphs, config.wall_source_glyphs, " "]:
+			config.floor_source_glyphs, config.wall_source_glyphs, " ", config.language_back_label, config.extra_glyphs]:
 		for ch in text:
 			_add_slot(glyphs, ch)
 	var cols: int = ceili(sqrt(float(glyphs.size())))

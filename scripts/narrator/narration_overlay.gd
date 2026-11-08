@@ -11,6 +11,10 @@ extends CanvasLayer
 ## swap to glitch glyphs); OWN lines take the player's glyph colour, their not-understood words keep switching
 ## between the real word and a scrambled one (share = 1 - understanding) and a few letters glitch lightly; NARRATOR
 ## lines keep the look above. World and own lines redraw every frame while on screen (a few seconds).
+## Obfuscation (task-067): narrator and world lines (not own lines) are obfuscated by the understanding of the selected
+## language, character by character (NarratorConfig obf_*): stable stand-ins, then wild spinning, then near
+## characters converging, and a character past its threshold is always right. Words still holding stand-ins pulse in
+## a slow wave. Such lines redraw every frame while on screen.
 ## Cost: two canvas items redrawn only while a morph runs (about 3 batched passes: glow quads, outlines, fills),
 ## nothing allocated per frame; a doubt line also redraws every frame while it rests, for the few seconds it is on
 ## screen. Pure presentation: it listens to the Narrator and never writes data.
@@ -65,6 +69,9 @@ var _word_of: PackedInt32Array = PackedInt32Array()
 var _broken: PackedByteArray = PackedByteArray()
 var _word_phase: PackedFloat32Array = PackedFloat32Array()
 var _alt: PackedStringArray = PackedStringArray()
+## Obfuscation: per letter whether its word still holds an unresolved character, and whether any letter does.
+var _word_unfound: PackedByteArray = PackedByteArray()
+var _has_unfound: bool = false
 
 
 func _ready() -> void:
@@ -76,6 +83,13 @@ func _ready() -> void:
 	_font = SystemFont.new()
 	_font.font_names = config.font_names
 	_font.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+	var fallbacks: Array[Font] = []
+	for font_name in config.fallback_font_names:
+		var fallback := SystemFont.new()
+		fallback.font_names = PackedStringArray([font_name])
+		fallback.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+		fallbacks.append(fallback)
+	_font.fallbacks = fallbacks
 	_glow_texture = _make_glow_texture()
 	_glow_node = Node2D.new()
 	_glow_node.name = "NarrationGlow"
@@ -132,7 +146,7 @@ func _on_beat_started(beat: NarrationBeat) -> void:
 
 ## True for layers that move while they rest (world and own lines).
 func _is_animated() -> bool:
-	return _layer != NarrationBeat.Layer.NARRATOR
+	return _layer != NarrationBeat.Layer.NARRATOR or _has_unfound
 
 
 ## Layer of the line on screen.
@@ -314,6 +328,81 @@ func _fill_layer() -> void:
 			_broken[i] = 1
 			_word_phase[i] = broken_words[w]
 		_alt[i] = scramble[_rng.randi() % scramble.length()] if scramble != "" else _chars[i]
+	_fill_obfuscation()
+
+
+## Which words still hold unresolved characters at the current understanding (narrator and world lines only).
+func _fill_obfuscation() -> void:
+	var n: int = _chars.size()
+	_word_unfound.resize(n)
+	_word_unfound.fill(0)
+	_has_unfound = false
+	if not _obfuscates():
+		return
+	var words: Dictionary[int, bool] = {}
+	for i in n:
+		if _chars[i] != " " and not is_understood(_chars[i], _understanding):
+			words[_word_of[i]] = true
+			_has_unfound = true
+	for i in n:
+		if words.has(_word_of[i]):
+			_word_unfound[i] = 1
+
+
+## True for the layers obfuscated by understanding (never own lines).
+func _obfuscates() -> bool:
+	return _layer != NarrationBeat.Layer.OWN and _understanding < 1.0
+
+
+## Understanding (0..1) from which a character is always shown right (hashed, case-insensitive).
+func threshold_of(ch: String) -> float:
+	var code: int = ch.to_lower().unicode_at(0)
+	return lerpf(config.obf_found_min, config.obf_found_max, _noise(code, 0.37))
+
+
+## True when the character is understood at `understanding` (then it never glitches, in any word).
+func is_understood(ch: String, understanding: float) -> bool:
+	return understanding >= 1.0 or understanding >= threshold_of(ch)
+
+
+## What an unresolved character shows right now (the right character once understood).
+func obfuscated(i: int) -> String:
+	var ch: String = _chars[i]
+	if ch == " " or is_understood(ch, _understanding):
+		return ch
+	var code: int = ch.unicode_at(0)
+	if _understanding < config.obf_spin_start:
+		return _pick(config.obf_static_glyphs, _noise(code * 31 + i, 1.7), ch)
+	var tick: float = floorf(_doubt_time * config.obf_spin_hz + _noise(i, 2.3) * 4.0)
+	if _understanding < config.obf_near_start:
+		return _pick(config.obf_wild_glyphs, _noise(i * 7 + code, tick), ch)
+	# Near stage: closer characters, and the right one more often, as the threshold comes closer.
+	var span: float = maxf(threshold_of(ch) - config.obf_near_start, 0.001)
+	var t: float = clampf((_understanding - config.obf_near_start) / span, 0.0, 1.0)
+	if _noise(i + 13, tick) < t:
+		return ch
+	var dist: int = maxi(1, roundi(float(config.obf_near_max_dist) * (1.0 - t)))
+	var offset: int = int(_noise(i + 29, tick) * float(2 * dist + 1)) - dist
+	if offset == 0:
+		offset = 1
+	return _near(ch, code, offset)
+
+
+static func _pick(glyphs: String, k: float, fallback: String) -> String:
+	if glyphs == "":
+		return fallback
+	return glyphs[mini(int(k * glyphs.length()), glyphs.length() - 1)]
+
+
+## A character `offset` code points away, kept inside a-z / A-Z / 0-9 for those, else any printable neighbour.
+static func _near(ch: String, code: int, offset: int) -> String:
+	var ranges: Array[Vector2i] = [Vector2i(97, 122), Vector2i(65, 90), Vector2i(48, 57)]
+	for r in ranges:
+		if code >= r.x and code <= r.y:
+			var size: int = r.y - r.x + 1
+			return String.chr(r.x + posmod(code - r.x + offset, size))
+	var other: int = code + offset
+	return String.chr(other) if other > 32 and other != 127 else ch
 
 
 ## Deterministic 0..1 noise per letter and tick (no per-frame random state).
@@ -326,7 +415,8 @@ static func _noise(i: int, tick: float) -> float:
 func _glitching(i: int) -> bool:
 	match _layer:
 		NarrationBeat.Layer.WORLD:
-			return _noise(i, floorf(_doubt_time * config.world_glitch_hz)) < config.world_glitch_share
+			var share: float = lerpf(config.world_glitch_share, config.world_glitch_min_share, _understanding)
+			return _noise(i, floorf(_doubt_time * config.world_glitch_hz)) < share
 		NarrationBeat.Layer.OWN:
 			return _noise(i, floorf(_doubt_time * config.own_glitch_hz) + 0.5) < config.own_glitch_share
 	return false
@@ -338,6 +428,10 @@ func _char_at(i: int) -> String:
 		return _chars[i]
 	if _layer == NarrationBeat.Layer.OWN and _broken[i] != 0 and sin(_word_phase[i] + _doubt_time * TAU * config.own_switch_hz) > 0.0:
 		return _alt[i]
+	if _obfuscates() and _word_unfound.size() == _chars.size():
+		var shown: String = obfuscated(i)
+		if shown != _chars[i]:
+			return shown
 	if _glitching(i):
 		var glyphs: String = config.glitch_glyphs if _layer == NarrationBeat.Layer.WORLD else config.own_scramble_glyphs
 		if glyphs != "":
@@ -430,6 +524,12 @@ func _pose() -> void:
 			var dip: float = 1.0 - config.doubt_alpha_dip * (0.5 + 0.5 * sin(w + ph.y))
 			_alpha[i] *= dip
 			_glow[i] *= dip
+		if _word_unfound.size() == _chars.size() and _word_unfound[i] != 0:
+			# Unresolved words pulse: a slow wave runs along the letters, lifting and dimming them a little.
+			var wave: float = sin(TAU * config.obf_wave_hz * _doubt_time - float(i) * config.obf_wave_letter_phase)
+			var strength: float = 1.0 - _understanding
+			_pos[i].y -= (0.5 + 0.5 * wave) * config.obf_wave_px * _scale * strength
+			_alpha[i] *= 1.0 - config.obf_wave_alpha * strength * (0.5 - 0.5 * wave)
 		if _layer == NarrationBeat.Layer.WORLD and _chars[i] != " " and _glitching(i):
 			var tick: float = floorf(_doubt_time * config.world_glitch_hz)
 			var jump := Vector2(_noise(i + 3, tick) - 0.5, _noise(i + 5, tick) - 0.5) * 2.0

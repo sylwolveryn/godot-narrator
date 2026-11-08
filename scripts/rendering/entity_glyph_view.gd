@@ -57,6 +57,20 @@ func _ready() -> void:
 	_build_instance()
 
 
+## Understanding look (task-066), set by PlayerGlyphView: hollow (1 = edge band only) and the colour grade.
+func set_understanding_look(hollow: float, saturation: float, brightness: float) -> void:
+	if _material == null:
+		return
+	_material.set_shader_parameter(&"hollow", hollow)
+	_material.set_shader_parameter(&"face_saturation", saturation)
+	_material.set_shader_parameter(&"face_brightness", brightness)
+
+
+## The body material (presentation checks).
+func body_material() -> ShaderMaterial:
+	return _material
+
+
 ## Number of body glyphs around the heart.
 func glyph_count() -> int:
 	return _layout.size() if _layout != null else 0

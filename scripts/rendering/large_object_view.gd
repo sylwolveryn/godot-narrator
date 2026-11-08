@@ -7,6 +7,10 @@ extends Node3D
 ## Reveal (like the halos and the world mesh): hidden until any cell of the footprint is seen or remembered, drawn in
 ## the def's memory tint while only remembered, fading between the looks. Animated layers (e.g. water) cycle their
 ## glyphs at the def's low anim_fps from pre-built texts (no string building at run time).
+## Layered clarity (task-066): behind its colour layers every piece has a dark silhouette "backing" label (the art with
+## every drawn or enclosed character replaced by a block, plus a wide outline), so the floor glyphs no longer show
+## through the gaps of the art. Its opacity follows the selected language's understanding
+## (SignalBus.language_understanding_changed): hidden at 0 (the old look), opaque at 1.
 ## Reads MapLoader and MapReveal; never writes data.
 
 @export var map_loader: MapLoader
@@ -17,6 +21,16 @@ extends Node3D
 const GLYPH_ASPECT_FALLBACK: float = 0.6
 ## Looks closer than this to their target snap to it.
 const LOOK_EPSILON: float = 0.002
+const SPACE: String = " "
+
+## Colour of the silhouette backing at full understanding (the scene's background colour hides the floor glyphs).
+@export var backing_color: Color = Color(0.008, 0.01, 0.018, 1.0)
+## Character drawn for every covered art cell of the backing.
+@export var backing_char: String = "█"
+## Outline of the backing label in font pixels (closes the gaps between lines and characters).
+@export_range(0, 64) var backing_outline: int = 16
+## Backing opacity = understanding ^ backing_exponent.
+@export var backing_exponent: float = 1.0
 
 
 class Piece:
@@ -24,6 +38,8 @@ class Piece:
 	var def: LargeObjectDef
 	var root: Node3D
 	var labels: Array[Label3D] = []
+	## Dark silhouette behind the colour layers (layered clarity); hidden while the clarity is 0.
+	var backing: Label3D
 	var layers: PackedStringArray = PackedStringArray()
 	## Current and target visibility (0 hidden, 1 shown) and seen fraction (0 remembered, 1 seen).
 	var vis: float = 0.0
@@ -40,11 +56,15 @@ var _pixel_sizes: Dictionary[LargeObjectDef, float] = {}
 var _anim_clock: float = 0.0
 var _fading: bool = false
 var _animating: bool = false
+## Backing opacity (0..1) from the language understanding.
+var _clarity: float = 0.0
+var _backing_texts: Dictionary[LargeObjectDef, String] = {}
 
 
 func _ready() -> void:
 	set_process(false)
 	SignalBus.run_started.connect(_on_run_started)
+	SignalBus.language_understanding_changed.connect(_on_understanding_changed)
 	if map_reveal != null:
 		map_reveal.cells_seen.connect(refresh_reveal)
 	if map_loader != null:
@@ -92,6 +112,16 @@ func piece_art_width(index: int) -> float:
 	return _base_width(piece.def) * piece.root.scale.x
 
 
+## The silhouette backing label of a piece.
+func piece_backing(index: int) -> Label3D:
+	return _pieces[index].backing
+
+
+## Current backing opacity (0..1) from the language understanding.
+func clarity() -> float:
+	return _clarity
+
+
 ## Re-reads the reveal state of every footprint and starts the fades towards it.
 func refresh_reveal() -> void:
 	for piece in _pieces:
@@ -117,6 +147,12 @@ func _on_map_built(map: MapData) -> void:
 		_pieces.append(_make_piece(placement, def))
 	# MapReveal resets its state on the same signal; read it once it has.
 	call_deferred(&"_snap_reveal")
+
+
+func _on_understanding_changed(_language: StringName, understanding: float) -> void:
+	_clarity = pow(clampf(understanding, 0.0, 1.0), maxf(backing_exponent, 0.001))
+	for piece in _pieces:
+		_apply_look(piece)
 
 
 func _on_run_started(_run_index: int) -> void:
@@ -147,30 +183,80 @@ func _make_piece(placement: LargeObjectPlacement, def: LargeObjectDef) -> Piece:
 	piece.root.scale = Vector3(float(r.size.x), float(r.size.y), 1.0)
 	var texts: Dictionary = _texts_of(def)
 	piece.layers = def.layers()
-	for i in piece.layers.size():
+	var count: int = piece.layers.size()
+	# The backing sorts behind every layer and every layer outline.
+	piece.backing = _make_label(def, "Backing", -count - 1, backing_outline, _backing_text_of(def))
+	piece.backing.visible = false
+	piece.root.add_child(piece.backing)
+	for i in count:
 		var layer: String = piece.layers[i]
-		var label := Label3D.new()
-		label.name = "Layer%d" % i
-		label.font = _font_of(def)
-		label.font_size = def.font_size
-		label.pixel_size = _pixel_size_of(def)
-		label.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
-		# Top-left aligned, placed by hand and without edge-space trimming (Label3D trims the leading / trailing spaces
-		# of every line by default, which would shift the sparse layers (eyes, water) against the stone layer).
-		label.autowrap_trim_flags = 0
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-		# Offset is in label pixels and applied in billboard space (a node offset would not turn with the camera).
-		label.offset = Vector2(-_base_width(def) * 0.5, _art_height(def)) / _pixel_size_of(def)
-		label.outline_size = def.outline_size
-		label.render_priority = i
-		label.outline_render_priority = i - piece.layers.size()
-		label.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		label.text = (texts[layer] as PackedStringArray)[0]
+		var label: Label3D = _make_label(def, "Layer%d" % i, i, def.outline_size, (texts[layer] as PackedStringArray)[0])
+		label.outline_render_priority = i - count
 		piece.root.add_child(label)
 		piece.labels.append(label)
 	piece.root.visible = false
 	return piece
+
+
+func _make_label(def: LargeObjectDef, label_name: String, priority: int, outline: int, text: String) -> Label3D:
+	var label := Label3D.new()
+	label.name = label_name
+	label.font = _font_of(def)
+	label.font_size = def.font_size
+	label.pixel_size = _pixel_size_of(def)
+	label.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+	# Top-left aligned, placed by hand and without edge-space trimming (Label3D trims the leading / trailing spaces
+	# of every line by default, which would shift the sparse layers (eyes, water) against the stone layer).
+	label.autowrap_trim_flags = 0
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	# Offset is in label pixels and applied in billboard space (a node offset would not turn with the camera).
+	label.offset = Vector2(-_base_width(def) * 0.5, _art_height(def)) / _pixel_size_of(def)
+	label.outline_size = outline
+	label.render_priority = priority
+	label.outline_render_priority = priority - 1
+	label.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	label.text = text
+	return label
+
+
+## The silhouette of the art: a cell is covered when it is drawn, or enclosed by drawn cells left and right on its
+## line AND above and below in its column (so the gaps inside the art close, the open sky around it stays open).
+func _backing_text_of(def: LargeObjectDef) -> String:
+	if _backing_texts.has(def):
+		return _backing_texts[def]
+	var lines: PackedStringArray = def.art_lines
+	var cols: int = 0
+	for line in lines:
+		cols = maxi(cols, line.length())
+	var out := PackedStringArray()
+	for r in lines.size():
+		var line: String = lines[r]
+		var row: String = ""
+		for c in line.length():
+			var covered: bool = line[c] != SPACE
+			if not covered:
+				covered = _drawn_in(line, 0, c) and _drawn_in(line, c + 1, line.length()) 						and _drawn_in_column(lines, c, 0, r) and _drawn_in_column(lines, c, r + 1, lines.size())
+			row += backing_char if covered else SPACE
+		out.append(row)
+	var text: String = "
+".join(out)
+	_backing_texts[def] = text
+	return text
+
+
+static func _drawn_in(line: String, from: int, to: int) -> bool:
+	for c in range(from, mini(to, line.length())):
+		if line[c] != SPACE:
+			return true
+	return false
+
+
+static func _drawn_in_column(lines: PackedStringArray, col: int, from: int, to: int) -> bool:
+	for r in range(from, to):
+		if col < lines[r].length() and lines[r][col] != SPACE:
+			return true
+	return false
 
 
 ## Hidden / remembered / seen of a footprint: the best state of its cells.
@@ -207,6 +293,11 @@ func _apply_look(piece: Piece) -> void:
 		var label: Label3D = piece.labels[i]
 		label.modulate = def.color_of(piece.layers[i]) * tint
 		label.outline_modulate = def.outline_color * Color(1.0, 1.0, 1.0, tint.a)
+	var back: Color = backing_color
+	back.a *= _clarity * piece.vis
+	piece.backing.visible = back.a > 0.0
+	piece.backing.modulate = back
+	piece.backing.outline_modulate = back
 
 
 func _update_animating() -> void:
