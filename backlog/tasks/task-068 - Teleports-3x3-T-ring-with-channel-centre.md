@@ -1,10 +1,11 @@
 ---
 id: TASK-068
 title: Teleports (3x3 T ring with channel centre)
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:09:00Z'
+updated_date: '2026-11-08T16:10:00Z'
 labels:
   - world
   - rendering
