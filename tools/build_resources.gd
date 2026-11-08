@@ -31,12 +31,15 @@ func _init() -> void:
 	# Multi-cell props (task-058): one LargeObjectDef per prop, registered in the legend by its type.
 	DirAccess.make_dir_recursive_absolute(DIR + LARGE_DIR)
 	ok = _save(_gargoyle_fountain(), LARGE_DIR + "gargoyle_fountain.tres") and ok
+	ok = _save(_cannon(), LARGE_DIR + "cannon.tres") and ok
 
 	var legend := MapLegend.new()
 	legend.hazards[MapLegend.SPIKES] = load(DIR + "hazard_spikes.tres") as HazardDefinition
 	legend.hazards[MapLegend.CORRUPT] = load(DIR + "hazard_corrupting.tres") as HazardDefinition
 	var gargoyle: LargeObjectDef = load(DIR + LARGE_DIR + "gargoyle_fountain.tres") as LargeObjectDef
 	legend.large_objects[gargoyle.type] = gargoyle
+	var cannon: LargeObjectDef = load(DIR + LARGE_DIR + "cannon.tres") as LargeObjectDef
+	legend.large_objects[cannon.type] = cannon
 	ok = _save(legend, "map_legend.tres") and ok
 	ok = _save(SaveConfig.new(), "save_config.tres") and ok
 	ok = _save(GlyphFxConfig.new(), "glyph_fx_config.tres") and ok
@@ -79,6 +82,9 @@ func _init() -> void:
 	# Teleports (task-068): trip timeline, camera drive, colour waves, pad look.
 	ok = _save(TeleportConfig.new(), "teleport_config.tres") and ok
 	ok = _save(DirtConfig.new(), "dirt_config.tres") and ok
+	# Interact control (task-072) and the cannon (task-073).
+	ok = _save(InteractConfig.new(), "interact_config.tres") and ok
+	ok = _save(_cannon_config(), "cannon_config.tres") and ok
 
 	quit(0 if ok else 1)
 
@@ -129,7 +135,40 @@ func _gargoyle_fountain() -> LargeObjectDef:
 		"s": "~-~=~-",
 	}
 	def.anim_fps = 5.0
+	# Task-073: a cannon ball destroys the whole fountain.
+	def.destructible = true
 	return def
+
+
+## The cannon `C` (task-073): merged like the gargoyle (1x1, 2x2 ...). No art here: CannonView draws it per facing
+## (CannonConfig.art). Solid, indestructible (balls bounce off it), low enough not to hide or shade what is behind it.
+func _cannon() -> LargeObjectDef:
+	var def := LargeObjectDef.new()
+	def.type = &"cannon"
+	def.character = "C"
+	def.height = 0.8
+	def.blocks_movement = true
+	def.blocks_sight = false
+	def.blocks_light = false
+	def.destructible = false
+	return def
+
+
+## Cannon numbers and the barrel art per screen direction (0 = right, clockwise on screen): body `(###)` on wheels
+## `o---o`, barrel `=` / `H` / `/` / `\` ending in the muzzle `O`.
+func _cannon_config() -> CannonConfig:
+	var cfg := CannonConfig.new()
+	cfg.art = [
+		PackedStringArray(["         ", "         ", "  (###)=O", "  o---o  ", "         "]),
+		PackedStringArray(["         ", "         ", "  (###)  ", "  o---o\\ ", "        O"]),
+		PackedStringArray(["         ", "         ", "  (###)  ", "  o-H-o  ", "    O    "]),
+		PackedStringArray(["         ", "         ", "  (###)  ", " /o---o  ", "O        "]),
+		PackedStringArray(["         ", "         ", "O=(###)  ", "  o---o  ", "         "]),
+		PackedStringArray(["O        ", " \\       ", "  (###)  ", "  o---o  ", "         "]),
+		PackedStringArray(["    O    ", "    H    ", "  (###)  ", "  o---o  ", "         "]),
+		PackedStringArray(["        O", "       / ", "  (###)  ", "  o---o  ", "         "]),
+	]
+	return cfg
 
 
 func _save(res: Resource, file: String) -> bool:

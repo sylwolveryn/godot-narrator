@@ -56,6 +56,8 @@ extends Resource
 @export var blocks_sight: bool = true
 ## Its cells block light (GlyphLightOcclusion).
 @export var blocks_light: bool = true
+## A cannon ball (or any Destructibles hitter) destroys it (task-073, LargeObjects). Indestructible objects make balls bounce.
+@export var destructible: bool = false
 
 
 ## Layer char of the art glyph at (col, row).

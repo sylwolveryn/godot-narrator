@@ -43,17 +43,17 @@ func set_type(cell: Vector2i, type: StringName) -> void:
 	types[cell.y * width + cell.x] = type
 
 
-## The merged prop covering a cell, null when there is none.
+## The merged prop covering a cell, null when there is none (destroyed props cover nothing).
 func large_object_at(cell: Vector2i) -> LargeObjectPlacement:
 	for placement in large_objects:
-		if placement.has_cell(cell):
+		if not placement.destroyed and placement.has_cell(cell):
 			return placement
 	return null
 
 
-## Index (into `teleports`) of the working pad whose centre is `cell`, -1 when none.
+## Index (into `teleports`) of the working (not destroyed) pad whose centre is `cell`, -1 when none.
 func teleport_at_centre(cell: Vector2i) -> int:
 	for i in teleports.size():
-		if teleports[i].centre == cell:
+		if teleports[i].centre == cell and not teleports[i].destroyed:
 			return i
 	return -1

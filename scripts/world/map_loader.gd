@@ -40,6 +40,8 @@ const DEFAULT_MATERIAL := "res://resources/glyphs/glyph_surface_material.tres"
 
 var _cells: Node3D
 var _bounds: Node3D
+## Collision body of every merged prop that blocks movement (task-073: LargeObjects switches it off when destroyed).
+var _large_bodies: Dictionary[LargeObjectPlacement, StaticBody3D] = {}
 
 
 func _ready() -> void:
@@ -220,6 +222,7 @@ func _failed(message: String) -> MapData:
 
 func _clear() -> void:
 	drawn_cells.clear()
+	_large_bodies.clear()
 	if world_mesh != null:
 		world_mesh.free()
 		world_mesh = null
@@ -272,7 +275,9 @@ func _build_geometry(map: MapData) -> void:
 	for placement in map.large_objects:
 		var def: LargeObjectDef = legend.large_def(placement.type)
 		if def != null and def.blocks_movement:
-			_cells.add_child(_make_large(placement, def))
+			var body: StaticBody3D = _make_large(placement, def)
+			_large_bodies[placement] = body
+			_cells.add_child(body)
 
 
 func _run_length(map: MapData, x: int, y: int, type: StringName) -> int:
@@ -312,6 +317,11 @@ func _make_large(placement: LargeObjectPlacement, def: LargeObjectDef) -> Static
 	body.add_to_group(&"map_large_objects")
 	body.add_child(_collision_box(Vector3(r.size.x * s, def.height, r.size.y * s)))
 	return body
+
+
+## The collision body of a merged prop (null when it has none).
+func large_body(placement: LargeObjectPlacement) -> StaticBody3D:
+	return _large_bodies.get(placement, null)
 
 
 ## World position of the centre of a cell rectangle, on the floor plane.

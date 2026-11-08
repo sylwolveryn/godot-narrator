@@ -113,13 +113,25 @@ func _build() -> void:
 
 	# Dirt walls (task-070): the only writer of the dirt state (the one destroy entry point, chunked collision, the eaten
 	# counter). Before Player and MapReveal so destroyed cells are dirt again before the run-start spawn reveals.
+	# Destructibles (task-073): the registry the owners of destructible things opt into (dirt, large props, teleports,
+	# later enemies); cannon balls query it by cell.
+	var destructibles: Node = load("res://scripts/world/destructibles.gd").new()
+	destructibles.name = "Destructibles"
+	_add(root, destructibles)
 	var dirt_cfg: DirtConfig = load(CFG + "dirt_config.tres")
 	var dirt: Node3D = load("res://scripts/world/dirt_walls.gd").new()
 	dirt.name = "DirtWalls"
 	dirt.set("config", dirt_cfg)
 	dirt.set("map_loader", loader)
 	dirt.set("save_service", save)
+	dirt.set("destructibles", destructibles)
 	_add(root, dirt)
+	# The only writer of the destroyed state of merged props (task-073); restores them at run start like the dirt.
+	var large_objects: Node = load("res://scripts/world/large_objects.gd").new()
+	large_objects.name = "LargeObjects"
+	large_objects.set("map_loader", loader)
+	large_objects.set("destructibles", destructibles)
+	_add(root, large_objects)
 
 	var rig: Node3D = load("res://scripts/rendering/camera_rig.gd").new()
 	rig.name = "CameraRig"
@@ -265,6 +277,56 @@ func _build() -> void:
 	sfx.set("voice_volume_db", library_cfg.voice_volume_db)
 	_add(root, sfx)
 
+	# Interact (task-072) and cannons (task-073). Interactables must sit after MenuController / InputDiscovery and before
+	# IntroSequence: its _input sees the press before the menu and the discovery, after the intro's skip capture.
+	var interact_cfg: InteractConfig = load(CFG + "interact_config.tres")
+	var interactables: Node = load("res://scripts/world/interactables.gd").new()
+	interactables.name = "Interactables"
+	interactables.set("config", interact_cfg)
+	interactables.set("map_loader", loader)
+	interactables.set("player", player)
+	_add(root, interactables)
+	var cannon_cfg: CannonConfig = load(CFG + "cannon_config.tres")
+	var balls: Node = load("res://scripts/world/cannon_balls.gd").new()
+	balls.name = "CannonBalls"
+	balls.set("config", cannon_cfg)
+	balls.set("map_loader", loader)
+	balls.set("destructibles", destructibles)
+	balls.set("player", player)
+	balls.set("player_config", player_cfg)
+	_add(root, balls)
+	var cannons: Node = load("res://scripts/world/cannon_system.gd").new()
+	cannons.name = "CannonSystem"
+	cannons.set("config", cannon_cfg)
+	cannons.set("map_loader", loader)
+	cannons.set("player", player)
+	cannons.set("interactables", interactables)
+	cannons.set("balls", balls)
+	_add(root, cannons)
+	var cannon_view: Node3D = load("res://scripts/rendering/cannon_view.gd").new()
+	cannon_view.name = "CannonView"
+	cannon_view.set("config", cannon_cfg)
+	cannon_view.set("cannons", cannons)
+	cannon_view.set("map_loader", loader)
+	cannon_view.set("map_reveal", reveal)
+	cannon_view.set("camera_rig", rig)
+	_add(root, cannon_view)
+	var ball_view: Node3D = load("res://scripts/rendering/cannon_ball_view.gd").new()
+	ball_view.name = "CannonBallView"
+	ball_view.set("config", cannon_cfg)
+	ball_view.set("balls", balls)
+	_add(root, ball_view)
+	var hint: Node3D = load("res://scripts/rendering/interact_hint_view.gd").new()
+	hint.name = "InteractHintView"
+	hint.set("config", interact_cfg)
+	hint.set("player", player)
+	_add(root, hint)
+	var boom: Node = load("res://scripts/world/cannon_boom_sfx.gd").new()
+	boom.name = "CannonBoomSfx"
+	boom.set("config", cannon_cfg)
+	boom.set("library", library)
+	_add(root, boom)
+
 	# Layer 20: intro veil + wave, above everything.
 	var intro: CanvasLayer = load("res://scripts/ui/intro_sequence.gd").new()
 	intro.name = "IntroSequence"
@@ -292,6 +354,7 @@ func _build() -> void:
 	_add(root, runs)
 	player.set("run_manager", runs)
 	menu.set("run_manager", runs)
+	interactables.set("run_manager", runs)
 	ink.set("run_manager", runs)
 
 	# Small pushable objects (task-019): data layer (cells, collision, pushing) and its MultiMesh presentation.
@@ -304,6 +367,7 @@ func _build() -> void:
 	pushables.set("entity", progression)
 	pushables.set("run_manager", runs)
 	_add(root, pushables)
+	balls.set("pushables", pushables)
 	var object_view: Node3D = load("res://scripts/rendering/object_glyph_view.gd").new()
 	object_view.name = "ObjectGlyphView"
 	object_view.set("pushables", pushables)
@@ -334,6 +398,7 @@ func _build() -> void:
 	teleports.set("map_loader", loader)
 	teleports.set("player", player)
 	teleports.set("run_manager", runs)
+	teleports.set("destructibles", destructibles)
 	_add(root, teleports)
 	var teleport_view: Node3D = load("res://scripts/rendering/teleport_view.gd").new()
 	teleport_view.name = "TeleportView"

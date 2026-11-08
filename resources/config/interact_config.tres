@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="InteractConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/interact_config.gd" id="1_746mp"]
+
+[resource]
+script = ExtResource("1_746mp")
+hint_font_names = PackedStringArray("Consolas", "Segoe UI Symbol", "DejaVu Sans", "monospace")

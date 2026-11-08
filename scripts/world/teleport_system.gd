@@ -6,12 +6,20 @@ extends Node
 ## the destination centre `arrival_seconds` before the end (teleport_arrived), teleport_finished at the end. After
 ## arriving (or when a pad has nowhere to go) that pad cannot fire again until the player has left its centre.
 ## The only writer of the trip state; presentation (TeleportView, PlayerGlyphView) follows the signals.
+## Destructible (task-073): working pads opt into Destructibles (kind KIND); a hit on any cell of a pad's 3x3 footprint
+## destroys it (TeleportPad.destroyed: no more trips from or to it, TeleportView draws it cracked). The run start
+## restores every destroyed pad.
+
+## Destructibles kind of a teleport pad.
+const KIND: StringName = &"teleport"
 
 @export var config: TeleportConfig
 @export var map_loader: MapLoader
 @export var player: Player
 ## Read-only source of the run phase (trips only start while playing).
 @export var run_manager: RunManager
+## Optional (task-073): the registry the pads opt into.
+@export var destructibles: Destructibles
 
 ## Destination picker; tests seed it.
 var rng := RandomNumberGenerator.new()
@@ -32,6 +40,41 @@ func _ready() -> void:
 	rng.randomize()
 	SignalBus.run_started.connect(_on_run_changed)
 	SignalBus.run_ended.connect(_on_run_changed)
+	SignalBus.run_started.connect(func(_i: int) -> void: restore_pads())
+	if destructibles != null:
+		destructibles.register(KIND, func(cell: Vector2i) -> bool: return pad_at(cell) >= 0, destroy_pad)
+
+
+## Index (MapData.teleports) of the standing working pad whose 3x3 footprint holds `cell`, -1 when none.
+func pad_at(cell: Vector2i) -> int:
+	if map_loader == null:
+		return -1
+	var pads: Array[TeleportPad] = map_loader.data.teleports
+	for i in pads.size():
+		if not pads[i].destroyed and pads[i].rect.has_point(cell):
+			return i
+	return -1
+
+
+## Destroys the working pad covering `cell` (it stops teleporting). False when there is none.
+func destroy_pad(cell: Vector2i, cause: StringName) -> bool:
+	var i: int = pad_at(cell)
+	if i < 0:
+		return false
+	var pad: TeleportPad = map_loader.data.teleports[i]
+	pad.destroyed = true
+	SignalBus.destructible_destroyed.emit(KIND, pad.rect, map_loader.rect_to_world(pad.rect), cause)
+	return true
+
+
+## Every destroyed pad works again (run start).
+func restore_pads() -> void:
+	if map_loader == null:
+		return
+	for pad in map_loader.data.teleports:
+		if pad.destroyed:
+			pad.destroyed = false
+			SignalBus.destructible_restored.emit(KIND, pad.rect)
 
 
 func _physics_process(delta: float) -> void:

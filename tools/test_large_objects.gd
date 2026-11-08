@@ -222,7 +222,12 @@ func _check_arena() -> void:
 	_check(map.has_spawn and map.type_at(map.spawn_cell) == MapLegend.SPAWN, "arena has a spawn")
 	_check(map.width >= 40 and map.width <= 50 and map.height >= 30 and map.height <= 34, "arena size %dx%d" % [map.width, map.height])
 	var sizes: Dictionary = {}
+	# The arena also holds cannons (task-073, drawn by CannonView): only the gargoyles are LargeObjectView pieces.
+	var gargoyles: int = 0
 	for p in map.large_objects:
+		if p.type != GARGOYLE:
+			continue
+		gargoyles += 1
 		sizes[p.rect.size] = true
 	for s: Vector2i in [Vector2i(1, 1), Vector2i(2, 1), Vector2i(2, 2), Vector2i(3, 2)]:
 		_check(sizes.has(s), "arena has a %dx%d gargoyle" % [s.x, s.y])
@@ -238,7 +243,7 @@ func _check_arena() -> void:
 	_check(runs.get("phase") == PHASE_PLAYING, "arena run is playing")
 	var view: Node3D = main.get_node("LargeObjectView")
 	var reveal: Node = main.get_node("MapReveal")
-	_check(view.call("piece_count") == map.large_objects.size(), "arena: one piece per gargoyle (%d vs %d)" % [view.call("piece_count"), map.large_objects.size()])
+	_check(view.call("piece_count") == gargoyles, "arena: one piece per gargoyle (%d vs %d)" % [view.call("piece_count"), gargoyles])
 	# Reveal: pieces far from the spawn are hidden, the ones in sight near it are shown.
 	var reach: float = (reveal.get("config") as RevealConfig).reveal_radius * loader.world_config.cell_size
 	for i in view.call("piece_count"):

@@ -22,3 +22,4 @@ layer_anims = Dictionary[String, String]({
 "s": "~-~=~-",
 "w": "|:|'|."
 })
+destructible = true

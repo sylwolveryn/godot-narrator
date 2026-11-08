@@ -29,6 +29,8 @@ func _init() -> void:
 	# Intro skip (task-050): swallowed by IntroSequence while the intro is up, so it never leaks into the game.
 	_set_action("intro_skip", [_key(KEY_ESCAPE), _key(KEY_SPACE), _mouse(MOUSE_BUTTON_LEFT), _mouse(MOUSE_BUTTON_RIGHT),
 		_button(JOY_BUTTON_A), _button(JOY_BUTTON_START)])
+	# Interact (task-072): only takes over Space / left click while an interactable is in reach (Interactables).
+	_set_action("interact", [_key(KEY_SPACE), _mouse(MOUSE_BUTTON_LEFT), _button(JOY_BUTTON_X)])
 	# Camera rotation and zoom (task-051).
 	_set_action("camera_rotate_left", [_key(KEY_Q)])
 	_set_action("camera_rotate_right", [_key(KEY_E)])

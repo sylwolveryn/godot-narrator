@@ -10,8 +10,10 @@ extends RefCounted
 ## bit1 +x, bit2 -z, bit3 +z side has no wall neighbour; side face: bit0 / bit1 = low / high end of the face is a
 ## free corner), COLOR.b = 1 on the floor quad under a wall (the shader samples wall-region light data there).
 ## COLOR.a marks dirt (task-070): 1 = not dirt, DIRT_MARK = a dirt block of a chunk mesh (cell from UV), DIRT_LOOSE = a
-## crumbling dirt block drawn alone (cell from the instance origin). Dirt cells get only their floor quad in the world
-## mesh; their blocks live in chunk meshes (build_dirt_chunk) so destroying a cell rebuilds one chunk, not the world.
+## crumbling dirt block drawn alone (cell from the instance origin). Dirt cells get nothing in the world mesh (task-071:
+## a 200 x 200 dirt field would otherwise draw 40,000 never-culled floor quads under the blocks); their blocks, and the
+## floor of a destroyed dirt cell, live in chunk meshes (build_dirt_chunk), so destroying a cell rebuilds one chunk, not
+## the world, and off-screen chunks are culled.
 
 ## Triangle vertex order of a quad (a, b, c, d).
 const QUAD_ORDER: Array[int] = [0, 1, 2, 0, 2, 3]
@@ -57,7 +59,7 @@ func build(map: MapData, config: WorldConfig) -> ArrayMesh:
 		for x in map.width:
 			_cell = Vector2i(x, y)
 			var type: StringName = map.type_at(_cell)
-			if type == MapLegend.VOID:
+			if type == MapLegend.VOID or type == MapLegend.DIRT:
 				continue
 			_under_wall = type == MapLegend.WALL
 			_edge_bits = 0
@@ -115,14 +117,21 @@ func build_object(config: WorldConfig) -> ArrayMesh:
 
 ## Mesh of the dirt blocks inside `rect` (task-070): a wall-high block per DIRT cell with its top and the side faces that
 ## look onto a cell that is neither wall nor dirt (faces between solid cells are never drawn). Top edge bits mark the
-## open sides (rims). Null when the rect holds no dirt. Cost ~ cells of the rect; a full 16 x 16 chunk is 256 tops.
-func build_dirt_chunk(map: MapData, rect: Rect2i, config: WorldConfig) -> ArrayMesh:
+## open sides (rims). A cell of `floor_cells` (the home dirt cells of the map) that is no longer dirt gets its floor
+## quad here: the world mesh leaves dirt cells out (task-071). Null when the rect draws nothing. Cost ~ cells of the
+## rect; a full 16 x 16 chunk is 256 tops.
+func build_dirt_chunk(map: MapData, rect: Rect2i, config: WorldConfig, floor_cells: Dictionary = {}) -> ArrayMesh:
 	_begin(config)
 	_alpha = DIRT_MARK
 	for y in range(rect.position.y, rect.end.y):
 		for x in range(rect.position.x, rect.end.x):
 			_cell = Vector2i(x, y)
 			if map.type_at(_cell) != MapLegend.DIRT:
+				if floor_cells.has(_cell):
+					_alpha = NOT_DIRT
+					_edge_bits = 0
+					_floor()
+					_alpha = DIRT_MARK
 				continue
 			var s: float = _config.cell_size
 			var o: Vector3 = _origin() + Vector3(s, 0, s) * 0.5

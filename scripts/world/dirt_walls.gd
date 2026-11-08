@@ -5,19 +5,24 @@ extends Node3D
 ## it is floor. The ONE entry point is `destroy(cell, cause)`, reached through SignalBus.dirt_destroy_requested (the
 ## player eats a cell it pushes into; later a cannon ball). Destroyed cells become dirt again at every run start.
 ##
-## Scales to large maps (a 200x200 map of ~39,000 D cells): collision lives in square chunks (DirtConfig.chunk_size), one
-## StaticBody3D per chunk with one box per horizontal run of dirt in it; destroying a cell rebuilds only the boxes of its
-## chunk (<= chunk_size rows). No per-frame work at all.
+## Scales to large maps (a 200x200 map of ~39,000 D cells): collision lives in strips (one row of a square chunk of
+## DirtConfig.chunk_size), one StaticBody3D per strip with one box per horizontal run of dirt in it; destroying a cell
+## rebuilds only the boxes of its strip. No per-frame work at all.
 ##
 ## Eating (cause CAUSE_EATEN) counts in the save (PersistentProgress.walls_eaten), fires WALL_EATEN every time and
 ## WALLS_DEVOURED when the counter reaches the next milestone (a random gap in [milestone_min, milestone_max], re-rolled
 ## after each milestone, stored as next_devour_at).
 
 const CAUSE_EATEN: StringName = &"eaten"
+## Destructibles kind of dirt (task-073).
+const KIND: StringName = &"dirt"
 
 @export var config: DirtConfig
 @export var map_loader: MapLoader
 @export var save_service: SaveService
+## Optional (task-073): the registry dirt opts into (cannon balls destroy dirt through it; the destroy still goes
+## through SignalBus.dirt_destroy_requested).
+@export var destructibles: Destructibles
 
 ## Seedable (tests): the milestone gaps.
 var rng := RandomNumberGenerator.new()
@@ -26,7 +31,7 @@ var rng := RandomNumberGenerator.new()
 var _home: Dictionary[Vector2i, bool] = {}
 ## Destroyed home cells (floor now).
 var _destroyed: Dictionary[Vector2i, bool] = {}
-## Chunk -> its collision body (only chunks that hold dirt in the map file).
+## Strip (chunk x, row y) -> its collision body (only strips that hold dirt in the map file).
 var _bodies: Dictionary[Vector2i, StaticBody3D] = {}
 
 
@@ -35,6 +40,8 @@ func _ready() -> void:
 		config = DirtConfig.new()
 	rng.randomize()
 	SignalBus.dirt_destroy_requested.connect(destroy)
+	if destructibles != null:
+		destructibles.register(KIND, is_dirt, _destroy_requested)
 	SignalBus.run_started.connect(func(_i: int) -> void: restore())
 	if map_loader != null:
 		map_loader.map_built.connect(_on_map_built)
@@ -57,6 +64,11 @@ func home_count() -> int:
 	return _home.size()
 
 
+## Dirt cells of the map file (read-only; DirtView draws the floor of the destroyed ones).
+func home_cells() -> Dictionary[Vector2i, bool]:
+	return _home
+
+
 ## Chunk holding a cell.
 func chunk_of(cell: Vector2i) -> Vector2i:
 	var n: int = maxi(config.chunk_size, 1)
@@ -72,22 +84,33 @@ func chunk_rect(chunk: Vector2i) -> Rect2i:
 
 ## Collision boxes of a chunk (tests).
 func chunk_box_count(chunk: Vector2i) -> int:
-	var body: StaticBody3D = _bodies.get(chunk, null)
-	return body.get_child_count() if body != null else 0
+	var n: int = 0
+	var r: Rect2i = chunk_rect(chunk)
+	for y in range(r.position.y, r.end.y):
+		var body: StaticBody3D = _bodies.get(Vector2i(chunk.x, y), null)
+		n += body.get_child_count() if body != null else 0
+	return n
 
 
 ## Destroys a dirt cell: it becomes floor (collision, sight and light follow the map data at once) and
-## SignalBus.dirt_destroyed is emitted. False when the cell is not dirt.
+## SignalBus.dirt_destroyed and SignalBus.destructible_destroyed (kind KIND) are emitted. False when the cell is not dirt.
 func destroy(cell: Vector2i, cause: StringName = CAUSE_EATEN) -> bool:
 	if not is_dirt(cell):
 		return false
 	map_loader.data.set_type(cell, MapLegend.FLOOR)
 	_destroyed[cell] = true
-	_rebuild_chunk(chunk_of(cell))
+	_rebuild_strip(Vector2i(chunk_of(cell).x, cell.y))
 	SignalBus.dirt_destroyed.emit(map_loader.map_id, cell, cause)
+	SignalBus.destructible_destroyed.emit(KIND, Rect2i(cell, Vector2i.ONE), map_loader.cell_to_world(cell), cause)
 	if cause == CAUSE_EATEN:
 		_count_eaten()
 	return true
+
+
+## Destructibles hook: the request goes the one dirt way (SignalBus.dirt_destroy_requested); true when it was destroyed.
+func _destroy_requested(cell: Vector2i, cause: StringName) -> bool:
+	SignalBus.dirt_destroy_requested.emit(cell, cause)
+	return not is_dirt(cell)
 
 
 ## Every destroyed cell becomes dirt again (run start); only the chunks that changed are rebuilt.
@@ -134,25 +157,34 @@ func _on_map_built(map: MapData) -> void:
 	_bodies.clear()
 	_home.clear()
 	_destroyed.clear()
-	var chunks: Dictionary[Vector2i, bool] = {}
+	var strips: Dictionary[Vector2i, bool] = {}
 	for y in map.height:
 		for x in map.width:
 			var cell := Vector2i(x, y)
 			if map.type_at(cell) == MapLegend.DIRT:
 				_home[cell] = true
-				chunks[chunk_of(cell)] = true
-	for chunk: Vector2i in chunks:
+				strips[Vector2i(chunk_of(cell).x, y)] = true
+	for strip: Vector2i in strips:
 		var body := StaticBody3D.new()
-		body.name = "DirtChunk_%d_%d" % [chunk.x, chunk.y]
+		body.name = "DirtStrip_%d_%d" % [strip.x, strip.y]
 		body.set_meta(&"cell_type", MapLegend.DIRT)
 		add_child(body)
-		_bodies[chunk] = body
-		_rebuild_chunk(chunk)
+		_bodies[strip] = body
+		_rebuild_strip(strip)
 
 
-## Replaces a chunk's boxes: one per horizontal run of dirt cells in each of its rows.
+## Rebuilds every strip of a chunk.
 func _rebuild_chunk(chunk: Vector2i) -> void:
-	var body: StaticBody3D = _bodies.get(chunk, null)
+	var r: Rect2i = chunk_rect(chunk)
+	for y in range(r.position.y, r.end.y):
+		_rebuild_strip(Vector2i(chunk.x, y))
+
+
+## Replaces the boxes of one strip (one row of a chunk): one box per horizontal run of dirt cells. A destroyed cell only
+## changes the runs of its own row, so the physics server re-inserts 1-3 shapes of a small body (task-071: a whole-chunk
+## body re-inserted ~30 shapes per eaten cell, which cost several ms inside the physics step on the 200 x 200 field).
+func _rebuild_strip(strip: Vector2i) -> void:
+	var body: StaticBody3D = _bodies.get(strip, null)
 	if body == null:
 		return
 	for child in body.get_children():
@@ -161,20 +193,20 @@ func _rebuild_chunk(chunk: Vector2i) -> void:
 	var map: MapData = map_loader.data
 	var s: float = map_loader.world_config.cell_size
 	var h: float = map_loader.world_config.wall_height
-	var r: Rect2i = chunk_rect(chunk)
-	for y in range(r.position.y, r.end.y):
-		var x: int = r.position.x
-		while x < r.end.x:
-			if map.type_at(Vector2i(x, y)) != MapLegend.DIRT:
-				x += 1
-				continue
-			var run: int = 0
-			while x + run < r.end.x and map.type_at(Vector2i(x + run, y)) == MapLegend.DIRT:
-				run += 1
-			var shape := CollisionShape3D.new()
-			var box := BoxShape3D.new()
-			box.size = Vector3(run * s, h, s)
-			shape.shape = box
-			shape.position = Vector3((x + run * 0.5) * s, h * 0.5, (y + 0.5) * s)
-			body.add_child(shape)
-			x += run
+	var r: Rect2i = chunk_rect(Vector2i(strip.x, chunk_of(Vector2i(0, strip.y)).y))
+	var y: int = strip.y
+	var x: int = r.position.x
+	while x < r.end.x:
+		if map.type_at(Vector2i(x, y)) != MapLegend.DIRT:
+			x += 1
+			continue
+		var run: int = 0
+		while x + run < r.end.x and map.type_at(Vector2i(x + run, y)) == MapLegend.DIRT:
+			run += 1
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(run * s, h, s)
+		shape.shape = box
+		shape.position = Vector3((x + run * 0.5) * s, h * 0.5, (y + 0.5) * s)
+		body.add_child(shape)
+		x += run

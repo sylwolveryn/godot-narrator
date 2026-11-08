@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="CannonConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/cannon_config.gd" id="1_me2qr"]
+
+[resource]
+script = ExtResource("1_me2qr")
+glyph_font_names = PackedStringArray("Consolas", "Segoe UI Symbol", "DejaVu Sans", "monospace")
+art = Array[PackedStringArray]([PackedStringArray("         ", "         ", "  (###)=O", "  o---o  ", "         "), PackedStringArray("         ", "         ", "  (###)  ", "  o---o\\ ", "        O"), PackedStringArray("         ", "         ", "  (###)  ", "  o-H-o  ", "    O    "), PackedStringArray("         ", "         ", "  (###)  ", " /o---o  ", "O        "), PackedStringArray("         ", "         ", "O=(###)  ", "  o---o  ", "         "), PackedStringArray("O        ", " \\       ", "  (###)  ", "  o---o  ", "         "), PackedStringArray("    O    ", "    H    ", "  (###)  ", "  o---o  ", "         "), PackedStringArray("        O", "       / ", "  (###)  ", "  o---o  ", "         ")])
+font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")

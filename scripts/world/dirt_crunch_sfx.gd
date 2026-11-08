@@ -36,6 +36,10 @@ func _ready() -> void:
 	if _player.stream == null:
 		_player.stream = synthesize()
 	SignalBus.dirt_destroyed.connect(func(_m: StringName, _c: Vector2i, _cause: StringName) -> void: crunch())
+	# Task-073: anything else destroyed (a gargoyle, a teleport pad hit by a cannon ball) crunches too.
+	SignalBus.destructible_destroyed.connect(func(kind: StringName, _r: Rect2i, _w: Vector3, _cause: StringName) -> void:
+		if kind != DirtWalls.KIND:
+			crunch())
 
 
 ## Plays one crunch unless one played less than crunch_min_interval ago. Returns true when it played.

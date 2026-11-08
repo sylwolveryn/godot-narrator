@@ -75,6 +75,9 @@ func _ready() -> void:
 		settings.settings_changed.connect(apply_static)
 	SignalBus.dirt_destroyed.connect(_on_dirt_destroyed)
 	SignalBus.dirt_restored.connect(_on_dirt_restored)
+	SignalBus.destructible_destroyed.connect(_on_destructible_changed)
+	SignalBus.destructible_restored.connect(func(kind: StringName, rect: Rect2i) -> void:
+		_on_destructible_changed(kind, rect, Vector3.ZERO, &""))
 	if map_loader != null:
 		map_loader.map_built.connect(_on_map_built)
 		if not map_loader.data.is_empty():
@@ -243,6 +246,14 @@ func _apply_clarity() -> void:
 ## light recompute its shadows (blended, as on a cell change).
 func _on_dirt_destroyed(_map_id: StringName, cell: Vector2i, _cause: StringName) -> void:
 	_refresh_occlusion(cell, false)
+
+
+## Something else was destroyed or restored (task-073: a gargoyle's cells turned floor or back): the static lights that
+## reach its cells are re-baked. Dirt is handled by dirt_destroyed / dirt_restored.
+func _on_destructible_changed(kind: StringName, rect: Rect2i, _world: Vector3, _cause: StringName) -> void:
+	if kind == DirtWalls.KIND:
+		return
+	_refresh_occlusion(rect.get_center(), false)
 
 
 ## Destroyed dirt cells are solid again (run start): the static lights that reach them are re-baked.

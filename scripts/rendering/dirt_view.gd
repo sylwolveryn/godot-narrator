@@ -93,7 +93,7 @@ func crumbling() -> int:
 ## Rebuilds one chunk's block mesh from the map data. Returns the build time in microseconds.
 func rebuild_chunk(chunk: Vector2i) -> int:
 	var started: int = Time.get_ticks_usec()
-	var mesh: ArrayMesh = _builder.build_dirt_chunk(map_loader.data, dirt_walls.chunk_rect(chunk), map_loader.world_config)
+	var mesh: ArrayMesh = _builder.build_dirt_chunk(map_loader.data, dirt_walls.chunk_rect(chunk), map_loader.world_config, dirt_walls.home_cells())
 	var mi: MeshInstance3D = _chunks.get(chunk, null)
 	if mesh == null:
 		if mi != null:

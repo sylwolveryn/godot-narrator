@@ -5,6 +5,8 @@ extends RefCounted
 var type: StringName = &""
 ## Footprint in map cells (position = top-left cell, size = cells wide / deep).
 var rect: Rect2i = Rect2i()
+## True while the object is destroyed (task-073, LargeObjects): its cells are floor, its collision is off, it is not drawn.
+var destroyed: bool = false
 
 
 func _init(object_type: StringName = &"", footprint: Rect2i = Rect2i()) -> void:

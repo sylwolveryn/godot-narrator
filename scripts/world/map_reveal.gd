@@ -72,6 +72,8 @@ func _ready() -> void:
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.player_spawned.connect(_on_player_spawned)
 	SignalBus.dirt_destroyed.connect(_on_dirt_destroyed)
+	SignalBus.destructible_destroyed.connect(func(_k: StringName, _r: Rect2i, _w: Vector3, _c: StringName) -> void:
+		_last_position = Vector3.INF)
 	if settings != null:
 		settings.settings_changed.connect(_on_settings_changed)
 	if map_loader != null:

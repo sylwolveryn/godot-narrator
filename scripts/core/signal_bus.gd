@@ -107,3 +107,23 @@ signal dirt_destroy_requested(cell: Vector2i, cause: StringName)
 signal dirt_destroyed(map_id: StringName, cell: Vector2i, cause: StringName)
 ## Emitted by DirtWalls when every destroyed dirt cell of the map became dirt again (run start); `cells` = those cells.
 signal dirt_restored(cells: Array[Vector2i])
+
+## Interact (task-072). Emitted by Interactables when the interactable in reach of the player changes: `available`
+## false when none is in reach; `centre` its footprint centre (world, on the floor). The hint glyph follows it.
+signal interact_focus_changed(available: bool, centre: Vector3)
+## Emitted by Interactables when an interact hold starts (true) or ends (false). While it is held the press belongs to
+## the object: the player does not walk toward the cursor.
+signal interact_hold_changed(holding: bool)
+
+## Destructibles (task-073). Emitted by the owner of a destructible thing (DirtWalls, LargeObjects, TeleportSystem,
+## later the enemies) every time one was destroyed: `kind` its Destructibles kind (dirt, a large object type, teleport,
+## ...), `rect` its footprint in cells, `world_position` the footprint centre on the floor, `cause` who did it
+## (DirtWalls.CAUSE_EATEN, CannonBalls.CAUSE_CANNON, ...). Remains and effects hook in here.
+signal destructible_destroyed(kind: StringName, rect: Rect2i, world_position: Vector3, cause: StringName)
+## Emitted by the owner when a destroyed thing is back (run start; dirt uses dirt_restored instead).
+signal destructible_restored(kind: StringName, rect: Rect2i)
+## Cannon (task-073). Emitted by CannonSystem for every ball fired: the cannon's index, the muzzle (world) and the
+## ball's direction on the ground plane. The boom and the muzzle flash follow it.
+signal cannon_fired(cannon_index: int, muzzle: Vector3, direction: Vector3)
+## Emitted by CannonBalls when a ball bounced off something indestructible (world position of the bounce).
+signal cannon_ball_bounced(world_position: Vector3)

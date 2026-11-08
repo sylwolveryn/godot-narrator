@@ -39,6 +39,8 @@ class Piece:
 	var frame: Label3D
 	## Null for a broken pad.
 	var rune: Label3D
+	## Cracks drawn instead of frame and rune while a working pad is destroyed (task-073); made on the first hit.
+	var cracks: Label3D
 	var state: int = 0
 	var glow: float = 0.0
 
@@ -93,6 +95,12 @@ func _ready() -> void:
 	SignalBus.teleport_started.connect(_on_teleport_started)
 	SignalBus.teleport_arrived.connect(_on_teleport_arrived)
 	SignalBus.teleport_finished.connect(_on_teleport_finished)
+	SignalBus.destructible_destroyed.connect(func(kind: StringName, rect: Rect2i, _w: Vector3, _c: StringName) -> void:
+		if kind == TeleportSystem.KIND:
+			_refresh_pad(rect))
+	SignalBus.destructible_restored.connect(func(kind: StringName, rect: Rect2i) -> void:
+		if kind == TeleportSystem.KIND:
+			_refresh_pad(rect))
 	if map_reveal != null:
 		map_reveal.cells_seen.connect(refresh_reveal)
 	if map_loader != null:
@@ -499,10 +507,36 @@ func _footprint_state(rect: Rect2i) -> int:
 	return best
 
 
+## A pad was destroyed or restored (task-073): a destroyed pad shows cracks over its ring instead of its frame and rune.
+func _refresh_pad(rect: Rect2i) -> void:
+	for piece in _pad_pieces:
+		if piece.pad.rect != rect:
+			continue
+		if piece.cracks == null:
+			var cracked: Piece = _make_broken(piece.pad)
+			piece.cracks = cracked.frame
+			piece.cracks.get_parent().remove_child(piece.cracks)
+			cracked.root.free()
+			piece.cracks.name = "Cracks"
+			piece.root.add_child(piece.cracks)
+		piece.glow = 0.0
+		_apply_look(piece)
+
+
 func _apply_look(piece: Piece) -> void:
 	var glowing: bool = piece.glow > FORCE_SHOW_GLOW
 	piece.root.visible = piece.state != MapReveal.CellState.HIDDEN or glowing
 	if not piece.root.visible:
+		return
+	var wrecked: bool = piece.rune != null and piece.pad.destroyed
+	if piece.cracks != null:
+		piece.cracks.visible = wrecked
+		piece.frame.visible = not wrecked
+		piece.rune.visible = not wrecked
+	if wrecked:
+		var t: Color = config.memory_tint if piece.state == MapReveal.CellState.MEMORY else Color.WHITE
+		piece.cracks.modulate = config.broken_color * t
+		piece.cracks.outline_modulate = config.outline_color * Color(1.0, 1.0, 1.0, t.a)
 		return
 	var tint: Color = Color.WHITE if piece.state == MapReveal.CellState.SEEN or glowing else config.memory_tint
 	var g: float = clampf(piece.glow, 0.0, 1.0)

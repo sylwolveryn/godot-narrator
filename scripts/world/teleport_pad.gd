@@ -17,6 +17,9 @@ var cells: Array[Vector2i] = []
 var rect: Rect2i = Rect2i()
 ## True for a broken group (no channel, never teleports).
 var broken: bool = true
+## True while a working pad is destroyed (task-073, a cannon ball): it no longer teleports and is no target; the run
+## start restores it (TeleportSystem).
+var destroyed: bool = false
 ## Working pads: the centre cell, the channel character and its index in MapLegend.teleport_channels.
 var centre: Vector2i = Vector2i.ZERO
 var channel: String = ""
@@ -67,7 +70,7 @@ static func targets(pads: Array[TeleportPad], from: int) -> Array[int]:
 	var best: int = -1
 	var best_rank: int = 0
 	for pad in pads:
-		if pad.channel_index == own:
+		if pad.channel_index == own or pad.destroyed:
 			continue
 		# Distance upward from the own channel, wrapping: the smallest positive one is the next higher channel.
 		var rank: int = pad.channel_index - own
@@ -79,7 +82,7 @@ static func targets(pads: Array[TeleportPad], from: int) -> Array[int]:
 	if best < 0:
 		return out
 	for i in pads.size():
-		if pads[i].channel_index == best:
+		if pads[i].channel_index == best and not pads[i].destroyed:
 			out.append(i)
 	return out
 

@@ -11,6 +11,7 @@ extends Node3D
 ## every drawn or enclosed character replaced by a block, plus a wide outline), so the floor glyphs no longer show
 ## through the gaps of the art. Its opacity follows the selected language's understanding
 ## (SignalBus.language_understanding_changed): hidden at 0 (the old look), opaque at 1.
+## Destroyed props (task-073, LargeObjectPlacement.destroyed) are hidden until they are restored.
 ## Reads MapLoader and MapReveal; never writes data.
 
 @export var map_loader: MapLoader
@@ -65,6 +66,8 @@ func _ready() -> void:
 	set_process(false)
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.language_understanding_changed.connect(_on_understanding_changed)
+	SignalBus.destructible_destroyed.connect(func(_k: StringName, rect: Rect2i, _w: Vector3, _c: StringName) -> void: _refresh_piece_at(rect))
+	SignalBus.destructible_restored.connect(func(_k: StringName, rect: Rect2i) -> void: _refresh_piece_at(rect))
 	if map_reveal != null:
 		map_reveal.cells_seen.connect(refresh_reveal)
 	if map_loader != null:
@@ -282,8 +285,15 @@ func _step_fade(delta: float) -> void:
 	_fading = still
 
 
+## A destroyed (or restored) prop (task-073, LargeObjects): its piece hides (or shows again).
+func _refresh_piece_at(rect: Rect2i) -> void:
+	for piece in _pieces:
+		if piece.placement.rect == rect:
+			_apply_look(piece)
+
+
 func _apply_look(piece: Piece) -> void:
-	piece.root.visible = piece.vis > 0.0
+	piece.root.visible = piece.vis > 0.0 and not piece.placement.destroyed
 	if not piece.root.visible:
 		return
 	var def: LargeObjectDef = piece.def

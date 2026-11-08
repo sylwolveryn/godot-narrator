@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="LargeObjectDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/large_object_def.gd" id="1_8fqq0"]
+
+[resource]
+script = ExtResource("1_8fqq0")
+type = &"cannon"
+character = "C"
+art_lines = PackedStringArray()
+mask_lines = PackedStringArray()
+font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")
+height = 0.8
+blocks_sight = false
+blocks_light = false

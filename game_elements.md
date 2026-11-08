@@ -3,8 +3,10 @@
 ## Maps
 - Files: `data/maps/*.txt`. Map id = file name.
 - `m1_awakening.txt`: original maze, start map.
-- `m2_arena.txt`: open arena, test map for merged props.
+- `m2_arena.txt`: open arena, test map for merged props. Cannons: 1x1 at (18,24), 2x2 at (27,20). Small D patch (12-14, 23-25).
 - `m3_dirt.txt`: dirt map (40x30). `#` ring, lots of `D`, tunnels, pockets. Fully revealed, no fog, no darkness.
+- `m4_dirt_field.txt`: 200x200. `#` border, all `D`, `@` at (100,100). Default look (fog). Made by `python tools/generate_dirt_field.py`. Only walls + dirt + player.
+  - Load ~2.5 s, ~4 ms script per frame digging (dev PC). Check: `tools/test_dirt_field.gd`.
 - Pick map:
   - god window "Map" dropdown
   - run arg: `-- --map=m2_arena`
@@ -25,7 +27,8 @@
 | `o` | pushable object | - | small block | only grown form pushes; one cell per push; cell under it is floor |
 | `T` | teleport ring | none (not in DB) | 3x3 ring of T around a channel char = working pad | walkable floor; centre char (0-9 a-z A-Z) is the channel, even `o`; any other T group = broken (dim cracks, no trip); see Teleports |
 | `D` | dirt wall | none | eatable wall | blocks move, sight, light like `#`; walk into it = eaten (crumble, dust, crunch) -> floor; back each run; events WALL_EATEN, WALLS_DEVOURED |
-| `G` | gargoyle fountain | none (not in DB) | ASCII gargoyle over animated water basin | blocks movement, sight, light; def: `resources/config/large_objects/gargoyle_fountain.tres` |
+| `G` | gargoyle fountain | none (not in DB) | ASCII gargoyle over animated water basin | blocks movement, sight, light; destructible (cannon ball removes whole object); def: `resources/config/large_objects/gargoyle_fountain.tres` |
+| `C` | cannon | none (not in DB) | ASCII cannon, barrel turns | merged like G (1x1, 2x2); blocks movement only; indestructible; interact = fire; see Cannon |
 
 - `-` = no DB row listed.
 
@@ -67,13 +70,31 @@ TTT     anything else made of T = broken
 - Seed: `m3_dirt` = reveal_all, no fog, no darkness.
 
 ### Dirt `D`
-- One entry: `SignalBus.dirt_destroy_requested(cell, cause)` -> DirtWalls.destroy. Eating = cause `eaten`. Later: cannon.
-- Chunks 16x16 (DirtConfig.chunk_size): one collision body + one mesh per chunk; destroy rebuilds 1-2 chunks only.
+- One entry: `SignalBus.dirt_destroy_requested(cell, cause)` -> DirtWalls.destroy. Eating = cause `eaten`, cannon ball = `cannon`.
+- Chunks 16x16 (DirtConfig.chunk_size): one mesh per chunk (dirt blocks + floor of eaten cells; world mesh skips dirt cells); collision = one body per chunk row (strip). Destroy rebuilds 1 strip + 1-2 chunk meshes.
 - Player digs on through dirt, keeps 75% speed per cell (PlayerConfig.dig_speed_keep). No HIT_WALL for dirt.
 - Save: `walls_eaten`, `next_devour_at`. Every random 100-200 eaten -> WALLS_DEVOURED (narrator, 1 of 5 lines at random).
 - WALL_EATEN world line "Crumble, dust, destroyed" once ever.
 - Crunch: `<override>/sfx/dirt_crunch.mp3` > `<game>/sfx/...` > `res://sfx/...` > synthesized noise. Random pitch, rate-limited.
 - Numbers: `resources/config/dirt_config.tres`.
+
+### Cannon `C`
+- Stand next to it (8 cells around footprint) -> it turns away from you (smooth, 220 deg/s). You are behind it. Leave -> keeps facing.
+- Interact: tap = 1 ball. Hold > 2 s = autofire, 1/s rising to 5/s over 4 s, until release.
+- Balls: cone +-15 deg, 11 cells/s, live 100 cells then fade. Bigger cannon = bigger balls. One MultiMesh, glyph + trail.
+- Hit:
+  - destructible (D, gargoyle, teleport pad, later enemies) -> destroyed, ball gone.
+  - wall, map edge, cannon, pushable object, player -> bounce. Player never hurt.
+  - floor, spikes, corruption, items -> fly over.
+- Destroyed things come back at run start (like dirt). Teleport pad hit = cracked, no trips.
+- Sound: `sfx/cannon_boom.mp3` override, else synthesized boom. Impact = dirt crunch.
+- Numbers: `resources/config/cannon_config.tres` (CannonConfig). Code: CannonSystem (turn, fire), Cannon, CannonBalls (sim), CannonView, CannonBallView, CannonBoomSfx.
+- Signals: cannon_fired, cannon_ball_bounced.
+
+### Destructibles (generic)
+- Registry node `Destructibles`: owners register `(kind, is_at(cell), destroy(cell, cause))`. Hitters ask `kind_at` / `destroy_at`.
+- Owners: DirtWalls (`dirt`), LargeObjects (`gargoyle`, any def with `destructible`), TeleportSystem (`teleport`). Enemies (TASK-075): register same way.
+- Every destruction: `SignalBus.destructible_destroyed(kind, rect, world_position, cause)`. Restore: `destructible_restored`.
 
 ## Controls
 
@@ -82,6 +103,7 @@ movement: WASD / arrows / gamepad stick or d-pad
           hold left mouse = walk toward cursor
           camera-relative (up = up on screen)
 sprint:   hold Left Shift / gamepad L3 or RB (after 1st death)
+interact: Space / left click / gamepad X (only next to an interactable, e.g. cannon)
 camera:   Q / E rotate
           right mouse drag rotate
           mouse wheel or PgUp / PgDn zoom
@@ -91,6 +113,7 @@ camera:   Q / E rotate
   - Nav: W/S or arrows. Confirm: Enter / Space / gamepad A.
   - Items: switch form (one <-> many), "remember" (origin ledger), "language" (pick language).
 - Intro skip: Esc, Space, mouse click, gamepad A / Start.
+- Interact (Interactables): only when an interactable is in reach (hint glyph over player). Then Space / click go to it: no walking, no menu. Else old meaning. Menu open -> Space = menu confirm.
 - Fullscreen: F11 or Alt+Enter.
 - No wall cut-away: if a wall hides you, rotate / zoom.
 
@@ -192,4 +215,4 @@ Run: `python god/god.py`
 - Tests:
   - `godot --headless --max-fps 30 --path . -s tools/test_x.gd`
   - god: `python -m unittest discover -s god/tests`
-- Tasks: backlog CLI (latest TASK-070).
+- Tasks: backlog CLI (latest TASK-076).

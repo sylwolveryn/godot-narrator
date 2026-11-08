@@ -53,6 +53,8 @@ var _sprinting: bool = false
 var _sprint_glide: bool = false
 ## Velocity before this step's slide (a dirt cell eaten on contact gives the speed back, task-070).
 var _pre_slide_velocity: Vector3 = Vector3.ZERO
+## True while an interact is held (task-072): the click belongs to the object, so the pointer does not walk.
+var _interact_hold: bool = false
 
 
 func _ready() -> void:
@@ -72,6 +74,7 @@ func _ready() -> void:
 	SignalBus.menu_closed.connect(_on_menu_closed)
 	SignalBus.teleport_started.connect(_on_teleport_started)
 	SignalBus.teleport_finished.connect(_on_teleport_finished)
+	SignalBus.interact_hold_changed.connect(func(holding: bool) -> void: _interact_hold = holding)
 
 
 func _physics_process(delta: float) -> void:
@@ -222,9 +225,9 @@ func _screen_to_world(screen: Vector2) -> Vector3:
 	return Vector3(screen.x, 0.0, screen.y).rotated(Vector3.UP, yaw)
 
 
-## Direction (length 0..1) toward the cursor while the pointer action is held.
+## Direction (length 0..1) toward the cursor while the pointer action is held (and no interact holds the click).
 func _pointer_direction() -> Vector2:
-	if not Input.is_action_pressed(config.action_pointer):
+	if _interact_hold or not Input.is_action_pressed(config.action_pointer):
 		return Vector2.ZERO
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera == null:
