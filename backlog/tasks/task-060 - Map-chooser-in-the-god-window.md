@@ -1,9 +1,11 @@
 ---
 id: TASK-060
 title: Map chooser in the god window
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-08T14:07:00Z'
+updated_date: '2026-11-08T14:07:00Z'
 labels:
   - tools
 dependencies:
