@@ -1,10 +1,11 @@
 ---
 id: TASK-071
 title: Big dirt field map (200x200)
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:54:00Z'
+updated_date: '2026-11-08T17:28:00Z'
 labels:
   - world
 dependencies:
