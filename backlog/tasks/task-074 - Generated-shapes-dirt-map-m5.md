@@ -1,11 +1,11 @@
 ---
 id: TASK-074
 title: Generated-shapes dirt map (m5)
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T17:10:00Z'
-updated_date: '2026-11-08T18:55:00Z'
+updated_date: '2026-11-08T19:07:00Z'
 labels:
   - world
   - tools
@@ -24,9 +24,9 @@ A copy of the 200x200 dirt field with mathematically generated floor routes carv
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 data/maps/m5_shapes.txt: 200x200 like m4, with floor routes carved from generated shapes (golden spiral, concentric rings, at least two more such as a Lissajous curve or rose curve, radial spokes) connected to the centre spawn
-- [ ] #2 The map is produced by a reproducible generator script in tools/ (parameters in the script header), rerunnable
-- [ ] #3 Enemies of all three types placed on the routes
+- [x] #1 data/maps/m5_shapes.txt: 200x200 like m4, with floor routes carved from generated shapes (golden spiral, concentric rings, at least two more such as a Lissajous curve or rose curve, radial spokes) connected to the centre spawn
+- [x] #2 The map is produced by a reproducible generator script in tools/ (parameters in the script header), rerunnable
+- [x] #3 Enemies of all three types placed on the routes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,3 +42,9 @@ A copy of the 200x200 dirt field with mathematically generated floor routes carv
 <!-- SECTION:NOTES:BEGIN -->
 tools/generate_shapes_map.py (seed 5, params in header: plaza r5.5, golden spiral a=3 to r96 w2, rings 18/32/47/62/78/92 widths 1/2, rose r60 k3, Lissajous 86 3:2 phase pi/2, 8 spokes 18-92; diagonal steps carve the corner so routes are 4-connected; connectivity pass joins loose components). data/maps/m5_shapes.txt: 7749 walkable cells all connected to @ (100,100); 6 L, 6 R (on rings, >=25 from spawn), 6 H (>=55), 8 W (>=22), 2 O (>=40), 2 C at (97,98) and (103,102). No map_settings row: default fog look. Check: tools/test_shapes_map.gd (structure, connectivity, load ~3 s, per-frame cost).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+tools/generate_shapes_map.py (seed 5, parameters in header): m4 copy with plaza, golden spiral, 6 rings, rose (6 petals), Lissajous 3:2, 8 spokes; all 7749 floor cells connected to the spawn. Enemies: 6 L, 6 R, 6 H (>=55 cells away), 8 W; 2 black holes; 2 cannons at the spawn. Default map settings (fog). Tests: test_shapes_map.
+<!-- SECTION:FINAL_SUMMARY:END -->
