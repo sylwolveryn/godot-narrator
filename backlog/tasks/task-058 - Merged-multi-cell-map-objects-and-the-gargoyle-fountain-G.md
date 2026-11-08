@@ -1,11 +1,11 @@
 ---
 id: TASK-058
 title: Merged multi-cell map objects and the gargoyle fountain (G)
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T14:07:00Z'
-updated_date: '2026-11-08T14:24:00Z'
+updated_date: '2026-11-08T14:29:00Z'
 labels:
   - world
   - rendering
@@ -23,8 +23,8 @@ Bigger props should be authored by repeating their character in the map. Adjacen
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The map legend marks mergeable types; adjacent cells of one type merge into rectangles (non-rectangular groups split into rectangles)
-- [ ] #2 G renders as one ASCII-art gargoyle fountain scaled to its footprint, blocks movement and line of sight
+- [x] #1 The map legend marks mergeable types; adjacent cells of one type merge into rectangles (non-rectangular groups split into rectangles)
+- [x] #2 G renders as one ASCII-art gargoyle fountain scaled to its footprint, blocks movement and line of sight
 - [ ] #3 Tests cover the merging (1x1, 2x1, 2x2, L-shape)
 <!-- AC:END -->
 
