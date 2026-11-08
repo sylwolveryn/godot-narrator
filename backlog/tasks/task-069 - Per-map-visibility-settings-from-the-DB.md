@@ -1,11 +1,11 @@
 ---
 id: TASK-069
 title: Per-map visibility settings from the DB
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:44:00Z'
-updated_date: '2026-11-08T17:17:00Z'
+updated_date: '2026-11-08T17:25:00Z'
 labels:
   - world
   - database
@@ -24,10 +24,10 @@ Maps need different visibility rules: the new dirt map is fully revealed with no
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 DB table map_settings (one row per map id) holds reveal/fog/sight/light settings; editable in the god window grid
-- [ ] #2 A map without a row behaves exactly as today (fog on, reveal radius with line of sight, darkness and memory look outside the light)
-- [ ] #3 A map can start fully revealed with no fog/darkness so everything is visible all the time
-- [ ] #4 Settings are applied when the map loads and on a DB reload; tests cover default and override
+- [x] #1 DB table map_settings (one row per map id) holds reveal/fog/sight/light settings; editable in the god window grid
+- [x] #2 A map without a row behaves exactly as today (fog on, reveal radius with line of sight, darkness and memory look outside the light)
+- [x] #3 A map can start fully revealed with no fog/darkness so everything is visible all the time
+- [x] #4 Settings are applied when the map loads and on a DB reload; tests cover default and override
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,3 +45,9 @@ Maps need different visibility rules: the new dirt map is fully revealed with no
 <!-- SECTION:NOTES:BEGIN -->
 Implemented: MapSettings (scripts/world/map_settings.gd) + MapSettingsResolver (scripts/data/map_settings_resolver.gd, node in main). MapReveal / GlyphWorldView resolve on map build, begin_run and settings_changed (DB reload). New shader uniform ambient_color (default = old hardcoded value). DB table map_settings (Rust + seed.json + DbConfig.tables + god DB_TABLES/DB_PRIMARY_KEYS), seed row m3_dirt; module published locally + seed_defaults. tools/test_map_settings.gd PASS; m1 frame pixel-identical to HEAD apart from the random identity glyph.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+DB map_settings (PK map_id): reveal_all, fog_enabled, darkness_enabled, reveal_radius, line_of_sight, player_light_radius, ambient_level; missing row / negative = today's config values. MapSettingsResolver is the single owner; MapReveal and GlyphWorldView apply on map build, run start and DB reload. m3_dirt row: revealed, no fog, no darkness. Tests: test_map_settings; m1 capture matches HEAD except the random identity glyph.
+<!-- SECTION:FINAL_SUMMARY:END -->
