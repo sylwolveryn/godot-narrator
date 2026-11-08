@@ -72,6 +72,7 @@ func _ready() -> void:
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.player_spawned.connect(_on_player_spawned)
 	SignalBus.dirt_destroyed.connect(_on_dirt_destroyed)
+	SignalBus.dev_reveal_map_requested.connect(_on_dev_reveal_map_requested)
 	SignalBus.destructible_destroyed.connect(func(_k: StringName, _r: Rect2i, _w: Vector3, _c: StringName) -> void:
 		_last_position = Vector3.INF)
 	if settings != null:
@@ -223,6 +224,14 @@ func _on_player_spawned(world_position: Vector3) -> void:
 	_tracking = true
 	_last_position = world_position
 	reveal_around(world_position)
+
+
+## god's Reveal map (via DevBridge): show every cell of the loaded map now; the fresh ones are saved as remembered.
+func _on_dev_reveal_map_requested() -> void:
+	if map_loader == null or map_loader.data.is_empty():
+		return
+	reveal_all()
+	_flush()
 
 
 func _on_run_ended(_cause: StringName) -> void:

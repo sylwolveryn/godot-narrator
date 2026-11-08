@@ -293,16 +293,21 @@ class GodApp:
         threading.Thread(target=work, daemon=True).start()
 
     def _reveal(self) -> None:
+        """A running game reveals its current map live (DevBridge); otherwise the save is edited headless for the
+        map chosen in the Map box."""
+        map_name = self.ctl.map_name
+
         def run() -> None:
+            if self.ctl.is_running():
+                core.request_live_reveal(self.fps_flags)
+                raise _Note(core.REVEAL_LIVE_NOTE)
             if not self.ctl.godot:
                 raise RuntimeError("Godot not found: set GODOT_BIN")
-            ok, line = core.run_reveal_tool(self.ctl.godot, self.ctl.root)
+            ok, line = core.run_reveal_tool(self.ctl.godot, self.ctl.root, map_name)
             if not ok:
                 raise RuntimeError(line)
-            if self.ctl.is_running():
-                raise _Note(core.REVEAL_RUNNING_NOTE)
 
-        self._act_note(run, "Map revealed.")
+        self._act_note(run, "Map %s revealed in the save." % (map_name or "m1_awakening"))
 
     def _toggle_fps(self) -> None:
         """FPS / frametime / CPU / GPU graphs on or off; applies live to a running game (and to later starts)."""

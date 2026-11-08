@@ -16,12 +16,15 @@ Godot is found via the `GODOT_BIN` environment variable, else `godot` on PATH. T
   (no error if missing), then starts the game.
 - **Continue game**: disabled while the save does not exist (checked every 3 s). If the game is not running it starts it.
   If it is already running, the first click shows a warning and the second click closes and restarts it.
-- **Reveal map**: runs the headless tool `tools/dev_reveal_map.gd`, which marks every non-void cell of the M1 map
-  revealed through the game's own `SaveService`. Disabled without a save. If the game is running, restart it to see the change.
+- **Reveal map**: if the game is running, it reveals the map currently in play right away, without a restart.
+  god bumps `[commands] reveal_map` in `dev_flags.cfg` and the game's `DevBridge` autoload runs `MapReveal.reveal_all()`.
+  The new cells are saved like any other reveal. If the game is not running, it runs the headless tool
+  `tools/dev_reveal_map.gd --map=<chosen map>`, which marks every non-void cell of the map chosen in the Map box as
+  revealed through the game's own `SaveService`. Disabled only when there is neither a save nor a running game.
 
 - **FPS: on / FPS: off**: toggles the performance overlay (FPS, frametime, CPU time, GPU time with graphs, from the
   vendored [Debug Menu](https://godotengine.org/asset-library/asset/1902) addon in `addons/debug_menu`). god writes
-  `dev_flags.cfg` (`[overlay] perf=true|false`) next to the save; the game's `PerfOverlay` autoload re-reads it every
+  `dev_flags.cfg` (`[overlay] perf=true|false`) next to the save; the game's `DevBridge` autoload re-reads it every
   0.5 s, so a running game switches at once and later starts keep the setting. Once shown, F3 in the game also cycles it.
 
 - **Map** (task-060): lists `data/maps/*.txt`. Start new game / Continue game start the game on the chosen map as

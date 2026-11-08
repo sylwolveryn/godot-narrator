@@ -11,6 +11,17 @@ plain HTTP; the `god/` launcher has buttons for everything below (Database secti
     spacetime publish database-narrator --server local --yes      # build + upload the module in spacetimedb/
     spacetime sql database-narrator --server local "SELECT * FROM glyph_anim"
 
+### First time on a new machine
+
+1. Install the SpacetimeDB CLI and Rust (rustup), then add the WebAssembly target the module is built for:
+   `rustup target add wasm32-unknown-unknown`.
+2. Log the CLI in to the **local** server (the default `spacetime login` goes to maincloud, and its token is rejected
+   by the local server with `401 Invalid token: InvalidSignature`):
+   `spacetime logout` then `spacetime login --server-issued-login local`. This identity owns what it publishes, and god
+   uses it (`spacetime login show --token`) for cell edits.
+3. `spacetime start`, then publish (above). The first publish runs `init`, which seeds the default rows. Tuning
+   edited in god on another machine lives only in that machine's database and is not copied.
+
 `spacetime.json` targets the `local` server. On a schema conflict republish with `--delete-data=always`
 (wipes player data too). The module is `spacetimedb/src/lib.rs`; `src/` is the template Rust client
 (not used by the game), regenerate its bindings with

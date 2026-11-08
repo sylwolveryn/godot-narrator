@@ -19,7 +19,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 SignalBus="*res://scripts/core/signal_bus.gd"
-PerfOverlay="*res://scripts/ui/perf_overlay.gd"
+DevBridge="*res://scripts/core/dev_bridge.gd"
 
 [display]
 

@@ -17,7 +17,7 @@ DEV_FLAGS_FILE_NAME = "dev_flags.cfg"  # read live by the game's PerfOverlay aut
 HIDDEN_FIELDS = frozenset({"revealed_cells", "script"})
 CLOSE_TIMEOUT = 5.0
 POLL_MS = 3000
-REVEAL_RUNNING_NOTE = "Map revealed. The game is running: restart it to see the change."
+REVEAL_LIVE_NOTE = "Reveal sent: the running game reveals its current map now."
 
 
 # --------------------------------------------------------------------------- paths
@@ -56,30 +56,57 @@ def dev_flags_path(save: Path) -> Path:
     return save.parent / DEV_FLAGS_FILE_NAME
 
 
-def read_perf_overlay(path: Path) -> bool:
-    """True when the flag file says [overlay] perf=true. Missing or unreadable file means off."""
+def read_dev_flags(path: Path) -> dict:
+    """{'perf': bool, 'reveal_map': int} from the Godot ConfigFile flag file. Missing / unreadable: off and 0."""
+    flags = {"perf": False, "reveal_map": 0}
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
-        return False
+        return flags
     section = ""
     for line in text.splitlines():
         line = line.strip()
         if line.startswith("[") and line.endswith("]"):
             section = line[1:-1].strip()
-        elif section == "overlay" and "=" in line:
-            key, _, value = line.partition("=")
-            if key.strip() == "perf":
-                return value.strip().lower() == "true"
-    return False
+            continue
+        key, sep, value = line.partition("=")
+        if not sep:
+            continue
+        key, value = key.strip(), value.strip()
+        if section == "overlay" and key == "perf":
+            flags["perf"] = value.lower() == "true"
+        elif section == "commands" and key == "reveal_map":
+            try:
+                flags["reveal_map"] = int(value)
+            except ValueError:
+                pass
+    return flags
+
+
+def write_dev_flags(path: Path, perf: bool, reveal_map: int) -> None:
+    """Write the flag file atomically; a running game (DevBridge) picks it up within a second."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    text = "[overlay]\n\nperf=%s\n\n[commands]\n\nreveal_map=%d\n" % ("true" if perf else "false", reveal_map)
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def read_perf_overlay(path: Path) -> bool:
+    return read_dev_flags(path)["perf"]
 
 
 def write_perf_overlay(path: Path, on: bool) -> None:
-    """Write the flag file in Godot ConfigFile format; a running game picks it up within a second."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text("[overlay]\n\nperf=%s\n" % ("true" if on else "false"), encoding="utf-8")
-    os.replace(tmp, path)
+    """Switch the FPS overlay, keeping the reveal request counter."""
+    write_dev_flags(path, on, read_dev_flags(path)["reveal_map"])
+
+
+def request_live_reveal(path: Path) -> int:
+    """Ask a running game to reveal its current map: bumps the reveal_map counter. Returns the new value."""
+    flags = read_dev_flags(path)
+    value = flags["reveal_map"] + 1
+    write_dev_flags(path, flags["perf"], value)
+    return value
 
 
 def find_godot(env: Optional[dict] = None, which: Callable[[str], Optional[str]] = shutil.which) -> Optional[str]:
@@ -243,10 +270,18 @@ def spawn_spike(godot: str, root: Path, scene: str) -> None:
     _spawn_detached(spike_args(godot, root, scene), root)
 
 
-def run_reveal_tool(godot: str, root: Path) -> tuple[bool, str]:
+def reveal_tool_args(godot: str, root: Path, map_name: Optional[str] = None) -> list:
+    """Headless reveal of a save that no running game holds; the map defaults to the tool's (M1)."""
+    args = [godot, "--headless", "--path", str(root), "-s", "tools/dev_reveal_map.gd"]
+    if map_name:
+        args += ["--", MAP_ARG_PREFIX + map_name]
+    return args
+
+
+def run_reveal_tool(godot: str, root: Path, map_name: Optional[str] = None) -> tuple[bool, str]:
     flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     try:
-        r = subprocess.run([godot, "--headless", "--path", str(root), "-s", "tools/dev_reveal_map.gd"],
+        r = subprocess.run(reveal_tool_args(godot, root, map_name),
                            capture_output=True, text=True, timeout=120, creationflags=flags)
     except (OSError, subprocess.SubprocessError) as e:
         return False, "Could not run Godot: %s" % e
@@ -353,7 +388,7 @@ def ui_state(save_exists: bool, running: bool, warned: bool, godot_found: bool =
     if running and warned:
         cont = "Click again to close and restart"
         hint = "The game is already running. Click Continue again to close and restart it."
-    return UiState(save_exists, cont, save_exists, status, hint)
+    return UiState(save_exists, cont, save_exists or running, status, hint)
 
 
 # --------------------------------------------------------------------------- progress parsing

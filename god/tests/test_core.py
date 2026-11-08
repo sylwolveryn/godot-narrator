@@ -65,7 +65,7 @@ class PerfOverlayFlag(unittest.TestCase):
             p = Path(d) / "sub" / "dev_flags.cfg"
             core.write_perf_overlay(p, True)
             self.assertTrue(core.read_perf_overlay(p))
-            self.assertEqual(p.read_text(), "[overlay]\n\nperf=true\n")
+            self.assertEqual(p.read_text(), "[overlay]\n\nperf=true\n\n[commands]\n\nreveal_map=0\n")
             core.write_perf_overlay(p, False)
             self.assertFalse(core.read_perf_overlay(p))
 
@@ -74,6 +74,29 @@ class PerfOverlayFlag(unittest.TestCase):
             p = Path(d) / "dev_flags.cfg"
             p.write_text("[other]\nperf=true\n[overlay]\nperf=false\n")
             self.assertFalse(core.read_perf_overlay(p))
+
+
+class DevFlags(unittest.TestCase):
+    def test_reveal_request_bumps_and_keeps_perf(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "dev_flags.cfg"
+            core.write_perf_overlay(p, True)
+            self.assertEqual(core.request_live_reveal(p), 1)
+            self.assertEqual(core.request_live_reveal(p), 2)
+            self.assertEqual(core.read_dev_flags(p), {"perf": True, "reveal_map": 2})
+            core.write_perf_overlay(p, False)
+            self.assertEqual(core.read_dev_flags(p), {"perf": False, "reveal_map": 2})
+
+    def test_bad_counter_is_zero(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "dev_flags.cfg"
+            p.write_text("[commands]\nreveal_map=abc\n")
+            self.assertEqual(core.read_dev_flags(p)["reveal_map"], 0)
+
+    def test_reveal_tool_args_pass_map(self):
+        args = core.reveal_tool_args("godot", ROOT, "m5_shapes")
+        self.assertEqual(args[-2:], ["--", "--map=m5_shapes"])
+        self.assertNotIn("--", core.reveal_tool_args("godot", ROOT))
 
 
 class Matching(unittest.TestCase):
@@ -272,7 +295,8 @@ class UiState(unittest.TestCase):
         self.assertTrue(core.ui_state(True, False, False).continue_enabled)
 
     def test_reveal_requires_save(self):
-        self.assertFalse(core.ui_state(False, True, False).reveal_enabled)
+        self.assertFalse(core.ui_state(False, False, False).reveal_enabled)
+        self.assertTrue(core.ui_state(False, True, False).reveal_enabled)
         self.assertTrue(core.ui_state(True, True, False).reveal_enabled)
 
     def test_warning_state(self):
