@@ -1,0 +1,9 @@
+{
+	"event": "SPRINT_UNLOCKED",
+	"language": "EN_GB",
+	"lines": {
+		"sprint_world_slow": "Slow",
+		"sprint_own_moving": "I Remember now, I am, I was alive. I was moving",
+		"sprint_narrator_did_you": "Did you?"
+	}
+}

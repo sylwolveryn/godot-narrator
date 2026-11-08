@@ -86,6 +86,7 @@ func _beat_from(row: Dictionary) -> NarrationBeat:
 	beat.supports = PackedStringArray(row.get("supports", []))
 	beat.contradicts = PackedStringArray(row.get("contradicts", []))
 	beat.role = NarrationBeat.Role[str(row.get("role", "STORY"))]
+	beat.layer = NarrationBeat.Layer[str(row.get("layer", "NARRATOR"))]
 	return beat
 
 

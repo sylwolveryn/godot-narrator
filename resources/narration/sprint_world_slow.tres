@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_0kbv0"]
+
+[resource]
+script = ExtResource("1_0kbv0")
+id = "sprint_world_slow"
+text = "Slow"
+event = &"SPRINT_UNLOCKED"
+min_deaths = 1
+mood = &"static"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 26
+layer = 0

@@ -33,13 +33,29 @@ func language() -> StringName:
 	return config.language
 
 
-## Folder that overrides the bundled files.
+## The game's own folder: next to the executable in an exported build, the project folder in dev runs.
+func game_root() -> String:
+	if not OS.has_feature("template"):
+		return ProjectSettings.globalize_path("res://").trim_suffix("/")
+	return OS.get_executable_path().get_base_dir()
+
+
+## Folder that overrides the bundled files (plugin folder).
 func override_root() -> String:
 	if config.override_root != "":
 		return config.override_root
 	if not OS.has_feature("template"):
-		return ProjectSettings.globalize_path("res://")
-	return OS.get_executable_path().get_base_dir()
+		return game_root().path_join(config.dev_override_dir)
+	return game_root()
+
+
+## Understanding of the narration language as 0..1, from the DB table player_language (percent).
+func understanding() -> float:
+	if database != null:
+		for row: Variant in database.rows("player_language"):
+			if row is Dictionary and str((row as Dictionary).get("language", "")) == str(config.language):
+				return clampf(float((row as Dictionary).get("understanding", config.default_understanding)) / 100.0, 0.0, 1.0)
+	return clampf(config.default_understanding / 100.0, 0.0, 1.0)
 
 
 ## An event was triggered: resolve its files (logging what is missing) and count it in the DB.
@@ -127,15 +143,19 @@ func _text_for_event(event: StringName) -> Dictionary:
 	return _text_cache[found] as Dictionary
 
 
+## The raw file wins when it can be read (a swapped file works without a reimport); exported builds only have the
+## imported resource. An empty file gives no sound.
 func _load_audio(path: String) -> AudioStream:
+	if FileAccess.file_exists(path):
+		var bytes: PackedByteArray = FileAccess.get_file_as_bytes(path)
+		if bytes.is_empty():
+			return null
+		var stream := AudioStreamMP3.new()
+		stream.data = bytes
+		return stream
 	if path.begins_with("res://") and ResourceLoader.exists(path):
 		return load(path) as AudioStream
-	var bytes: PackedByteArray = FileAccess.get_file_as_bytes(path)
-	if bytes.is_empty():
-		return null
-	var stream := AudioStreamMP3.new()
-	stream.data = bytes
-	return stream
+	return null
 
 
 func _report_missing(event: StringName, suffix: String) -> void:
@@ -149,7 +169,9 @@ func _report_missing(event: StringName, suffix: String) -> void:
 
 
 func _missing_path() -> String:
-	return override_root().path_join(config.missing_log_path)
+	if config.override_root != "":
+		return config.override_root.path_join(config.missing_log_path)
+	return game_root().path_join(config.missing_log_path)
 
 
 func _load_missing() -> void:

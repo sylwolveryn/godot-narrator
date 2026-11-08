@@ -90,6 +90,15 @@ pub struct MovementProfile {
     pub acceleration: f32,
     /// Speed lost per second when input stops (units/s^2).
     pub deceleration: f32,
+    /// Sprint (task-063): top speed multiplier while sprint is held.
+    #[default(1.5)]
+    pub sprint_speed_mult: f32,
+    /// Sprint: acceleration multiplier while sprint is held.
+    #[default(2.0)]
+    pub sprint_accel_mult: f32,
+    /// Sprint: deceleration multiplier after a sprint until the body stops (< 1 glides).
+    #[default(0.45)]
+    pub sprint_decel_mult: f32,
 }
 
 /// Look and feel of the player avatar (one row per profile; the game reads "default").
@@ -135,10 +144,11 @@ pub struct AvatarFx {
 }
 
 /// (profile, max_speed, acceleration, deceleration)
-const SEED_MOVEMENT: &[(&str, f32, f32, f32)] = &[
-    ("default", 4.5, 14.0, 16.0),
-    ("single", 4.8, 22.0, 24.0),
-    ("grown", 5.3, 8.0, 10.0),
+/// (profile, max_speed, acceleration, deceleration, sprint_speed_mult, sprint_accel_mult, sprint_decel_mult)
+const SEED_MOVEMENT: &[(&str, f32, f32, f32, f32, f32, f32)] = &[
+    ("default", 4.5, 14.0, 16.0, 1.5, 2.0, 0.45),
+    ("single", 4.8, 22.0, 24.0, 1.5, 2.0, 0.45),
+    ("grown", 5.3, 8.0, 10.0, 1.5, 2.0, 0.45),
 ];
 
 /// Proximity glyph animation tuning per surface
@@ -203,6 +213,7 @@ const SEED_EVENTS: &[(&str, &str)] = &[
     ("ORIGIN_STRUCK", "The origin is struck"),
     ("ORIGIN_RECANTED", "The origin is recanted"),
     ("TIME", "Time passes"),
+    ("SPRINT_UNLOCKED", "First move of a run once sprint is available"),
 ];
 
 const SEED_LANGUAGES: &[(&str, &str)] = &[
@@ -364,13 +375,16 @@ fn seed(ctx: &ReducerContext) {
             });
         }
     }
-    for (profile, max_speed, acceleration, deceleration) in SEED_MOVEMENT {
+    for (profile, max_speed, acceleration, deceleration, sprint_speed, sprint_accel, sprint_decel) in SEED_MOVEMENT {
         if ctx.db.movement_profile().profile().find(profile.to_string()).is_none() {
             ctx.db.movement_profile().insert(MovementProfile {
                 profile: profile.to_string(),
                 max_speed: *max_speed,
                 acceleration: *acceleration,
                 deceleration: *deceleration,
+                sprint_speed_mult: *sprint_speed,
+                sprint_accel_mult: *sprint_accel,
+                sprint_decel_mult: *sprint_decel,
             });
         }
     }
@@ -569,7 +583,18 @@ pub fn upsert_movement_profile(
     acceleration: f32,
     deceleration: f32,
 ) {
+    // Sprint multipliers are not edited here (the god window sends 4 values): keep the stored ones.
+    let existing = ctx.db.movement_profile().profile().find(&profile);
+    let sprint = |pick: fn(&MovementProfile) -> f32, seed: fn(&(&str, f32, f32, f32, f32, f32, f32)) -> f32| -> f32 {
+        match &existing {
+            Some(r) => pick(r),
+            None => SEED_MOVEMENT.iter().find(|s| s.0 == "default").map(seed).unwrap_or(1.0),
+        }
+    };
     let row = MovementProfile {
+        sprint_speed_mult: sprint(|r| r.sprint_speed_mult, |s| s.4),
+        sprint_accel_mult: sprint(|r| r.sprint_accel_mult, |s| s.5),
+        sprint_decel_mult: sprint(|r| r.sprint_decel_mult, |s| s.6),
         profile,
         max_speed: max_speed.max(0.0),
         acceleration: acceleration.max(0.01),

@@ -24,6 +24,10 @@ var identity_glyph: String = ""
 var max_speed: float = 0.0
 var acceleration: float = 0.0
 var deceleration: float = 0.0
+## Sprint multipliers of the active profile (task-063). Read-only for others.
+var sprint_speed_mult: float = 1.0
+var sprint_accel_mult: float = 1.0
+var sprint_decel_mult: float = 1.0
 ## The active entity form (EntityForm id; empty until the first entity_form_changed).
 var form: StringName = &""
 ## Direction the input asks for this physics step on the ground (length 0..1, zero when idle). Differs from the
@@ -41,6 +45,10 @@ var _cell: Vector2i = Vector2i(-1000000, -1000000)
 ## True while the body pushes into an obstacle; seconds until another bump may be announced.
 var _touching: bool = false
 var _hit_cooldown: float = 0.0
+## Sprint: unlocked for this run (decided at spawn from the death count); held this step; still gliding after one.
+var _sprint_available: bool = false
+var _sprinting: bool = false
+var _sprint_glide: bool = false
 
 
 func _ready() -> void:
@@ -61,9 +69,17 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var wanted: Vector3 = _wanted_velocity()
-	move_intent = wanted / maxf(max_speed, 0.001)
-	var rate: float = acceleration if wanted != Vector3.ZERO else deceleration
+	var direction: Vector3 = _wanted_direction()
+	_sprinting = _sprint_available and direction != Vector3.ZERO and Input.is_action_pressed(config.action_sprint)
+	var top_speed: float = max_speed * (sprint_speed_mult if _sprinting else 1.0)
+	var wanted: Vector3 = direction * top_speed
+	move_intent = direction
+	_update_sprint_glide(direction)
+	var rate: float
+	if wanted != Vector3.ZERO:
+		rate = acceleration * (sprint_accel_mult if _sprinting else 1.0)
+	else:
+		rate = deceleration * (sprint_decel_mult if _sprint_glide else 1.0)
 	velocity = velocity.move_toward(wanted, rate * delta)
 	velocity.y = 0.0
 	_limit_to_cursor(delta)
@@ -76,6 +92,26 @@ func _physics_process(delta: float) -> void:
 
 func _on_run_started(_run_index: int) -> void:
 	spawn()
+
+
+## True while sprint is held, unlocked and there is movement input (presentation and tests read it).
+func is_sprinting() -> bool:
+	return _sprinting
+
+
+## True when sprint is unlocked for the current run (decided at spawn).
+func is_sprint_available() -> bool:
+	return _sprint_available
+
+
+## After a sprint the stop glides (lower deceleration) until the body has nearly stopped. Walking on without sprint
+## ends the glide once the speed has eased back down to the normal top speed.
+func _update_sprint_glide(direction: Vector3) -> void:
+	var speed: float = velocity.length()
+	if _sprinting:
+		_sprint_glide = true
+	elif speed <= config.sprint_glide_end_speed or (direction != Vector3.ZERO and speed <= max_speed):
+		_sprint_glide = false
 
 
 ## While the in-world menu is open the movement input drives the menu and the player stands still (the world keeps running).
@@ -109,6 +145,9 @@ func spawn() -> void:
 	velocity = Vector3.ZERO
 	_touching = false
 	_hit_cooldown = 0.0
+	_sprinting = false
+	_sprint_glide = false
+	_sprint_available = save_service != null and save_service.progress.death_count >= config.sprint_unlock_deaths
 	if map_loader != null:
 		_cell = map_loader.world_to_cell(global_position)
 	if save_service != null:
@@ -119,8 +158,8 @@ func spawn() -> void:
 	SignalBus.player_spawned.emit(global_position)
 
 
-## Velocity the current input asks for. Zero before an input scheme is discovered or outside a run.
-func _wanted_velocity() -> Vector3:
+## Direction (length 0..1) the current input asks for. Zero before an input scheme is discovered or outside a run.
+func _wanted_direction() -> Vector3:
 	if run_manager == null or run_manager.phase != RunManager.Phase.PLAYING:
 		return Vector3.ZERO
 	_pointer_offset = null
@@ -129,10 +168,10 @@ func _wanted_velocity() -> Vector3:
 	match run_manager.state.input_scheme:
 		InputScheme.KEYBOARD, InputScheme.GAMEPAD:
 			var pad: Vector2 = Input.get_vector(config.action_left, config.action_right, config.action_up, config.action_down)
-			return _screen_to_world(pad) * max_speed
+			return _screen_to_world(pad)
 		InputScheme.MOUSE:
 			var pull: Vector2 = _pointer_direction()
-			return Vector3(pull.x, 0.0, pull.y) * max_speed
+			return Vector3(pull.x, 0.0, pull.y)
 	return Vector3.ZERO
 
 
@@ -177,6 +216,8 @@ func _announce_motion() -> void:
 	if moving and not _moved_this_run:
 		_moved_this_run = true
 		SignalBus.narration_event.emit(NarrationEvents.FIRST_MOVE)
+		if _sprint_available:
+			SignalBus.narration_event.emit(NarrationEvents.SPRINT_UNLOCKED)
 
 
 func _playing() -> bool:
@@ -226,6 +267,9 @@ func apply_movement_profile() -> void:
 	max_speed = float(row.get("max_speed", config.max_speed))
 	acceleration = float(row.get("acceleration", config.acceleration))
 	deceleration = float(row.get("deceleration", config.friction))
+	sprint_speed_mult = float(row.get("sprint_speed_mult", config.sprint_speed_mult))
+	sprint_accel_mult = float(row.get("sprint_accel_mult", config.sprint_accel_mult))
+	sprint_decel_mult = float(row.get("sprint_decel_mult", config.sprint_decel_mult))
 
 
 ## The DB movement_profile row of a profile id, or empty.

@@ -129,7 +129,7 @@ func _run() -> void:
 
 func _test_data() -> void:
 	var config: NarratorConfig = load(CONFIG_PATH)
-	_check(config.beats.size() == 40, "expected 40 beats (26 M1 + 14 origin), got %d" % config.beats.size())
+	_check(config.beats.size() == 43, "expected 43 beats (26 M1 + 3 sprint layers + 14 origin), got %d" % config.beats.size())
 	var supports: Dictionary = {}
 	var contradicts: Dictionary = {}
 	var neutral: int = 0

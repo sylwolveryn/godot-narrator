@@ -14,6 +14,11 @@ extends Node
 ## so the queue never drops them. A beat whose supports are all struck plays as a doubt line (current_doubt > 0),
 ## and at the floor the ladder prefers beats that support both surviving natures.
 ##
+## Layers (task-062): an event can have one line per layer (NarrationBeat.Layer: WORLD, OWN, NARRATOR). The event picks
+## its earliest layer that has an eligible line; when that line starts, the eligible lines of the later layers of the
+## same event are chained and start one after the other as soon as the previous one has dissolved (no silence gap).
+## A death preempt drops the chain. Voice files (NarrationLibrary) play with narrator lines only.
+##
 ## Must sit after SaveService and OriginLedger and before Player/MapReveal in the tree: signal handlers run in
 ## tree order, and run_count must be updated and run_started seen before the first reveals.
 
@@ -40,6 +45,8 @@ var current_doubt: float = 0.0
 ## Text and voice of the current beat (resolved through the library). Set before beat_started is emitted.
 var current_text: String = ""
 var current_voice: AudioStream
+## Understanding (0..1) of the narration language, for OWN lines (NarrationLibrary.understanding()). Set before beat_started.
+var current_understanding: float = 1.0
 var queued: NarrationBeat
 ## Run bookkeeping; refreshed on every run_started.
 var run_count: int = 1
@@ -54,6 +61,8 @@ var _parked: NarrationBeat
 var _next_after_preempt: NarrationBeat
 ## Beats of reactive events, in the order they were offered.
 var _reactive: Array[NarrationBeat] = []
+## Later-layer lines of the event on screen, in layer order (task-062).
+var _chain: Array[NarrationBeat] = []
 var _heard: Dictionary[String, bool] = {}
 ## Candidates collected this frame: Array of [NarrationBeat, int priority].
 var _candidates: Array = []
@@ -97,6 +106,9 @@ func advance(delta: float) -> void:
 	_tick_state(delta)
 	if queued != null and _clock - _queued_at > config.queue_ttl_seconds and not config.ttl_exempt_events.has(queued.event):
 		queued = null
+	# The next layer of the event on screen follows as soon as the previous line has dissolved.
+	if not _chain.is_empty() and (state == State.FREE or state == State.GAP):
+		_start(_chain.pop_front(), true)
 	# Reactive beats start as soon as nothing is showing; the silence gap does not hold them back.
 	if not _reactive.is_empty() and (state == State.FREE or state == State.GAP):
 		_start(_reactive.pop_front())
@@ -147,11 +159,14 @@ func pick_for_event(event: StringName, param: StringName = &"") -> NarrationBeat
 	return beat
 
 
-func _pick_exact(event: StringName, param: StringName) -> NarrationBeat:
+## Best eligible beat of an event; `layer` >= 0 restricts it to that layer, otherwise the earliest layer wins.
+func _pick_exact(event: StringName, param: StringName, layer: int = -1) -> NarrationBeat:
 	var survivors: PackedStringArray = floor_survivors()
 	var best: NarrationBeat
 	for beat: NarrationBeat in config.beats:
 		if beat.trigger != NarrationBeat.Trigger.EVENT or beat.event != event:
+			continue
+		if layer >= 0 and beat.layer != layer:
 			continue
 		if beat.event_param != &"" and beat.event_param != param:
 			continue
@@ -183,6 +198,8 @@ func supports_all(beat: NarrationBeat, natures: PackedStringArray) -> bool:
 
 
 func _ranks_before(a: NarrationBeat, b: NarrationBeat, survivors: PackedStringArray) -> bool:
+	if a.layer != b.layer:
+		return a.layer < b.layer
 	if a.min_run != b.min_run:
 		return a.min_run < b.min_run
 	var dual_a: bool = supports_all(a, survivors)
@@ -247,7 +264,7 @@ func _is_pending(beat: NarrationBeat) -> bool:
 	for candidate: Array in _candidates:
 		if candidate[0] == beat:
 			return true
-	if beat == queued or _reactive.has(beat):
+	if beat == queued or _reactive.has(beat) or _chain.has(beat):
 		return true
 	return beat == current and (state == State.SHOWING or state == State.DISSOLVING or state == State.PREEMPTING)
 
@@ -277,6 +294,7 @@ func _resolve_candidates() -> void:
 
 func _preempt(beat: NarrationBeat) -> void:
 	queued = null
+	_chain.clear()
 	match state:
 		State.FREE, State.GAP:
 			_start(beat)
@@ -289,13 +307,19 @@ func _preempt(beat: NarrationBeat) -> void:
 			beat_dissolving.emit(true)
 
 
-func _start(beat: NarrationBeat) -> void:
+## Starts a beat. Unless it is itself a chained line, the later layers of its event are chained behind it.
+func _start(beat: NarrationBeat, chained: bool = false) -> void:
 	current = beat
 	state = State.SHOWING
 	_timer = config.morph_in_seconds + config.beat_hold_seconds
 	current_doubt = doubt_fraction(beat)
 	current_text = library.line_for(beat) if library != null else beat.text
-	current_voice = library.audio_for(NarrationLibrary.event_of(beat)) if library != null else null
+	current_understanding = library.understanding() if library != null else 1.0
+	current_voice = null
+	if library != null and beat.layer == NarrationBeat.Layer.NARRATOR:
+		current_voice = library.audio_for(NarrationLibrary.event_of(beat))
+	if not chained:
+		_chain = layer_followers(beat)
 	if beat.once:
 		_heard[beat.id] = true
 		SignalBus.beat_heard.emit(beat.id)
@@ -303,6 +327,23 @@ func _start(beat: NarrationBeat) -> void:
 	if claimed != &"":
 		SignalBus.origin_claim_heard.emit(claimed)
 	beat_started.emit(beat)
+
+
+## The eligible lines of the later layers of a beat's event, in layer order (empty for TIME beats).
+func layer_followers(beat: NarrationBeat) -> Array[NarrationBeat]:
+	var out: Array[NarrationBeat] = []
+	if beat.trigger != NarrationBeat.Trigger.EVENT:
+		return out
+	for layer in range(beat.layer + 1, NarrationBeat.Layer.size()):
+		var next: NarrationBeat = _pick_exact(beat.event, beat.event_param, layer)
+		if next != null and next != beat:
+			out.append(next)
+	return out
+
+
+## The lines still chained behind the one on screen (tests, tools).
+func chained() -> Array[NarrationBeat]:
+	return _chain
 
 
 ## The nature whose trial a beat arms when heard: a CLAIM beat's nature, or the nature a RECANT beat takes back

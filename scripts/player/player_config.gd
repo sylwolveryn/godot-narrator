@@ -20,6 +20,21 @@ extends Resource
 @export var friction: float = 16.0
 ## DB movement_profile row used when the active form has no row of its own.
 @export var default_movement_profile: String = "default"
+
+@export_group("Sprint")
+## Deaths (PersistentProgress.death_count) needed before sprint is available; decided when the player spawns (task-063).
+@export var sprint_unlock_deaths: int = 1
+## Fallback sprint multipliers, used when the DB movement_profile row has no sprint columns.
+## Top speed multiplier while sprint is held with movement input.
+@export var sprint_speed_mult: float = 1.5
+## Acceleration multiplier while sprinting.
+@export var sprint_accel_mult: float = 2.0
+## Deceleration multiplier after a sprint until the body has (nearly) stopped: below 1 the stop glides.
+@export var sprint_decel_mult: float = 0.45
+## Below this speed (units per second) a post-sprint glide counts as stopped and normal deceleration returns.
+@export var sprint_glide_end_speed: float = 0.05
+
+@export_group("Movement")
 ## Mouse scheme: within this distance (world units) of the cursor the player stops.
 @export var pointer_stop_distance: float = 0.15
 ## Mouse scheme: distance at which the pointer pull reaches full strength (smaller = slower near the cursor).
@@ -33,6 +48,8 @@ extends Resource
 @export var action_down: StringName = &"move_down"
 ## Mouse scheme: while held, move toward the cursor.
 @export var action_pointer: StringName = &"move_pointer"
+## Held to sprint (once unlocked).
+@export var action_sprint: StringName = &"sprint"
 
 @export_group("In-world glyph")
 ## Fonts the identity glyph is rasterised with (first available, then the system fallbacks).

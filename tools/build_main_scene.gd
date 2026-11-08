@@ -224,6 +224,7 @@ func _build() -> void:
 	narration.set("narrator", narrator)
 	narration.set("config", narrator_cfg)
 	narration.set("display_config", load(DISPLAY_CONFIG))
+	narration.set("player_config", player_cfg)
 	_add(root, narration)
 
 	var sfx: Node = load("res://scripts/narrator/narration_sfx.gd").new()

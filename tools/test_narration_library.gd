@@ -1,7 +1,8 @@
 extends SceneTree
 ## Tests the plugin-style narration lookup (task-048), the SpacetimeDB SQL parsing, the idle ladder and the
 ## transformation fallback of the narrator (task-049), the glyph-animation palette parsing (task-054) and the per-form
-## movement profiles of the player (task-055).
+## movement profiles of the player (task-055), the narration layers world -> own -> narrator with their looks
+## (task-062) and the dev override / missing-log paths (task-064).
 ## Usage: godot --headless --path . -s tools/test_narration_library.gd --max-fps 30
 
 const CONFIG_PATH := "res://resources/narration/narrator_config.tres"
@@ -25,6 +26,9 @@ func _run() -> void:
 	_test_narrator_events()
 	_test_palette()
 	_test_movement_profiles()
+	_test_layers()
+	_test_overlay_layers()
+	_test_paths()
 	if _failures.is_empty():
 		print("PASS test_narration_library")
 		quit(0)
@@ -176,3 +180,136 @@ func _test_movement_profiles() -> void:
 	_check(is_equal_approx(player.get("max_speed"), cfg.max_speed) and is_equal_approx(player.get("deceleration"), cfg.friction), "no rows: PlayerConfig values")
 	player.queue_free()
 	db.queue_free()
+
+
+## SPRINT_UNLOCKED has one line per layer: they play world, own, narrator, each following the previous one as soon as
+## it has dissolved (no silence gap); the voice only comes with the narrator line.
+func _test_layers() -> void:
+	var n: Node = load("res://scripts/narrator/narrator.gd").new()
+	var cfg: NarratorConfig = (load(CONFIG_PATH) as NarratorConfig).duplicate()
+	n.set("config", cfg)
+	root.add_child(n)
+	var order: Array[String] = []
+	var layers: Array[int] = []
+	var times: Array[float] = []
+	var clock: Array[float] = [0.0]
+	n.beat_started.connect(func(b: NarrationBeat) -> void:
+		order.append(b.id)
+		layers.append(b.layer)
+		times.append(clock[0]))
+	root.get_node("SignalBus").emit_signal("run_started", 1)
+	n.set("run_count", 2)
+	n.set("death_count", 1)
+	# Let the run's own start beat (if any) go, then offer the sprint event.
+	for i in 400:
+		n.call("advance", 0.05)
+		clock[0] += 0.05
+	order.clear()
+	layers.clear()
+	times.clear()
+	n.call("trigger_event", NarrationEvents.SPRINT_UNLOCKED)
+	for i in 600:
+		n.call("advance", 0.05)
+		clock[0] += 0.05
+	_check(order == ["sprint_world_slow", "sprint_own_moving", "sprint_narrator_did_you"], "layer order world, own, narrator: %s" % [order])
+	_check(layers == [NarrationBeat.Layer.WORLD, NarrationBeat.Layer.OWN, NarrationBeat.Layer.NARRATOR], "layers %s" % [layers])
+	var line_time: float = cfg.morph_in_seconds + cfg.beat_hold_seconds + cfg.morph_out_seconds
+	if times.size() == 3:
+		_check(times[1] - times[0] < line_time + cfg.beat_gap_seconds * 0.5, "own follows world without the silence gap (%.2f s)" % (times[1] - times[0]))
+		_check(times[2] - times[1] < line_time + cfg.beat_gap_seconds * 0.5, "narrator follows own without the silence gap")
+	# Once-lines: the event is spent.
+	_check(n.call("pick_for_event", NarrationEvents.SPRINT_UNLOCKED) == null, "sprint lines play once")
+	# Before the first death nothing plays.
+	var fresh: Node = load("res://scripts/narrator/narrator.gd").new()
+	fresh.set("config", cfg)
+	root.add_child(fresh)
+	fresh.set("run_count", 1)
+	fresh.set("death_count", 0)
+	_check(fresh.call("pick_for_event", NarrationEvents.SPRINT_UNLOCKED) == null, "no sprint lines before the first death")
+	fresh.set("death_count", 1)
+	var first: NarrationBeat = fresh.call("pick_for_event", NarrationEvents.SPRINT_UNLOCKED)
+	_check(first != null and first.layer == NarrationBeat.Layer.WORLD, "the event opens with its world line")
+	var followers: Array = fresh.call("layer_followers", first) if first != null else []
+	_check(followers.size() == 2, "two later layers follow, got %d" % followers.size())
+	n.queue_free()
+	fresh.queue_free()
+
+
+## World lines sweep green / purple and glitch; own lines use the glyph colour and switch not-understood words;
+## narrator lines keep the plain text colour and never change letters.
+func _test_overlay_layers() -> void:
+	var overlay: CanvasLayer = load("res://scripts/narrator/narration_overlay.gd").new()
+	var cfg: NarratorConfig = (load(CONFIG_PATH) as NarratorConfig).duplicate()
+	overlay.set("config", cfg)
+	var pcfg := PlayerConfig.new()
+	pcfg.glyph_color = Color(0.2, 0.9, 0.3)
+	overlay.set("player_config", pcfg)
+	root.add_child(overlay)
+	var beat := NarrationBeat.new()
+	beat.text = "I was alive and moving"
+	beat.layer = NarrationBeat.Layer.OWN
+	overlay.call("show_beat", beat, 0.0, "", 0.0)
+	_check(overlay.call("_letter_color", 0) == pcfg.glyph_color, "own lines take the glyph colour")
+	var changed: bool = false
+	for i in 60:
+		overlay.call("advance", 0.05)
+		if String(overlay.call("shown_text")) != "Iwasaliveandmoving":
+			changed = true
+	_check(changed, "with no understanding the own line switches its words")
+	overlay.call("show_beat", beat, 0.0, "", 1.0)
+	var swapped_words: int = 0
+	for i in 40:
+		overlay.call("advance", 0.05)
+		var shown: String = overlay.call("shown_text")
+		var diff: int = 0
+		for k in shown.length():
+			if shown[k] != "Iwasaliveandmoving"[k]:
+				diff += 1
+		swapped_words = maxi(swapped_words, diff)
+	_check(swapped_words <= 3, "full understanding: only a light glitch (%d letters at most)" % swapped_words)
+	beat.layer = NarrationBeat.Layer.WORLD
+	overlay.call("show_beat", beat, 0.0, "", 1.0)
+	var c0: Color = overlay.call("_letter_color", 0)
+	_check(c0.g > 0.25 or c0.b > 0.25, "world colour comes from the green / purple sweep: %s" % c0)
+	var glitched: bool = false
+	for i in 60:
+		overlay.call("advance", 0.05)
+		if String(overlay.call("shown_text")) != "Iwasaliveandmoving":
+			glitched = true
+	_check(glitched, "world lines glitch")
+	beat.layer = NarrationBeat.Layer.NARRATOR
+	overlay.call("show_beat", beat, 0.0, "", 0.0)
+	var steady: bool = true
+	for i in 60:
+		overlay.call("advance", 0.05)
+		if String(overlay.call("shown_text")) != "Iwasaliveandmoving":
+			steady = false
+	_check(steady and overlay.call("_letter_color", 0) == cfg.text_color, "narrator lines never change letters")
+	overlay.queue_free()
+
+
+## Dev runs: the override folder is <project>/override (not the bundled folder itself); the missing log stays under the
+## game root; understanding comes from player_language.
+func _test_paths() -> void:
+	var library := NarrationLibrary.new()
+	library.config = NarrationLibraryConfig.new()
+	root.add_child(library)
+	var game: String = library.game_root()
+	_check(library.override_root() == game.path_join("override"), "dev override root: %s" % library.override_root())
+	_check(library.override_root() != ProjectSettings.globalize_path("res://").trim_suffix("/"), "override differs from the bundled folder")
+	_check(library.resolve("narration/event/RUN_STARTED_EN_GB.mp3") == library.override_root().path_join("narration/event/RUN_STARTED_EN_GB.mp3"),
+		"the override mp3 is found before the bundled one: %s" % library.resolve("narration/event/RUN_STARTED_EN_GB.mp3"))
+	_check(library.call("_missing_path") == game.path_join("logs/missing-narrations.json"), "missing log under the game root")
+	_check(is_equal_approx(library.understanding(), 1.0), "no DB: default understanding 100%")
+	var db := GameDatabase.new()
+	var db_cfg := DbConfig.new()
+	db_cfg.enabled = false
+	db_cfg.seed_path = ""
+	db.config = db_cfg
+	root.add_child(db)
+	db.tables = {"player_language": [{"language": "EN_GB", "understanding": 40.0}]}
+	library.database = db
+	_check(is_equal_approx(library.understanding(), 0.4), "understanding from player_language")
+	library.queue_free()
+	db.queue_free()
+

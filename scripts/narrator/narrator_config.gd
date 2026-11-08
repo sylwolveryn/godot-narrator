@@ -21,7 +21,7 @@ extends Resource
 ## A queued beat is dropped after waiting this long.
 @export var queue_ttl_seconds: float = 5.0
 ## Events whose queued beats never expire by TTL (they can only be replaced by a higher class, then they re-queue).
-@export var ttl_exempt_events: Array[StringName] = [NarrationEvents.RUN_STARTED]
+@export var ttl_exempt_events: Array[StringName] = [NarrationEvents.RUN_STARTED, NarrationEvents.SPRINT_UNLOCKED]
 @export var morph_in_seconds: float = 1.1
 @export var morph_out_seconds: float = 0.9
 ## How long the current beat dissolves when a death beat preempts it.
@@ -44,6 +44,7 @@ extends Resource
 	NarrationEvents.WALL_REVEALED: 2,
 	NarrationEvents.RUN_STARTED: 1,
 	NarrationEvents.FIRST_MOVE: 1,
+	NarrationEvents.SPRINT_UNLOCKED: 2,
 	NarrationEvents.HIT_WALL: 1,
 	NarrationEvents.HIT_UNKNOWN: 1,
 	NarrationEvents.IDLE_FOR_SHORT: 0,
@@ -121,6 +122,34 @@ extends Resource
 @export_range(0.05, 0.5) var doubt_hz: float = 0.4
 ## Brightness of an unsettled letter swings between 1 and 1 minus this (a swing of half of it, within the 0.25 limit).
 @export_range(0.0, 0.5) var doubt_alpha_dip: float = 0.4
+
+@export_group("Layers")
+## World lines (task-062): vibrant green / purple, glitchy. Letter colour sweeps between the two, a green and a purple
+## ghost split sideways, and on every glitch tick a share of the letters jumps and swaps to a glitch glyph.
+@export var world_colors: PackedColorArray = PackedColorArray([Color("#39ff88"), Color("#c04dff")])
+## Colour sweeps per second, ghost split (reference px), glitch ticks per second, share of letters per tick, jump (px).
+@export var world_wave_hz: float = 0.35
+## Phase step of the colour sweep from one letter to the next (radians), so even a short word shows both colours.
+@export var world_letter_phase: float = 1.3
+@export var world_split_px: float = 4.0
+@export var world_ghost_alpha: float = 0.7
+@export var world_glitch_hz: float = 7.0
+@export_range(0.0, 1.0) var world_glitch_share: float = 0.12
+@export var world_jitter_px: float = 6.0
+@export var glitch_glyphs: String = "#%&@$*+=?!/|<>~^01"
+## Own lines: the character's own glyph colour (PlayerConfig.glyph_color when the overlay has it, else this). Words the
+## character does not understand (share = 1 - understanding of the narration language) keep switching between the
+## real word and a scrambled one; a few letters glitch lightly even at full understanding.
+@export var own_text_color: Color = Color("#FFF6E6")
+@export var own_glow_color: Color = Color("#FFD9A0")
+@export var own_scramble_glyphs: String = "ΔΞΣΨΩλψξζ¤§#%"
+## Word switches per second (each broken word has its own phase), light glitch ticks per second and share per tick.
+@export var own_switch_hz: float = 1.2
+@export var own_glitch_hz: float = 5.0
+@export_range(0.0, 1.0) var own_glitch_share: float = 0.05
+## Narrator lines keep text_color and the mood glow, pulled towards a gloomy blue by narrator_glow_tint.
+@export var narrator_glow_color: Color = Color("#5B8CFF")
+@export_range(0.0, 1.0) var narrator_glow_tint: float = 0.55
 
 @export_group("Audio")
 @export var sfx_volume_db: float = -14.0

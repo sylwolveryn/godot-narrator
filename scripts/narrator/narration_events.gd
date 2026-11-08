@@ -37,5 +37,7 @@ const ENTITY_FORM_CHANGED: StringName = TRANSFORMED
 ## nature id as the event parameter (NarrationBeat.event_param).
 const ORIGIN_STRUCK: StringName = &"ORIGIN_STRUCK"
 const ORIGIN_RECANTED: StringName = &"ORIGIN_RECANTED"
+## The first move of a run in which sprint (Left Shift) is available (task-063).
+const SPRINT_UNLOCKED: StringName = &"SPRINT_UNLOCKED"
 ## Priority key used for TIME beats (they have no event name).
 const TIME: StringName = &"TIME"

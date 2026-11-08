@@ -39,6 +39,7 @@
 movement: WASD / arrows / gamepad stick or d-pad
           hold left mouse = walk toward cursor
           camera-relative (up = up on screen)
+sprint:   hold Left Shift / gamepad L3 or RB (after 1st death)
 camera:   Q / E rotate
           right mouse drag rotate
           mouse wheel or PgUp / PgDn zoom
@@ -65,6 +66,13 @@ camera:   Q / E rotate
 | single | 4.8 | 22 | 24 | quick |
 | grown | 5.3 | 8 | 10 | slow start, faster top |
 
+- Sprint (unlocks at death_count >= PlayerConfig.sprint_unlock_deaths = 1, checked at spawn):
+  - speed x1.5, accel x2.0 while held + moving
+  - after sprint: decel x0.45 until stopped = slippery glide
+  - let go of Shift, keep walking = ease back to normal
+  - DB cols `sprint_speed_mult` / `sprint_accel_mult` / `sprint_decel_mult` (all forms same)
+  - first move of a run with sprint = SPRINT_UNLOCKED
+
 - Look (DB `avatar_fx`):
   - slow crystal colour glow on glyph
   - short violet ink trail when moving
@@ -79,13 +87,23 @@ camera:   Q / E rotate
   - WALL/ITEM/SPIKES_REVEALED, CORRUPTION_ENTERED, EROSION_HIGH
   - HIT_WALL, HIT_UNKNOWN, HIT_SPIKES
   - DEATH, DEATH_BY_SPIKES, DEATH_BY_CORRUPTION
-  - TRANSFORMED(_TO_ONE/_TO_MANY), ORIGIN_STRUCK, ORIGIN_RECANTED, TIME
+  - TRANSFORMED(_TO_ONE/_TO_MANY), ORIGIN_STRUCK, ORIGIN_RECANTED, TIME, SPRINT_UNLOCKED
+- Layers (beat `layer` in `data/narration/*.json`), one event plays them in this order:
+
+| layer | look | notes |
+|---|---|---|
+| WORLD | green + purple, split ghost, glitchy | e.g. "Slow" |
+| OWN | player glyph colour, broken words switch | broken share = 100% - `player_language` understanding |
+| NARRATOR | blue glow (old look), default | only layer that plays the voice mp3 |
+
 - Languages (`language_def`): EN_GB, HU_HU, ALIEN, MATRIX, DREAM, DE_DE, RU_RU, JP_HAN, JP_KANA.
   - Only EN_GB texts exist so far.
 - Files:
   - `narration/event/<EVENT>_<LANG>.json` (`{"lines": {beat_id: text}}`)
-  - `.mp3` voice (none exist yet)
-- Lookup: game folder first (next to exe; project folder in editor) = player override / plugin, then bundled.
+  - `.mp3` voice: only empty test pair for RUN_STARTED (see below)
+- Lookup: override folder first, then bundled `narration/`.
+  - export: override = folder next to exe
+  - dev: override = `override/` in project (`override/narration/event/RUN_STARTED_EN_GB.mp3` = read 1st, `narration/event/RUN_STARTED_EN_GB.mp3` = read 2nd)
 - Missing file -> `logs/missing-narrations.json` (`{"errors": [...]}`, no duplicates) + DB `missing_narration`.
 - Beat logic: `data/narration/*.json` -> `tools/build_narration.gd` -> `.tres`.
 

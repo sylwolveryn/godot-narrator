@@ -88,6 +88,10 @@
 		{
 			"id": "TIME",
 			"description": "Timed beat during a run"
+		},
+		{
+			"id": "SPRINT_UNLOCKED",
+			"description": "First move of a run once sprint is available"
 		}
 	],
 	"language_def": [
@@ -1712,6 +1716,78 @@
 			"triggered": 0,
 			"text_path": "narration/event/TIME_JP_KANA.json",
 			"sound_path": "narration/event/TIME_JP_KANA.mp3"
+		},
+		{
+			"id": 199,
+			"event": "SPRINT_UNLOCKED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_EN_GB.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_EN_GB.mp3"
+		},
+		{
+			"id": 200,
+			"event": "SPRINT_UNLOCKED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_HU_HU.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_HU_HU.mp3"
+		},
+		{
+			"id": 201,
+			"event": "SPRINT_UNLOCKED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_ALIEN.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_ALIEN.mp3"
+		},
+		{
+			"id": 202,
+			"event": "SPRINT_UNLOCKED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_MATRIX.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_MATRIX.mp3"
+		},
+		{
+			"id": 203,
+			"event": "SPRINT_UNLOCKED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_DREAM.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_DREAM.mp3"
+		},
+		{
+			"id": 204,
+			"event": "SPRINT_UNLOCKED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_DE_DE.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_DE_DE.mp3"
+		},
+		{
+			"id": 205,
+			"event": "SPRINT_UNLOCKED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_RU_RU.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_RU_RU.mp3"
+		},
+		{
+			"id": 206,
+			"event": "SPRINT_UNLOCKED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_JP_HAN.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_JP_HAN.mp3"
+		},
+		{
+			"id": 207,
+			"event": "SPRINT_UNLOCKED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_JP_KANA.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_JP_KANA.mp3"
 		}
 	],
 	"glyph_anim": [
@@ -1782,19 +1858,28 @@
 			"profile": "default",
 			"max_speed": 4.5,
 			"acceleration": 14.0,
-			"deceleration": 16.0
+			"deceleration": 16.0,
+			"sprint_speed_mult": 1.5,
+			"sprint_accel_mult": 2.0,
+			"sprint_decel_mult": 0.45
 		},
 		{
 			"profile": "single",
 			"max_speed": 4.8,
 			"acceleration": 22.0,
-			"deceleration": 24.0
+			"deceleration": 24.0,
+			"sprint_speed_mult": 1.5,
+			"sprint_accel_mult": 2.0,
+			"sprint_decel_mult": 0.45
 		},
 		{
 			"profile": "grown",
 			"max_speed": 5.3,
 			"acceleration": 8.0,
-			"deceleration": 10.0
+			"deceleration": 10.0,
+			"sprint_speed_mult": 1.5,
+			"sprint_accel_mult": 2.0,
+			"sprint_decel_mult": 0.45
 		}
 	],
 	"avatar_fx": [
@@ -1817,6 +1902,44 @@
 			"lean_amount": 0.18,
 			"stretch_amount": 0.12,
 			"feel_smoothing": 0.12
+		}
+	],
+	"player_language": [
+		{
+			"language": "EN_GB",
+			"understanding": 100.0
+		},
+		{
+			"language": "HU_HU",
+			"understanding": 0.0
+		},
+		{
+			"language": "ALIEN",
+			"understanding": 0.0
+		},
+		{
+			"language": "MATRIX",
+			"understanding": 0.0
+		},
+		{
+			"language": "DREAM",
+			"understanding": 0.0
+		},
+		{
+			"language": "DE_DE",
+			"understanding": 0.0
+		},
+		{
+			"language": "RU_RU",
+			"understanding": 0.0
+		},
+		{
+			"language": "JP_HAN",
+			"understanding": 0.0
+		},
+		{
+			"language": "JP_KANA",
+			"understanding": 0.0
 		}
 	]
 }

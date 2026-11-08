@@ -1,5 +1,5 @@
 extends SceneTree
-## Writes the movement, menu, intro_skip, camera_* and toggle_fullscreen InputMap actions into project.godot ([input]) and removes the legacy
+## Writes the movement, sprint, menu, intro_skip, camera_* and toggle_fullscreen InputMap actions into project.godot ([input]) and removes the legacy
 ## prototype `transform` action. Idempotent.
 ## Usage: godot --headless --path . -s tools/build_input_map.gd
 
@@ -14,6 +14,8 @@ func _init() -> void:
 	_set_action("move_right", [_key(KEY_D), _key(KEY_RIGHT), _axis(JOY_AXIS_LEFT_X, 1.0), _button(JOY_BUTTON_DPAD_RIGHT)])
 	_set_action("move_up", [_key(KEY_W), _key(KEY_UP), _axis(JOY_AXIS_LEFT_Y, -1.0), _button(JOY_BUTTON_DPAD_UP)])
 	_set_action("move_down", [_key(KEY_S), _key(KEY_DOWN), _axis(JOY_AXIS_LEFT_Y, 1.0), _button(JOY_BUTTON_DPAD_DOWN)])
+	# Sprint (task-063): unlocked after the first death; held to run.
+	_set_action("sprint", [_key(KEY_SHIFT), _button(JOY_BUTTON_LEFT_STICK), _button(JOY_BUTTON_RIGHT_SHOULDER)])
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	_set_action("move_pointer", [click])

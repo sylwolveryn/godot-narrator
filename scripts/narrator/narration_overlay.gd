@@ -7,6 +7,10 @@ extends CanvasLayer
 ## tinted by the beat's mood sits behind the letters and is strongest while they fly. No random character swapping.
 ## Doubt lines (task-042): a share of the letters never settle. They keep a slow sway around their place and a
 ## gentle brightness dip (NarratorConfig.doubt_*, at most 0.5 Hz); the characters themselves never change.
+## Layers (task-062): WORLD lines are vibrant green / purple with a split ghost and glitch ticks (letters jump and
+## swap to glitch glyphs); OWN lines take the player's glyph colour, their not-understood words keep switching
+## between the real word and a scrambled one (share = 1 - understanding) and a few letters glitch lightly; NARRATOR
+## lines keep the look above. World and own lines redraw every frame while on screen (a few seconds).
 ## Cost: two canvas items redrawn only while a morph runs (about 3 batched passes: glow quads, outlines, fills),
 ## nothing allocated per frame; a doubt line also redraws every frame while it rests, for the few seconds it is on
 ## screen. Pure presentation: it listens to the Narrator and never writes data.
@@ -16,6 +20,8 @@ enum Phase { IDLE, ASSEMBLE, HOLD, DISPERSE }
 @export var narrator: Narrator
 @export var config: NarratorConfig
 @export var display_config: DisplayConfig
+## Optional: the own-layer text colour comes from its glyph_color.
+@export var player_config: PlayerConfig
 
 var phase: Phase = Phase.IDLE
 
@@ -51,6 +57,14 @@ var _doubt: PackedByteArray = PackedByteArray()
 var _doubt_phase: PackedVector2Array = PackedVector2Array()
 var _doubt_speed: PackedFloat32Array = PackedFloat32Array()
 var _doubt_time: float = 0.0
+## Layer of the line on screen (NarrationBeat.Layer), understanding (0..1) for own lines, and per letter: its word
+## index, whether that word is broken (own), the word's switch phase and the letter's scrambled stand-in.
+var _layer: int = NarrationBeat.Layer.NARRATOR
+var _understanding: float = 1.0
+var _word_of: PackedInt32Array = PackedInt32Array()
+var _broken: PackedByteArray = PackedByteArray()
+var _word_phase: PackedFloat32Array = PackedFloat32Array()
+var _alt: PackedStringArray = PackedStringArray()
 
 
 func _ready() -> void:
@@ -92,14 +106,14 @@ func advance(delta: float) -> void:
 		return
 	_doubt_time += delta
 	if phase == Phase.HOLD:
-		if _has_doubt():
+		if _has_doubt() or _is_animated():
 			_redraw()
 		return
 	_t += delta
 	if _t >= _duration:
 		if phase == Phase.ASSEMBLE:
 			phase = Phase.HOLD
-			set_process(_has_doubt())
+			set_process(_has_doubt() or _is_animated())
 			_redraw()
 		else:
 			_clear()
@@ -113,7 +127,25 @@ func is_showing() -> bool:
 
 
 func _on_beat_started(beat: NarrationBeat) -> void:
-	show_beat(beat, narrator.current_doubt, narrator.current_text)
+	show_beat(beat, narrator.current_doubt, narrator.current_text, narrator.current_understanding)
+
+
+## True for layers that move while they rest (world and own lines).
+func _is_animated() -> bool:
+	return _layer != NarrationBeat.Layer.NARRATOR
+
+
+## Layer of the line on screen.
+func layer() -> int:
+	return _layer
+
+
+## The letters as shown right now (glitches and switched words included); tests and tools.
+func shown_text() -> String:
+	var out: String = ""
+	for i in _chars.size():
+		out += _char_at(i)
+	return out
 
 
 ## True when part of the current line is unsettled.
@@ -124,8 +156,11 @@ func _has_doubt() -> bool:
 ## Lays the beat out and starts assembling it. Any previous line is replaced. `doubt_fraction` > 0 leaves that
 ## share of the letters unsettled (a doubt line, see Narrator.doubt_fraction).
 ## `text` replaces the beat's own text (the line resolved from the narration files); empty = the beat's text.
-func show_beat(beat: NarrationBeat, doubt_fraction: float = 0.0, text: String = "") -> void:
+## `understanding` (0..1) decides how much of an own line is broken.
+func show_beat(beat: NarrationBeat, doubt_fraction: float = 0.0, text: String = "", understanding: float = 1.0) -> void:
 	_text = text if text != "" else beat.text
+	_layer = beat.layer
+	_understanding = clampf(understanding, 0.0, 1.0)
 	_doubt_fraction = clampf(doubt_fraction, 0.0, 1.0)
 	_doubt_time = 0.0
 	_glow_color = config.mood_glow_colors.get(beat.mood, config.default_glow_color)
@@ -210,6 +245,8 @@ func _layout() -> void:
 	var top: float = viewport_size.y * config.vertical_anchor - line_h * lines.size() * 0.5
 	_chars.clear()
 	_rest.clear()
+	_word_of.clear()
+	var word_index: int = 0
 	for l in lines.size():
 		var x: float = (viewport_size.x - widths[l]) * 0.5
 		var y: float = top + line_h * l + _font.get_ascent(_font_px)
@@ -220,7 +257,9 @@ func _layout() -> void:
 			for i in word.length():
 				_chars.append(word[i])
 				_rest.append(Vector2(x, y))
+				_word_of.append(word_index)
 				x += _advance(word[i])
+			word_index += 1
 
 
 func _advance(ch: String) -> float:
@@ -244,6 +283,87 @@ func _fill_motion() -> void:
 		_in_delay[i] = config.stagger_fraction * (0.75 * float(i) / denom + 0.25 * _rng.randf())
 		_out_delay[i] = config.stagger_fraction * (0.3 * float(i) / denom + 0.7 * _rng.randf())
 	_fill_doubt()
+	_fill_layer()
+
+
+## Rolls the own-layer broken words (share 1 - understanding, at least one word when anything is not understood),
+## their switch phases, and every letter's scrambled stand-in.
+func _fill_layer() -> void:
+	var n: int = _chars.size()
+	_broken.resize(n)
+	_broken.fill(0)
+	_word_phase.resize(n)
+	_alt.resize(n)
+	var words: int = (_word_of[n - 1] + 1) if n > 0 else 0
+	var broken_words: Dictionary[int, float] = {}
+	if _layer == NarrationBeat.Layer.OWN and _understanding < 1.0 and words > 0:
+		var count: int = clampi(ceili((1.0 - _understanding) * float(words)), 1, words)
+		var order: Array[int] = []
+		for w in words:
+			order.append(w)
+		for k in count:
+			var pick: int = k + _rng.randi() % (words - k)
+			var tmp: int = order[k]
+			order[k] = order[pick]
+			order[pick] = tmp
+			broken_words[order[k]] = _rng.randf() * TAU
+	var scramble: String = config.own_scramble_glyphs if _layer == NarrationBeat.Layer.OWN else config.glitch_glyphs
+	for i in n:
+		var w: int = _word_of[i]
+		if broken_words.has(w):
+			_broken[i] = 1
+			_word_phase[i] = broken_words[w]
+		_alt[i] = scramble[_rng.randi() % scramble.length()] if scramble != "" else _chars[i]
+
+
+## Deterministic 0..1 noise per letter and tick (no per-frame random state).
+static func _noise(i: int, tick: float) -> float:
+	var v: float = sin(float(i) * 12.9898 + tick * 78.233) * 43758.5453
+	return v - floorf(v)
+
+
+## True when letter i is in a glitch on the current tick of its layer.
+func _glitching(i: int) -> bool:
+	match _layer:
+		NarrationBeat.Layer.WORLD:
+			return _noise(i, floorf(_doubt_time * config.world_glitch_hz)) < config.world_glitch_share
+		NarrationBeat.Layer.OWN:
+			return _noise(i, floorf(_doubt_time * config.own_glitch_hz) + 0.5) < config.own_glitch_share
+	return false
+
+
+## The character letter i shows right now: its stand-in while glitching or while its broken word is switched.
+func _char_at(i: int) -> String:
+	if _chars[i] == " " or _alt.size() != _chars.size():
+		return _chars[i]
+	if _layer == NarrationBeat.Layer.OWN and _broken[i] != 0 and sin(_word_phase[i] + _doubt_time * TAU * config.own_switch_hz) > 0.0:
+		return _alt[i]
+	if _glitching(i):
+		var glyphs: String = config.glitch_glyphs if _layer == NarrationBeat.Layer.WORLD else config.own_scramble_glyphs
+		if glyphs != "":
+			return glyphs[int(_noise(i + 7, floorf(_doubt_time * config.world_glitch_hz)) * glyphs.length()) % glyphs.length()]
+	return _chars[i]
+
+
+## Text colour of letter i (alpha 1).
+func _letter_color(i: int) -> Color:
+	match _layer:
+		NarrationBeat.Layer.WORLD:
+			var k: float = 0.5 + 0.5 * sin(_doubt_time * TAU * config.world_wave_hz + float(i) * config.world_letter_phase)
+			return config.world_colors[0].lerp(config.world_colors[1], k)
+		NarrationBeat.Layer.OWN:
+			return player_config.glyph_color if player_config != null else config.own_text_color
+	return config.text_color
+
+
+## Glow colour of letter i (alpha 1).
+func _letter_glow(i: int) -> Color:
+	match _layer:
+		NarrationBeat.Layer.WORLD:
+			return _letter_color(i)
+		NarrationBeat.Layer.OWN:
+			return config.own_glow_color
+	return _glow_color.lerp(config.narrator_glow_color, config.narrator_glow_tint)
 
 
 ## Picks the unsettled letters: round(doubt_fraction * visible letters), spread by a partial shuffle of the
@@ -310,6 +430,10 @@ func _pose() -> void:
 			var dip: float = 1.0 - config.doubt_alpha_dip * (0.5 + 0.5 * sin(w + ph.y))
 			_alpha[i] *= dip
 			_glow[i] *= dip
+		if _layer == NarrationBeat.Layer.WORLD and _chars[i] != " " and _glitching(i):
+			var tick: float = floorf(_doubt_time * config.world_glitch_hz)
+			var jump := Vector2(_noise(i + 3, tick) - 0.5, _noise(i + 5, tick) - 0.5) * 2.0
+			_pos[i] += jump * config.world_jitter_px * _scale
 
 
 func _draw_glow() -> void:
@@ -321,7 +445,7 @@ func _draw_glow() -> void:
 	for i in _chars.size():
 		if _chars[i] == " " or _glow[i] <= 0.004:
 			continue
-		var c: Color = _glow_color
+		var c: Color = _letter_glow(i)
 		c.a = _glow[i]
 		_glow_node.draw_texture_rect(_glow_texture, Rect2(_pos[i] + centre - half, size), false, c)
 
@@ -335,13 +459,25 @@ func _draw_text() -> void:
 				continue
 			var o: Color = config.outline_color
 			o.a *= _alpha[i]
-			_text_node.draw_char_outline(_font, _pos[i], _chars[i], _font_px, _outline_px, o)
+			_text_node.draw_char_outline(_font, _pos[i], _char_at(i), _font_px, _outline_px, o)
+	if _layer == NarrationBeat.Layer.WORLD and config.world_colors.size() >= 2:
+		# Split ghosts: green to the left, purple to the right.
+		var split := Vector2(config.world_split_px * _scale, 0.0)
+		for i in _chars.size():
+			if _chars[i] == " " or _alpha[i] <= 0.004:
+				continue
+			var g: Color = config.world_colors[0]
+			g.a = _alpha[i] * config.world_ghost_alpha
+			_text_node.draw_char(_font, _pos[i] - split, _char_at(i), _font_px, g)
+			var p: Color = config.world_colors[1]
+			p.a = _alpha[i] * config.world_ghost_alpha
+			_text_node.draw_char(_font, _pos[i] + split, _char_at(i), _font_px, p)
 	for i in _chars.size():
 		if _chars[i] == " " or _alpha[i] <= 0.004:
 			continue
-		var c: Color = config.text_color
+		var c: Color = _letter_color(i)
 		c.a = _alpha[i]
-		_text_node.draw_char(_font, _pos[i], _chars[i], _font_px, c)
+		_text_node.draw_char(_font, _pos[i], _char_at(i), _font_px, c)
 
 
 ## One soft radial blob (white, alpha falling off to the edge); tinted per letter at draw time.

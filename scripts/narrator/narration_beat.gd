@@ -6,6 +6,9 @@ extends Resource
 enum Trigger { EVENT, TIME }
 ## STORY = ordinary line; CLAIM arms a nature's trial when heard; BROKEN plays when it is struck; RECANT when it comes back.
 enum Role { STORY, CLAIM, BROKEN, RECANT }
+## Who speaks (task-062), also the play order of one event's lines: the world itself, the character's own memory,
+## then the narrator. Each layer has its own look (NarrationOverlay).
+enum Layer { WORLD, OWN, NARRATOR }
 
 @export var id: String = ""
 @export var text: String = ""
@@ -34,3 +37,4 @@ enum Role { STORY, CLAIM, BROKEN, RECANT }
 @export var event_param: StringName = &""
 ## Position in the beat table; breaks ties inside an event ladder.
 @export var order: int = 0
+@export var layer: Layer = Layer.NARRATOR
