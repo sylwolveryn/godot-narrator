@@ -32,3 +32,9 @@ The M1 map is a maze. An open antique arena with scattered obstacles is needed t
 <!-- SECTION:NOTES:BEGIN -->
 data/maps/m2_arena.txt 46x32 octagonal arena: 1x1, 1x2, 2x1, 2x2, 3x2 and an L-shaped gargoyle group, pillars, spikes, corruption pool, 3 items, 4 pushables. Loaded and played in test_large_objects (clean parse, reachability, reveal).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+data/maps/m2_arena.txt (46x32): open walled arena with gargoyles 1x1, 1x2, 2x1, 2x2, 3x2 and an L group, pillars, spikes, corruption, items, pushables. Loaded and checked in tools/test_large_objects.gd (spawn, reachability, footprints).
+<!-- SECTION:FINAL_SUMMARY:END -->
