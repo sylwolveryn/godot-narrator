@@ -1,9 +1,11 @@
 ---
 id: TASK-066
 title: World clarity and player glyph by language understanding
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-08T15:23:00Z'
+updated_date: '2026-11-08T15:25:00Z'
 labels:
   - rendering
 dependencies:
