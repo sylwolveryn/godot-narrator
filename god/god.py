@@ -33,6 +33,7 @@ class GodApp:
         self.query_in_flight = False
         self.last_sig = object()  # forces the first render
         self.notice = ""
+        self.fps_flags = core.dev_flags_path(controller.save)
         root.title("god - Narrator launcher")
         root.minsize(640, 760)
         self._build()
@@ -53,7 +54,8 @@ class GodApp:
         self.btn_new = ttk.Button(row, text="Start new game", command=lambda: self._act(self.ctl.new_game, "Started a new game."))
         self.btn_cont = ttk.Button(row, text="Continue game", command=self._continue)
         self.btn_reveal = ttk.Button(row, text="Reveal map", command=self._reveal)
-        for b in (self.btn_new, self.btn_cont, self.btn_reveal):
+        self.btn_fps = ttk.Button(row, text="FPS: off", command=self._toggle_fps)
+        for b in (self.btn_new, self.btn_cont, self.btn_reveal, self.btn_fps):
             b.pack(side="left", padx=(0, 6))
         self._build_map_pick(row)
         spikes = ttk.Frame(self.win)
@@ -235,6 +237,7 @@ class GodApp:
         self.btn_cont.config(text=st.continue_text, state="normal" if st.continue_enabled and not self.busy else "disabled")
         self.btn_reveal.config(state="normal" if st.reveal_enabled and not self.busy else "disabled")
         self.btn_new.config(state="disabled" if self.busy else "normal")
+        self.btn_fps.config(text="FPS: on" if core.read_perf_overlay(self.fps_flags) else "FPS: off")
         self.message.config(text=st.hint or self.notice)
 
     def _render_progress(self) -> None:
@@ -300,6 +303,16 @@ class GodApp:
                 raise _Note(core.REVEAL_RUNNING_NOTE)
 
         self._act_note(run, "Map revealed.")
+
+    def _toggle_fps(self) -> None:
+        """FPS / frametime / CPU / GPU graphs on or off; applies live to a running game (and to later starts)."""
+        on = not core.read_perf_overlay(self.fps_flags)
+        try:
+            core.write_perf_overlay(self.fps_flags, on)
+            self.notice = "FPS overlay %s." % ("on" if on else "off")
+        except OSError as e:
+            self.notice = "Error: %s" % e
+        self._render()
 
     def _spike(self, scene: str, label: str) -> None:
         def run() -> None:

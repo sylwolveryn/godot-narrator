@@ -19,6 +19,11 @@ Godot is found via the `GODOT_BIN` environment variable, else `godot` on PATH. T
 - **Reveal map**: runs the headless tool `tools/dev_reveal_map.gd`, which marks every non-void cell of the M1 map
   revealed through the game's own `SaveService`. Disabled without a save. If the game is running, restart it to see the change.
 
+- **FPS: on / FPS: off**: toggles the performance overlay (FPS, frametime, CPU time, GPU time with graphs, from the
+  vendored [Debug Menu](https://godotengine.org/asset-library/asset/1902) addon in `addons/debug_menu`). god writes
+  `dev_flags.cfg` (`[overlay] perf=true|false`) next to the save; the game's `PerfOverlay` autoload re-reads it every
+  0.5 s, so a running game switches at once and later starts keep the setting. Once shown, F3 in the game also cycles it.
+
 - **Map** (task-060): lists `data/maps/*.txt`. Start new game / Continue game start the game on the chosen map as
   `<godot> --path <repo> --max-fps 30 -- --map=<name>` (the game's `MapLoader` reads the user argument and falls back to
   the scene's map). The choice is remembered in `god/settings.json` (gitignored). Map memory in the save is kept per

@@ -13,6 +13,7 @@ from typing import Callable, Optional
 
 DEFAULT_PROJECT_NAME = "Narrator"
 SAVE_FILE_NAME = "progress.tres"
+DEV_FLAGS_FILE_NAME = "dev_flags.cfg"  # read live by the game's PerfOverlay autoload (scripts/ui/perf_overlay.gd)
 HIDDEN_FIELDS = frozenset({"revealed_cells", "script"})
 CLOSE_TIMEOUT = 5.0
 POLL_MS = 3000
@@ -48,6 +49,37 @@ def save_path(root: Path, env: Optional[dict] = None) -> Path:
     appdata = env.get("APPDATA")
     base = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
     return base / "Godot" / "app_userdata" / project_name(root) / SAVE_FILE_NAME
+
+
+def dev_flags_path(save: Path) -> Path:
+    """The dev flag file, next to the save in the game's user data folder."""
+    return save.parent / DEV_FLAGS_FILE_NAME
+
+
+def read_perf_overlay(path: Path) -> bool:
+    """True when the flag file says [overlay] perf=true. Missing or unreadable file means off."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    section = ""
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("[") and line.endswith("]"):
+            section = line[1:-1].strip()
+        elif section == "overlay" and "=" in line:
+            key, _, value = line.partition("=")
+            if key.strip() == "perf":
+                return value.strip().lower() == "true"
+    return False
+
+
+def write_perf_overlay(path: Path, on: bool) -> None:
+    """Write the flag file in Godot ConfigFile format; a running game picks it up within a second."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text("[overlay]\n\nperf=%s\n" % ("true" if on else "false"), encoding="utf-8")
+    os.replace(tmp, path)
 
 
 def find_godot(env: Optional[dict] = None, which: Callable[[str], Optional[str]] = shutil.which) -> Optional[str]:

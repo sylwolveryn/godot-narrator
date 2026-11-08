@@ -52,6 +52,30 @@ class Paths(unittest.TestCase):
         self.assertIsNone(core.find_godot({}, lambda n: None))
 
 
+class PerfOverlayFlag(unittest.TestCase):
+    def test_path_next_to_save(self):
+        self.assertEqual(core.dev_flags_path(Path("C:/AD/x/progress.tres")), Path("C:/AD/x/dev_flags.cfg"))
+
+    def test_missing_is_off(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertFalse(core.read_perf_overlay(Path(d) / "dev_flags.cfg"))
+
+    def test_round_trip(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "sub" / "dev_flags.cfg"
+            core.write_perf_overlay(p, True)
+            self.assertTrue(core.read_perf_overlay(p))
+            self.assertEqual(p.read_text(), "[overlay]\n\nperf=true\n")
+            core.write_perf_overlay(p, False)
+            self.assertFalse(core.read_perf_overlay(p))
+
+    def test_other_section_ignored(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "dev_flags.cfg"
+            p.write_text("[other]\nperf=true\n[overlay]\nperf=false\n")
+            self.assertFalse(core.read_perf_overlay(p))
+
+
 class Matching(unittest.TestCase):
     def game(self, cmd, name="godot.exe"):
         return core.is_game(Proc(1, name, cmd), ROOT)
