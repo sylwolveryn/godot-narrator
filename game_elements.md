@@ -22,6 +22,7 @@
 | `^` | spikes | glyph_anim (`spikes`) | kill on touch | events HIT_SPIKES, DEATH_BY_SPIKES |
 | `%` | corruption | glyph_anim (`corruption`) | erodes player inside | events CORRUPTION_ENTERED, EROSION_HIGH, DEATH_BY_CORRUPTION; kills at threshold |
 | `o` | pushable object | - | small block | only grown form pushes; one cell per push; cell under it is floor |
+| `T` | teleport ring | none (not in DB) | 3x3 ring of T around a channel char = working pad | walkable floor; centre char (0-9 a-z A-Z) is the channel, even `o`; any other T group = broken (dim cracks, no trip); see Teleports |
 | `G` | gargoyle fountain | none (not in DB) | ASCII gargoyle over animated water basin | blocks movement, sight, light; def: `resources/config/large_objects/gargoyle_fountain.tres` |
 
 - `-` = no DB row listed.
@@ -32,6 +33,25 @@
   - `GG` / `GG` = 2x bigger
 - Scan: row-major, extend right, then down. L-shapes split into rectangles.
 - New big prop = add a LargeObjectDef + legend entry. Nothing else.
+
+### Teleports
+```
+TTT
+T0T     exact 3x3 ring + channel char in middle = working
+TTT     anything else made of T = broken
+```
+- Channels in order: 0-9, a-z, A-Z (62).
+- Step on centre -> go to NEXT HIGHER channel on map (wraps Z -> 0), random pad of it.
+  - only own channel / one pad -> nothing happens.
+  - leave centre before it fires again.
+- Trip = 3 s, no move, no menu:
+  - glow-in 0.7 s, colour waves over floor + walls
+  - camera eases to target; glyph gone
+  - many targets: zoom out full, half pings hop between them, zoom in on chosen
+  - arrival wave, area + strength x targets (max 5)
+- Arena: 0 x2, 1 x1, 7 x3, one broken ring. 0 -> 1, 1 -> 7 (3), 7 -> 0 (2).
+- Code: TeleportPad (parse, route), TeleportSystem (trip), TeleportView (look, waves, camera). Numbers: `resources/config/teleport_config.tres`.
+- Signals: teleport_started / teleport_arrived / teleport_finished.
 
 ## Controls
 
@@ -148,4 +168,4 @@ Run: `python god/god.py`
 - Tests:
   - `godot --headless --max-fps 30 --path . -s tools/test_x.gd`
   - god: `python -m unittest discover -s god/tests`
-- Tasks: backlog CLI (latest TASK-061).
+- Tasks: backlog CLI (latest TASK-068).

@@ -87,3 +87,13 @@ signal language_list_requested
 ## Emitted by MenuController when a language was confirmed in the Language list; LanguageProgress applies it.
 signal language_select_requested(language: StringName)
 
+
+## Teleports (task-068). Emitted by TeleportSystem when the player stepped on a working pad's centre and a trip begins:
+## `from_centre` the source centre (world, on the floor), `candidates` the centres of every pad of the target channel,
+## `chosen_index` the one the trip goes to, `duration` the whole trip in seconds. Movement and the menu are blocked
+## until teleport_finished.
+signal teleport_started(from_centre: Vector3, candidates: Array[Vector3], chosen_index: int, duration: float)
+## Emitted by TeleportSystem when the body has been moved to the destination centre (the arrival wave plays).
+signal teleport_arrived(centre: Vector3, candidate_count: int)
+## Emitted by TeleportSystem when the trip is over (or was cut short by the run ending); movement is free again.
+signal teleport_finished

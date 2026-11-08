@@ -90,6 +90,9 @@ func parse_text(text: String) -> MapData:
 	map.types.resize(max_width * lines.size())
 	map.types.fill(MapLegend.VOID)
 
+	# Teleports (task-068) first: their cells (ring, channel centre, broken T groups) are floor whatever their character.
+	var teleport_cells: Dictionary[Vector2i, bool] = TeleportPad.parse(lines, legend.teleport_char, legend.teleport_channels,
+			map.teleports, map.broken_teleports)
 	var unknown_seen: Dictionary = {}
 	var ragged: bool = false
 	var first_floor: Vector2i = Vector2i(-1, -1)
@@ -99,6 +102,11 @@ func parse_text(text: String) -> MapData:
 			ragged = true
 		for x in line.length():
 			var ch: String = line[x]
+			if teleport_cells.has(Vector2i(x, y)):
+				if first_floor.x < 0:
+					first_floor = Vector2i(x, y)
+				map.set_type(Vector2i(x, y), MapLegend.FLOOR)
+				continue
 			var type: StringName = legend.type_for(ch)
 			if type == &"":
 				if not unknown_seen.has(ch):

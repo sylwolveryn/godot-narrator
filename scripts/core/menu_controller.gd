@@ -38,6 +38,8 @@ var _language_shown: bool = false
 var _language_ids: PackedStringArray = PackedStringArray()
 ## Selection of the item list while a sub view is shown (restored on going back).
 var _list_selected: int = 0
+## True during a teleport trip: the menu does not open.
+var _teleporting: bool = false
 
 
 func _ready() -> void:
@@ -49,6 +51,8 @@ func _ready() -> void:
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.menu_item_pointed.connect(_on_item_pointed)
+	SignalBus.teleport_started.connect(_on_teleport_started)
+	SignalBus.teleport_finished.connect(_on_teleport_finished)
 	_check_unlock()
 
 
@@ -112,9 +116,9 @@ func toggle() -> bool:
 	return open()
 
 
-## Opens the menu. Refused while it is locked, outside a run, or when no item is offered.
+## Opens the menu. Refused while it is locked, outside a run, during a teleport trip, or when no item is offered.
 func open() -> bool:
-	if _open or not is_unlocked():
+	if _open or not is_unlocked() or _teleporting:
 		return false
 	if run_manager != null and run_manager.phase != RunManager.Phase.PLAYING:
 		return false
@@ -290,7 +294,18 @@ func _page_size() -> int:
 
 
 func _on_run_started(_run_index: int) -> void:
+	_teleporting = false
 	close()
+
+
+## A teleport trip (task-068) closes the menu and keeps it shut until the trip is over.
+func _on_teleport_started(_from: Vector3, _candidates: Array[Vector3], _chosen: int, _duration: float) -> void:
+	_teleporting = true
+	close()
+
+
+func _on_teleport_finished() -> void:
+	_teleporting = false
 
 
 func _on_run_ended(_cause: StringName) -> void:

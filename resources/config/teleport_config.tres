@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="TeleportConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/teleport_config.gd" id="1_c0hfp"]
+
+[resource]
+script = ExtResource("1_c0hfp")
+frame_lines = PackedStringArray("/=-T-=\\", "|  :  |", "[     ]", "T: . :T", "[     ]", "|  :  |", "\\=-T-=/")
+font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")

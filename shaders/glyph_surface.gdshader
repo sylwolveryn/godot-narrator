@@ -51,6 +51,9 @@ const int LAYER_TYPES = 8;
 const vec2 LAYER_SALT = vec2(41.7, 13.3); // hash salt of the per-cell layered pick
 const float FLOOR_HASH_N = 2.9;          // dot(up, (1.7, 2.9, 3.3)): the old floor glyph hash, kept for layered cells
 const float RAY_EPS = 0.0001;
+const int MAX_WAVES = 8;                 // TeleportView.MAX_WAVES
+const float WAVE_REACH = 2.5;            // a wave band is skipped beyond this many band widths
+
 
 global uniform sampler2D reveal_mask : filter_nearest;
 
@@ -114,6 +117,13 @@ uniform vec2 anim_brightness = vec2(0.55, 1.25);   // brightness of an animated 
 uniform float clarity = 0.0;
 uniform sampler2D layer_map : filter_nearest, repeat_disable;   // r order/type code, g height / layer_params.x, b half extent * 2 (cell fraction), a 1 = near a layered box
 uniform vec2 layer_params = vec2(1.0, 4.0);   // x ray height (world units, also the g scale), y ray samples
+
+// Colour waves (task-068, TeleportView): up to MAX_WAVES expanding rings that add vibrant colour and glyph density to the
+// floor and walls they pass. Per glyph cell (cell centre pc), so the ring steps in ASCII cells. wave_count 0 = no cost.
+uniform int wave_count = 0;
+uniform vec4 wave_geo[MAX_WAVES];        // xz centre, z ring radius, w band half width (world units)
+uniform vec4 wave_col[MAX_WAVES];        // rgb colour, a strength
+uniform vec4 wave_style = vec4(0.12, 0.6, 0.55, 0.6);   // x rainbow phase per world unit, y per second, z rainbow mix, w glyph density gain
 
 varying flat vec3 w_nrm;
 varying flat float v_type;
@@ -366,6 +376,24 @@ void fragment() {
 	b += edge * edge_gain * (lum_l + edge_ambient);
 	b *= min(vis, 1.0) * mix(1.0, memory_density, mem);
 	b = max(b, memory_floor * mem * (t == T_FLOOR ? 0.8 : 1.0));
+	vec3 wave_c = vec3(0.0);
+	if (wave_count > 0) {
+		for (int i = 0; i < MAX_WAVES; i++) {
+			if (i >= wave_count) {
+				break;
+			}
+			vec4 wg = wave_geo[i];
+			float wd = distance(pc.xz, wg.xy);
+			float wx = (wd - wg.z) / wg.w;
+			if (abs(wx) > WAVE_REACH) {
+				continue;
+			}
+			float wk = exp(-wx * wx) * wave_col[i].a;
+			vec3 rainbow = 0.5 + 0.5 * cos(TAU * (wd * wave_style.x - TIME * wave_style.y + float(i) * 0.37 + vec3(0.0, 0.33, 0.67)));
+			wave_c += mix(wave_col[i].rgb, rainbow, wave_style.z) * wk;
+		}
+		b += max(wave_c.r, max(wave_c.g, wave_c.b)) * wave_style.w;
+	}
 	if (lift_zone.w > 0.0) {
 		b *= 1.0 - lift_zone.w * (1.0 - smoothstep(lift_zone.z * 0.4, lift_zone.z, distance(hp.xz, lift_zone.xy)));
 	}
@@ -417,6 +445,14 @@ void fragment() {
 	float grey = dot(c, vec3(0.3, 0.59, 0.11));
 	c = mix(vec3(grey), c, mix(memory_saturation, 1.0, seen)) * mix(memory_dim, 1.0, seen) * mix(memory_tint, vec3(1.0), seen);
 	c += glint_color * m.b * cov;
+	// Colour waves: the glyphs in a band take the wave's (saturated) hue and brighten; a faint fill lights the cell.
+	float wave_k = max(wave_c.r, max(wave_c.g, wave_c.b));
+	if (wave_k > 0.0) {
+		vec3 wave_hue = wave_c / wave_k;
+		wave_hue *= wave_hue;              // more saturated
+		float wave_a = min(wave_k, 1.0);
+		c = mix(c, wave_hue * cov * min(0.8 + 0.3 * wave_k, 1.3), wave_a) + wave_hue * (0.1 * wave_a * grow);
+	}
 	// Depth fog: the far (upper) part of the screen sinks into the dark.
 	float screen_top = 1.0 - FRAGCOORD.y / VIEWPORT_SIZE.y;
 	c *= 1.0 - fog_strength * smoothstep(fog_start, 1.0, screen_top);

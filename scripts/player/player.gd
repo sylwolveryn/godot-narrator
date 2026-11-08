@@ -38,6 +38,8 @@ var _ground: Plane = Plane(Vector3.UP, 0.0)
 var _moving: bool = false
 var _moved_this_run: bool = false
 var _menu_open: bool = false
+## True during a teleport trip (task-068): movement input is ignored like while the menu is open.
+var _teleporting: bool = false
 ## Ground offset from the player to the cursor while the pointer is held, else null.
 var _pointer_offset: Variant = null
 ## Map cell the player stood in last physics step (steps are counted when it changes).
@@ -66,6 +68,8 @@ func _ready() -> void:
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.menu_opened.connect(_on_menu_opened)
 	SignalBus.menu_closed.connect(_on_menu_closed)
+	SignalBus.teleport_started.connect(_on_teleport_started)
+	SignalBus.teleport_finished.connect(_on_teleport_finished)
 
 
 func _physics_process(delta: float) -> void:
@@ -123,6 +127,36 @@ func _on_menu_closed() -> void:
 	_menu_open = false
 
 
+## A teleport trip blocks movement: the body stops at once and no sprint, glide or pointer state carries over.
+func _on_teleport_started(_from: Vector3, _candidates: Array[Vector3], _chosen: int, _duration: float) -> void:
+	_teleporting = true
+	_stop_motion_state()
+
+
+func _on_teleport_finished() -> void:
+	_teleporting = false
+
+
+## True while a teleport trip blocks movement.
+func is_teleporting() -> bool:
+	return _teleporting
+
+
+## Moves the body to a world position on the floor (teleport arrival, task-068), at rest.
+func place_at(world_position: Vector3) -> void:
+	global_position = Vector3(world_position.x, 0.0, world_position.z)
+	_stop_motion_state()
+
+
+func _stop_motion_state() -> void:
+	velocity = Vector3.ZERO
+	move_intent = Vector3.ZERO
+	_pointer_offset = null
+	_sprinting = false
+	_sprint_glide = false
+	_touching = false
+
+
 ## Pointer scheme: never travel further than the cursor within one physics step, so arrival
 ## does not depend on the frame rate or on how much speed is left when the stop radius is reached.
 func _limit_to_cursor(delta: float) -> void:
@@ -140,6 +174,7 @@ func _limit_to_cursor(delta: float) -> void:
 func spawn() -> void:
 	_moving = false
 	_moved_this_run = false
+	_teleporting = false
 	if map_loader != null:
 		global_position = map_loader.spawn_position
 	velocity = Vector3.ZERO
@@ -163,7 +198,7 @@ func _wanted_direction() -> Vector3:
 	if run_manager == null or run_manager.phase != RunManager.Phase.PLAYING:
 		return Vector3.ZERO
 	_pointer_offset = null
-	if _menu_open:
+	if _menu_open or _teleporting:
 		return Vector3.ZERO
 	match run_manager.state.input_scheme:
 		InputScheme.KEYBOARD, InputScheme.GAMEPAD:

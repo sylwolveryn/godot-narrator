@@ -13,6 +13,10 @@ var has_spawn: bool = false
 var objects: Array[Vector2i] = []
 ## Merged multi-cell props (task-058), row-major by top-left cell. Their cells hold the prop type in `types`.
 var large_objects: Array[LargeObjectPlacement] = []
+## Working teleports (task-068), row-major by top-left cell; their cells (ring and centre) hold floor in `types`.
+var teleports: Array[TeleportPad] = []
+## Broken teleport groups (T cells that do not form an exact ring with a channel centre); their cells hold floor.
+var broken_teleports: Array[TeleportPad] = []
 ## Cell types that block light besides walls and void (large props with LargeObjectDef.blocks_light).
 var light_blocking_types: Dictionary[StringName, bool] = {}
 ## Errors make the map unusable or degrade it (e.g. missing file, no spawn).
@@ -45,3 +49,11 @@ func large_object_at(cell: Vector2i) -> LargeObjectPlacement:
 		if placement.has_cell(cell):
 			return placement
 	return null
+
+
+## Index (into `teleports`) of the working pad whose centre is `cell`, -1 when none.
+func teleport_at_centre(cell: Vector2i) -> int:
+	for i in teleports.size():
+		if teleports[i].centre == cell:
+			return i
+	return -1

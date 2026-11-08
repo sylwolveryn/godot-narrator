@@ -76,6 +76,8 @@ func _init() -> void:
 	ok = _save(AvatarFxConfig.new(), "avatar_fx_config.tres") and ok
 	# Language understanding progression (task-065).
 	ok = _save(LanguageConfig.new(), "language_config.tres") and ok
+	# Teleports (task-068): trip timeline, camera drive, colour waves, pad look.
+	ok = _save(TeleportConfig.new(), "teleport_config.tres") and ok
 
 	quit(0 if ok else 1)
 

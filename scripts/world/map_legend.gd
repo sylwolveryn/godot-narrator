@@ -28,6 +28,12 @@ const OBJECT: StringName = &"object"
 ## Multi-cell props (task-058): cell type -> definition. Their character (LargeObjectDef.character) needs no entry in
 ## `entries`; adjacent cells of one type merge into rectangular objects (LargeObjectMerger).
 @export var large_objects: Dictionary[StringName, LargeObjectDef] = {}
+## Teleports (task-068): an exact 3x3 ring of `teleport_char` around a channel character is a working teleport; any
+## other group of `teleport_char` cells is broken. Parsed before `entries`, so a channel character inside a ring (e.g.
+## `o`) is a channel, not its legend meaning. All teleport cells are floor.
+@export var teleport_char: String = "T"
+## Channel characters in channel order (the trip goes to the next higher channel present, wrapping around).
+@export var teleport_channels: String = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 ## Cell type used for characters not in `entries` (a warning is logged).
 @export var unknown_type: StringName = FLOOR
 

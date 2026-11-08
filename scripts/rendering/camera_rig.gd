@@ -17,6 +17,11 @@ var _yaw_goal: float = 0.0
 ## Current and requested zoom, as a multiple of the profile's size (ortho) or distance (perspective).
 var _zoom: float = 1.0
 var _zoom_goal: float = 1.0
+## View override (task-068, teleport travel): while set, a presentation node places the rig and sets the zoom every
+## frame (override_view); the follow and the player's zoom input pause. release_override() hands back to the follow
+## (smoothed) and to the zoom the player had asked for.
+var _override: bool = false
+var _zoom_goal_saved: float = 1.0
 ## One full turn in degrees; used to keep the unwrapped yaw small.
 const FULL_TURN: float = 360.0
 
@@ -31,7 +36,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_update_rotation_keys(delta)
 	_update_view(delta)
-	if follow_target == null:
+	if follow_target == null or _override:
 		return
 	var goal: Vector3 = _goal()
 	if view_config.follow_smoothing <= 0.0:
@@ -46,7 +51,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if view_config.rotation_enabled and Input.is_action_pressed(view_config.action_drag):
 			rotate_by(-(event as InputEventMouseMotion).relative.x * view_config.drag_degrees_per_pixel)
 		return
-	if not view_config.zoom_enabled:
+	if not view_config.zoom_enabled or _override:
 		return
 	if event.is_action_pressed(view_config.action_zoom_in, true):
 		zoom_by(-1.0)
@@ -94,6 +99,38 @@ func current_yaw_degrees() -> float:
 ## The zoom the view shows right now (1 = the profile's own size / distance).
 func current_zoom() -> float:
 	return _zoom
+
+
+## Places the rig over a floor point and shows `zoom` (multiple of the profile's size) right now, pausing the follow
+## and the zoom input until release_override(). Called every frame by whoever drives the view (e.g. TeleportView).
+## The zoom may go up to the profile's zoom_max; values outside zoom_min..zoom_max are clamped.
+func override_view(world_position: Vector3, zoom: float) -> void:
+	if not _override:
+		_override = true
+		_zoom_goal_saved = _zoom_goal
+	global_position = Vector3(world_position.x, view_config.look_height, world_position.z)
+	_zoom = clampf(zoom, view_config.zoom_min, view_config.zoom_max)
+	_zoom_goal = _zoom
+	_apply_transform()
+
+
+## Ends a view override: the follow takes over again (smoothed from where the override left the rig) and the zoom eases
+## back to the one the player had asked for.
+func release_override() -> void:
+	if not _override:
+		return
+	_override = false
+	_zoom_goal = _zoom_goal_saved
+
+
+## True while a view override is in effect.
+func is_overridden() -> bool:
+	return _override
+
+
+## The zoom the player asked for (the goal), ignoring an override in effect.
+func requested_zoom() -> float:
+	return _zoom_goal_saved if _override else _zoom_goal
 
 
 ## Jumps straight to the follow target (no smoothing), e.g. after a respawn.

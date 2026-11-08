@@ -172,6 +172,7 @@ func _build() -> void:
 	player_glyph.set("entity_config", entity_cfg)
 	player_glyph.set("avatar_config", load(CFG + "avatar_fx_config.tres"))
 	player_glyph.set("database", database)
+	player_glyph.set("teleport_config", load(CFG + "teleport_config.tres"))
 	_add(root, player_glyph)
 
 	# Ink trail behind the moving player (task-057): one MultiMesh of fading ink glyphs; values from DB avatar_fx.
@@ -293,6 +294,25 @@ func _build() -> void:
 	_add(root, object_view)
 	# Layered clarity (task-066): pushable objects are layered boxes of the world view.
 	glyph_view.set("pushables", pushables)
+
+	# Teleports (task-068): the trip logic (watches the player's cell, owns the timeline, moves the body) and its
+	# presentation (pad frames, colour waves on the world material, camera travel through the rig).
+	var teleport_cfg: TeleportConfig = load(CFG + "teleport_config.tres")
+	var teleports: Node = load("res://scripts/world/teleport_system.gd").new()
+	teleports.name = "TeleportSystem"
+	teleports.set("config", teleport_cfg)
+	teleports.set("map_loader", loader)
+	teleports.set("player", player)
+	teleports.set("run_manager", runs)
+	_add(root, teleports)
+	var teleport_view: Node3D = load("res://scripts/rendering/teleport_view.gd").new()
+	teleport_view.name = "TeleportView"
+	teleport_view.set("config", teleport_cfg)
+	teleport_view.set("map_loader", loader)
+	teleport_view.set("map_reveal", reveal)
+	teleport_view.set("camera_rig", rig)
+	teleport_view.set("surface_material", load(GLYPH_MATERIAL))
+	_add(root, teleport_view)
 
 	var hazards: Node = load("res://scripts/world/hazard_monitor.gd").new()
 	hazards.name = "HazardMonitor"

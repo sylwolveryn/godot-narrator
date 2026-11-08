@@ -36,6 +36,8 @@ const QUAD_EXTENT: float = 2.0
 ## Fallback avatar look; the DB row (database, table avatar_fx) replaces it when read.
 @export var avatar_config: AvatarFxConfig
 @export var database: GameDatabase
+## Teleports (task-068): the glyph dissolves over the glow-in, stays hidden during the travel, reappears on arrival.
+@export var teleport_config: TeleportConfig
 
 var _rng := RandomNumberGenerator.new()
 var _viewport: SubViewport
@@ -56,6 +58,9 @@ var _flashing: bool = false
 var _dying: bool = false
 var _death_clock: float = 0.0
 var _player_visible: bool = false
+## Teleport presence 0..1 (alpha multiplier) and its direction: -1 dissolving / hidden, +1 reappearing / shown.
+var _presence: float = 1.0
+var _presence_dir: float = 1.0
 
 var _slot_b: int = 1
 var _slot_c: int = 1
@@ -141,6 +146,11 @@ func _ready() -> void:
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.entity_form_changed.connect(set_form)
 	SignalBus.language_understanding_changed.connect(_on_understanding_changed)
+	SignalBus.teleport_started.connect(_on_teleport_started)
+	SignalBus.teleport_arrived.connect(_on_teleport_arrived)
+	SignalBus.teleport_finished.connect(_on_teleport_finished)
+	if teleport_config == null:
+		teleport_config = TeleportConfig.new()
 	if player != null:
 		player.identity_changed.connect(_on_identity_changed)
 		if player.identity_glyph != "":
@@ -156,9 +166,10 @@ func _process(delta: float) -> void:
 		_step_corruption(level, delta)
 	_step_death(delta)
 	_step_feel(delta)
+	_step_presence(delta)
 	_write_player(level)
 	_write_fragments(delta)
-	_entity.present(delta, _glyph_centre(), level, _tint, _identity != "")
+	_entity.present(delta, _glyph_centre(), level, _tint, _identity != "" and _presence > 0.5)
 
 
 ## Shows the single glyph or the grown entity. animate = play the grow / fold morph, otherwise it just appears.
@@ -354,7 +365,7 @@ func _write_player(level: float) -> void:
 	var shape := Basis(Vector3(size, 0.0, 0.0), Vector3(_lean * size, _stretch * size, 0.0), Vector3(0.0, 0.0, size))
 	_multimesh.set_instance_transform(PLAYER_INSTANCE, Transform3D(shape, pos))
 	var col: Color = player_config.glyph_color.lerp(_tint, level * fx_config.tint_strength)
-	col.a = lerpf(1.0, fx_config.fade_min_alpha, level)
+	col.a = lerpf(1.0, fx_config.fade_min_alpha, level) * _presence
 	_multimesh.set_instance_color(PLAYER_INSTANCE, col)
 	_multimesh.set_instance_custom_data(PLAYER_INSTANCE,
 			Color(float(IDENTITY_SLOT), float(_slot_b + SLOT_PACK * _slot_c), level, _morph if _morphing else 0.0))
@@ -532,7 +543,35 @@ func _on_hazard_lethal(_cause: StringName, tint: Color) -> void:
 	_death_tint = tint
 
 
+## Teleport presence (0..1): it eases toward the current direction (dissolve over the glow-in, reappear over half the
+## arrival).
+func _step_presence(delta: float) -> void:
+	if _presence_dir < 0.0:
+		_presence = maxf(_presence - delta / maxf(teleport_config.glow_in_seconds, 0.001), 0.0)
+	else:
+		_presence = minf(_presence + delta / maxf(teleport_config.arrival_seconds * 0.5, 0.001), 1.0)
+
+
+## 0..1: 0 while the glyph is away on a teleport trip.
+func teleport_presence() -> float:
+	return _presence
+
+
+func _on_teleport_started(_from: Vector3, _candidates: Array[Vector3], _chosen: int, _duration: float) -> void:
+	_presence_dir = -1.0
+
+
+func _on_teleport_arrived(_centre: Vector3, _count: int) -> void:
+	_presence_dir = 1.0
+
+
+func _on_teleport_finished() -> void:
+	_presence_dir = 1.0
+
+
 func _on_run_started(_run_index: int) -> void:
+	_presence = 1.0
+	_presence_dir = 1.0
 	_dying = false
 	_flashing = false
 	_death_clock = 0.0
