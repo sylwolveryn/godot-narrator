@@ -6,6 +6,10 @@
 // INSTANCE_CUSTOM = (base atlas slot, corrupt slots B + 64 * C, erosion level 0..1, morph B->C 0..1).
 // Erosion (level): the base glyph blends continuously into the corrupt glyph, the image warps in slow waves
 // (no per-frame random, only TIME) and a violet ghost image slides beside it. Opacity 0 collapses the quad.
+// Crystal glow (task-056): the glyph is split into facets that each drift slowly through a small palette, a few
+// facets sparkle; the halo follows the palette. Lean / stretch (task-057): the transform's Y column carries
+// (lean, stretch, 0) * size for the player glyph (a plain uniform scale gives lean 0, stretch 1), pivoting at the
+// glyph's foot so the glyph leans into its motion and stretches / squashes with the acceleration.
 shader_type spatial;
 render_mode unshaded, blend_premul_alpha, depth_draw_never, cull_disabled, fog_disabled;
 
@@ -14,6 +18,8 @@ render_mode unshaded, blend_premul_alpha, depth_draw_never, cull_disabled, fog_d
 const float TWO_PI = 6.2831853;
 const float HIDDEN_BELOW = 0.003;
 const float SLOT_PACK = 64.0;
+const int CRYSTAL_MAX = 6;                // AvatarFxConfig.crystal_max_colors
+const float MIN_STRETCH = 0.2;
 const vec2 OUTLINE_DIRS[4] = vec2[4](vec2(1.0, 0.0), vec2(-1.0, 0.0), vec2(0.0, 1.0), vec2(0.0, -1.0));
 
 uniform sampler2D glyph_atlas : filter_linear, repeat_disable;
@@ -32,6 +38,12 @@ uniform float halo_intensity = 0.75;
 uniform float halo_pool = 0.35;
 uniform float halo_breath_amount = 0.08;
 uniform float halo_breath_period = 4.0;
+uniform vec4 crystal_palette[CRYSTAL_MAX];
+uniform float crystal_count = 0.0;              // colours in use (0 = crystal glow off)
+uniform float crystal_speed = 0.08;             // palette cycles per second
+uniform float crystal_strength = 0.45;
+uniform float crystal_facets = 5.0;
+uniform float crystal_sparkle = 0.04;
 uniform float halo_ref_size = 1.5;              // quad half-size of the player glyph; the halo of smaller quads (fragments) shrinks with its cube
 
 varying vec2 q;
@@ -58,7 +70,11 @@ void vertex() {
 		vec3 r = INV_VIEW_MATRIX[0].xyz;
 		vec3 u = INV_VIEW_MATRIX[1].xyz;
 		vec3 to_cam = INV_VIEW_MATRIX[2].xyz;
-		vec3 pos = c + (r * VERTEX.x + u * VERTEX.y) * size + to_cam * lift;
+		vec3 shape = MODEL_MATRIX[1].xyz / max(size, 0.0001);
+		float stretch = max(shape.y, MIN_STRETCH);
+		float foot_y = VERTEX.y + glyph_fill;
+		vec2 v = vec2(VERTEX.x * inversesqrt(stretch) + shape.x * foot_y, foot_y * stretch - glyph_fill);
+		vec3 pos = c + (r * v.x + u * v.y) * size + to_cam * lift;
 		POSITION = PROJECTION_MATRIX * VIEW_MATRIX * vec4(pos, 1.0);
 		q = VERTEX.xy;
 		float cb = mod(INSTANCE_CUSTOM.y + 0.5, SLOT_PACK);
@@ -78,6 +94,18 @@ float slot_cov(float slot, vec2 uv) {
 	}
 	vec2 tile = vec2(mod(slot + 0.5, atlas_grid.x), floor((slot + 0.5) / atlas_grid.x));
 	return texture(glyph_atlas, (floor(tile) + uv) / atlas_grid).a;
+}
+
+float crystal_hash(vec2 p) {
+	return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+// The palette colour at phase t (0..1 wraps), blended smoothly between neighbours.
+vec3 crystal_at(float t) {
+	float pp = fract(t) * crystal_count;
+	int i0 = min(int(pp), CRYSTAL_MAX - 1);
+	int i1 = int(mod(float(i0 + 1), max(crystal_count, 1.0)));
+	return mix(crystal_palette[i0].rgb, crystal_palette[i1].rgb, smoothstep(0.0, 1.0, fract(pp)));
 }
 
 // The glyph: the base slot blended into the (morphing) corrupt slot by the erosion level.
@@ -118,12 +146,23 @@ void fragment() {
 	float al = back;
 	rgb = ghost_color * ghost + rgb * (1.0 - ghost);
 	al = ghost + al * (1.0 - ghost);
-	rgb = tint.rgb * cov + rgb * (1.0 - cov);
+	vec3 face = tint.rgb;
+	vec3 halo_tint = mix(halo_color, ghost_color, level);
+	if (crystal_count > 0.5 && crystal_strength > 0.0) {
+		float k = crystal_strength * (1.0 - level);
+		vec2 facet = floor(gp * crystal_facets);
+		float fh = crystal_hash(facet);
+		vec3 cc = crystal_at(TIME * crystal_speed + fh * 0.35);
+		float spark = step(1.0 - crystal_sparkle, crystal_hash(facet + floor(TIME * 1.5 + fh * 7.0)));
+		face = mix(tint.rgb, cc, k) + cc * spark * 0.6 * (1.0 - level);
+		halo_tint = mix(halo_tint, crystal_at(TIME * crystal_speed), k * 0.6);
+	}
+	rgb = face * cov + rgb * (1.0 - cov);
 	al = cov + al * (1.0 - cov);
 	rgb *= tint.a;
 	al *= tint.a;
 	float breath = 1.0 + halo_breath_amount * sin(TIME * TWO_PI / halo_breath_period);
 	float glow = halo_shape(q, h_pool_y, h_squash, halo_pool) * halo_intensity * breath * tint.a * h_k;
-	ALBEDO = rgb + mix(halo_color, ghost_color, level) * glow;
+	ALBEDO = rgb + halo_tint * glow;
 	ALPHA = al;
 }

@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="AvatarFxConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/avatar_fx_config.gd" id="1_ebuid"]
+
+[resource]
+script = ExtResource("1_ebuid")
+crystal_palette = PackedColorArray(0.62352943, 0.9411765, 1, 1, 0.56078434, 0.65882355, 1, 1, 0.8509804, 0.6117647, 1, 1, 1, 0.90588236, 0.6901961, 1)
+trail_font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")

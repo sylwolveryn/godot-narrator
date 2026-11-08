@@ -153,8 +153,58 @@ def _spawn_detached(args: list[str], root: Path) -> None:
                      close_fds=True)
 
 
-def spawn_game(godot: str, root: Path) -> None:
-    _spawn_detached([godot, "--path", str(root), *MAX_FPS_ARGS], root)
+def game_args(godot: str, root: Path, map_name: Optional[str] = None) -> list[str]:
+    """The game command line; a chosen map goes after `--` as a user argument the game reads (MapLoader)."""
+    args = [godot, "--path", str(root), *MAX_FPS_ARGS]
+    if map_name:
+        args += ["--", MAP_ARG_PREFIX + map_name]
+    return args
+
+
+def spawn_game(godot: str, root: Path, map_name: Optional[str] = None) -> None:
+    _spawn_detached(game_args(godot, root, map_name), root)
+
+
+# --------------------------------------------------------------------------- map chooser (task-060)
+
+MAPS_DIR = "data/maps"
+MAP_EXTENSION = ".txt"
+MAP_ARG_PREFIX = "--map="
+SETTINGS_FILE_NAME = "settings.json"
+SETTING_MAP = "map"
+
+
+def list_maps(root: Path) -> list[str]:
+    """Names (file stems) of the maps in data/maps/*.txt, sorted. Empty when the folder is missing."""
+    folder = root / MAPS_DIR
+    if not folder.is_dir():
+        return []
+    return sorted(p.stem for p in folder.iterdir() if p.is_file() and p.suffix.lower() == MAP_EXTENSION)
+
+
+def settings_path() -> Path:
+    """god's own settings file, next to god.py (gitignored)."""
+    return Path(__file__).resolve().parent / SETTINGS_FILE_NAME
+
+
+def load_settings(path: Path) -> dict:
+    """The settings dict; empty when the file is missing or not a JSON object."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def save_settings(path: Path, data: dict) -> None:
+    path.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def choose_map(maps: list, remembered: Optional[str]) -> Optional[str]:
+    """The map to preselect: the remembered one if it still exists, else the first map, else None."""
+    if remembered in maps:
+        return remembered
+    return maps[0] if maps else None
 
 
 def spawn_spike(godot: str, root: Path, scene: str) -> None:
@@ -190,6 +240,8 @@ class GameController:
         self._list, self._terminate, self._kill, self._spawn = list_procs, terminate, kill, spawn
         self._sleep, self._clock, self.close_timeout = sleep, clock, close_timeout
         self.warned = False
+        # Map chooser (task-060): the map the game is started on; None starts the scene's own map.
+        self.map_name: Optional[str] = None
 
     def game_processes(self) -> list:
         return [p for p in self._list() if is_game(p, self.root)]
@@ -217,7 +269,10 @@ class GameController:
     def start(self) -> None:
         if not self.godot:
             raise RuntimeError("Godot not found: put `godot` on PATH or set GODOT_BIN")
-        self._spawn(self.godot, self.root)
+        if self.map_name:
+            self._spawn(self.godot, self.root, self.map_name)
+        else:
+            self._spawn(self.godot, self.root)
 
     def new_game(self) -> None:
         self.close_game()
@@ -400,7 +455,7 @@ DB_SERVER = "local"
 DB_DIR = "database"
 DB_TABLES = (
     "event_def", "language_def", "narration", "player_stats", "player_death",
-    "player_language", "missing_narration", "glyph_anim", "movement_profile", "config_version",
+    "player_language", "missing_narration", "glyph_anim", "movement_profile", "avatar_fx", "config_version",
 )
 # Player movement profiles (DB table movement_profile): "default" is the fallback, the others are entity forms.
 MOVEMENT_PROFILES = ("default", "single", "grown")

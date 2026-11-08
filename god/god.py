@@ -46,6 +46,7 @@ class GodApp:
         self.btn_reveal = ttk.Button(row, text="Reveal map", command=self._reveal)
         for b in (self.btn_new, self.btn_cont, self.btn_reveal):
             b.pack(side="left", padx=(0, 6))
+        self._build_map_pick(row)
         spikes = ttk.Frame(self.win)
         spikes.pack(fill="x", **pad)
         ttk.Label(spikes, text="Prototypes:").pack(side="left", padx=(0, 6))
@@ -61,6 +62,30 @@ class GodApp:
         self.progress.tag_configure("err", foreground="#b00020")
         self.progress.tag_configure("empty", foreground="#666666")
         self._build_db()
+
+    def _build_map_pick(self, row) -> None:
+        """Map chooser (task-060): data/maps/*.txt; the choice is remembered in god/settings.json."""
+        self.settings_file = core.settings_path()
+        settings = core.load_settings(self.settings_file)
+        maps = core.list_maps(self.ctl.root)
+        ttk.Label(row, text="Map:").pack(side="left", padx=(6, 4))
+        self.map_pick = ttk.Combobox(row, values=maps, state="readonly", width=18)
+        chosen = core.choose_map(maps, settings.get(core.SETTING_MAP))
+        if chosen:
+            self.map_pick.set(chosen)
+        self.ctl.map_name = chosen
+        self.map_pick.bind("<<ComboboxSelected>>", self._on_map_picked)
+        self.map_pick.pack(side="left")
+
+    def _on_map_picked(self, _event=None) -> None:
+        name = self.map_pick.get() or None
+        self.ctl.map_name = name
+        settings = core.load_settings(self.settings_file)
+        settings[core.SETTING_MAP] = name
+        try:
+            core.save_settings(self.settings_file, settings)
+        except OSError as e:
+            self._log("Could not save settings: %s" % e, error=True)
 
     def _build_db(self) -> None:
         pad = {"padx": 10, "pady": 4}

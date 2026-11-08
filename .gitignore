@@ -18,3 +18,6 @@ mono_crash.*.json
 # Runtime output (missing-narration log) and Python caches
 /logs/
 __pycache__/
+
+# god launcher settings (task-060)
+/god/settings.json

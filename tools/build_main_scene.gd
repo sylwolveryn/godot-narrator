@@ -158,7 +158,17 @@ func _build() -> void:
 	player_glyph.set("world_config", load(CFG + "glyph_world_config.tres"))
 	player_glyph.set("world", load(CFG + "world_config.tres"))
 	player_glyph.set("entity_config", entity_cfg)
+	player_glyph.set("avatar_config", load(CFG + "avatar_fx_config.tres"))
+	player_glyph.set("database", database)
 	_add(root, player_glyph)
+
+	# Ink trail behind the moving player (task-057): one MultiMesh of fading ink glyphs; values from DB avatar_fx.
+	var ink: Node3D = load("res://scripts/rendering/ink_trail_view.gd").new()
+	ink.name = "InkTrailView"
+	ink.set("config", load(CFG + "avatar_fx_config.tres"))
+	ink.set("database", database)
+	ink.set("player", player)
+	_add(root, ink)
 
 	# The in-world menu: glyphs of the surroundings fly into a framed list (one MultiMesh, hidden while closed).
 	var menu_view: Node3D = load("res://scripts/rendering/menu_glyph_view.gd").new()
@@ -199,6 +209,13 @@ func _build() -> void:
 	halos.set("config", load(CFG + "glyph_world_config.tres"))
 	halos.set("map_loader", loader)
 	_add(root, halos)
+
+	# Merged multi-cell props (task-058): ASCII-art Label3D pieces scaled to their footprint, reveal-aware.
+	var large_view: Node3D = load("res://scripts/rendering/large_object_view.gd").new()
+	large_view.name = "LargeObjectView"
+	large_view.set("map_loader", loader)
+	large_view.set("map_reveal", reveal)
+	_add(root, large_view)
 
 	# Narration text: above the world and above the intro veil (decision-001).
 	var narration: CanvasLayer = load("res://scripts/narrator/narration_overlay.gd").new()
@@ -243,6 +260,7 @@ func _build() -> void:
 	_add(root, runs)
 	player.set("run_manager", runs)
 	menu.set("run_manager", runs)
+	ink.set("run_manager", runs)
 
 	# Small pushable objects (task-019): data layer (cells, collision, pushing) and its MultiMesh presentation.
 	var push_cfg: PushConfig = load(CFG + "push_config.tres")

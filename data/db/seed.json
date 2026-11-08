@@ -1796,5 +1796,27 @@
 			"acceleration": 8.0,
 			"deceleration": 10.0
 		}
+	],
+	"avatar_fx": [
+		{
+			"profile": "default",
+			"crystal_palette": "#9ff0ff,#8fa8ff,#d99cff,#ffe7b0",
+			"crystal_speed": 0.08,
+			"crystal_strength": 0.55,
+			"crystal_facets": 5.0,
+			"crystal_sparkle": 0.04,
+			"trail_enabled": true,
+			"trail_chars": ".,:;'`",
+			"trail_color": "#8a6bff",
+			"trail_rim": "#efe6ff",
+			"trail_lifetime": 0.8,
+			"trail_spacing": 0.22,
+			"trail_size": 0.24,
+			"trail_spread": 0.6,
+			"trail_jitter": 0.12,
+			"lean_amount": 0.18,
+			"stretch_amount": 0.12,
+			"feel_smoothing": 0.12
+		}
 	]
 }

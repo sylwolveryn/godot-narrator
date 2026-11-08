@@ -8,6 +8,7 @@ extends Node3D
 ## can draw works. Erosion distorts the glyph progressively (continuous blend into a substitute glyph, slow warp,
 ## violet ghost, tint, fade); death breaks it into fragments that fly outward and fade. Erosion and death arrive
 ## by SignalBus signals; this node only presents, it never writes data. No per-frame allocations.
+## Crystal glow and lean / stretch (task-056/057) come from AvatarFxConfig, refreshed from the DB table avatar_fx.
 
 const ACTOR_SHADER: String = "res://shaders/glyph_actor.gdshader"
 const PLAYER_INSTANCE: int = 0
@@ -29,6 +30,9 @@ const QUAD_EXTENT: float = 2.0
 @export var world: WorldConfig
 ## The grown multi-glyph entity (task-017): its body is a second MultiMesh (EntityGlyphView), the heart stays instance 0.
 @export var entity_config: EntityGrowthConfig
+## Fallback avatar look; the DB row (database, table avatar_fx) replaces it when read.
+@export var avatar_config: AvatarFxConfig
+@export var database: GameDatabase
 
 var _rng := RandomNumberGenerator.new()
 var _viewport: SubViewport
@@ -58,6 +62,11 @@ var _retarget_in: float = 0.0
 var _shed_in: float = 0.0
 
 var _entity: EntityGlyphView
+## Avatar look in effect, and the lean / stretch state (stretch 1 = none).
+var _fx: AvatarFxConfig
+var _lean: float = 0.0
+var _stretch: float = 1.0
+var _prev_speed: float = 0.0
 var _form: StringName = EntityForm.SINGLE
 
 var _frag_age: PackedFloat32Array = PackedFloat32Array()
@@ -114,6 +123,11 @@ func _ready() -> void:
 	_build_atlas()
 	_build_multimesh()
 	_build_entity()
+	if avatar_config == null:
+		avatar_config = AvatarFxConfig.new()
+	apply_avatar_fx(avatar_config.from_tables(database.tables) if database != null else avatar_config)
+	if database != null:
+		database.tables_loaded.connect(func(tables: Dictionary) -> void: apply_avatar_fx(avatar_config.from_tables(tables)))
 	_slot_b = _random_slot()
 	_slot_c = _slot_b
 	SignalBus.erosion_changed.connect(_on_erosion_changed)
@@ -135,6 +149,7 @@ func _process(delta: float) -> void:
 	if not _dying:
 		_step_corruption(level, delta)
 	_step_death(delta)
+	_step_feel(delta)
 	_write_player(level)
 	_write_fragments(delta)
 	_entity.present(delta, _glyph_centre(), level, _tint, _identity != "")
@@ -328,7 +343,10 @@ func _write_player(level: float) -> void:
 		_multimesh.set_instance_color(PLAYER_INSTANCE, _clear_color)
 		return
 	var pos: Vector3 = player.global_position + Vector3.UP * player_config.glyph_height
-	_multimesh.set_instance_transform(PLAYER_INSTANCE, Transform3D(Basis.from_scale(Vector3.ONE * _half_size * _entity.heart_scale()), pos))
+	var size: float = _half_size * _entity.heart_scale()
+	# The Y column carries (lean, stretch) for the actor shader (see glyph_actor.gdshader).
+	var shape := Basis(Vector3(size, 0.0, 0.0), Vector3(_lean * size, _stretch * size, 0.0), Vector3(0.0, 0.0, size))
+	_multimesh.set_instance_transform(PLAYER_INSTANCE, Transform3D(shape, pos))
 	var col: Color = player_config.glyph_color.lerp(_tint, level * fx_config.tint_strength)
 	col.a = lerpf(1.0, fx_config.fade_min_alpha, level)
 	_multimesh.set_instance_color(PLAYER_INSTANCE, col)
@@ -356,6 +374,49 @@ func _write_fragments(delta: float) -> void:
 		col.a = 1.0 - t
 		_multimesh.set_instance_color(i, col)
 		_multimesh.set_instance_custom_data(i, Color(float(_frag_slot[i]), 0.0, 0.0, 0.0))
+
+
+## Applies an avatar look: the crystal glow uniforms now, lean / stretch values from the next frame on.
+func apply_avatar_fx(fx: AvatarFxConfig) -> void:
+	_fx = fx
+	var colours := PackedVector4Array()
+	for i in fx.crystal_max_colors:
+		var c: Color = fx.crystal_palette[i] if i < fx.crystal_palette.size() else Color.BLACK
+		colours.append(Vector4(c.r, c.g, c.b, 1.0))
+	_material.set_shader_parameter(&"crystal_palette", colours)
+	_material.set_shader_parameter(&"crystal_count", float(mini(fx.crystal_palette.size(), fx.crystal_max_colors)))
+	_material.set_shader_parameter(&"crystal_speed", fx.crystal_speed)
+	_material.set_shader_parameter(&"crystal_strength", fx.crystal_strength)
+	_material.set_shader_parameter(&"crystal_facets", fx.crystal_facets)
+	_material.set_shader_parameter(&"crystal_sparkle", fx.crystal_sparkle)
+
+
+## The avatar look in effect.
+func avatar_fx() -> AvatarFxConfig:
+	return _fx
+
+
+## Current lean (screen shear) and stretch (1 = none) of the player glyph.
+func feel() -> Vector2:
+	return Vector2(_lean, _stretch)
+
+
+## Lean into the motion (speed along the screen's right axis) and stretch with the acceleration, both eased.
+func _step_feel(delta: float) -> void:
+	var velocity := Vector3(player.velocity.x, 0.0, player.velocity.z)
+	var speed: float = velocity.length()
+	var accel: float = (speed - _prev_speed) / maxf(delta, 0.0001)
+	_prev_speed = speed
+	var right: Vector3 = Vector3.RIGHT
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	if camera != null:
+		right = camera.global_transform.basis.x
+	var top_speed: float = maxf(player.max_speed, 0.001)
+	var lean_target: float = clampf(velocity.dot(right) / top_speed, -1.0, 1.0) * _fx.lean_amount
+	var stretch_target: float = 1.0 + clampf(accel / maxf(_fx.stretch_reference_accel, 0.001), -1.0, 1.0) * _fx.stretch_amount
+	var k: float = clampf(delta / maxf(_fx.feel_smoothing, 0.001), 0.0, 1.0)
+	_lean = lerpf(_lean, lean_target, k)
+	_stretch = lerpf(_stretch, stretch_target, k)
 
 
 ## A fragment of the eroding glyph drifts off in a random screen direction.

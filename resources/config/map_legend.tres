@@ -1,13 +1,18 @@
 [gd_resource type="Resource" script_class="MapLegend" format=3]
 
-[ext_resource type="Script" path="res://scripts/world/hazard_definition.gd" id="1_jx182"]
-[ext_resource type="Resource" path="res://resources/config/hazard_spikes.tres" id="2_krhl1"]
-[ext_resource type="Resource" path="res://resources/config/hazard_corrupting.tres" id="3_rhfsb"]
-[ext_resource type="Script" path="res://scripts/world/map_legend.gd" id="4_efd0b"]
+[ext_resource type="Script" path="res://scripts/world/hazard_definition.gd" id="1_rhfsb"]
+[ext_resource type="Resource" path="res://resources/config/hazard_spikes.tres" id="2_efd0b"]
+[ext_resource type="Resource" path="res://resources/config/hazard_corrupting.tres" id="3_tvcy7"]
+[ext_resource type="Script" path="res://scripts/world/large_object_def.gd" id="4_uvubx"]
+[ext_resource type="Resource" path="res://resources/config/large_objects/gargoyle_fountain.tres" id="5_lbqem"]
+[ext_resource type="Script" path="res://scripts/world/map_legend.gd" id="6_ffm45"]
 
 [resource]
-script = ExtResource("4_efd0b")
-hazards = Dictionary[StringName, ExtResource("1_jx182")]({
-&"corrupt": ExtResource("3_rhfsb"),
-&"spikes": ExtResource("2_krhl1")
+script = ExtResource("6_ffm45")
+hazards = Dictionary[StringName, ExtResource("1_rhfsb")]({
+&"corrupt": ExtResource("3_tvcy7"),
+&"spikes": ExtResource("2_efd0b")
+})
+large_objects = Dictionary[StringName, ExtResource("4_uvubx")]({
+&"gargoyle": ExtResource("5_lbqem")
 })

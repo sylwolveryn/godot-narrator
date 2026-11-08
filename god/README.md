@@ -19,6 +19,11 @@ Godot is found via the `GODOT_BIN` environment variable, else `godot` on PATH. T
 - **Reveal map**: runs the headless tool `tools/dev_reveal_map.gd`, which marks every non-void cell of the M1 map
   revealed through the game's own `SaveService`. Disabled without a save. If the game is running, restart it to see the change.
 
+- **Map** (task-060): lists `data/maps/*.txt`. Start new game / Continue game start the game on the chosen map as
+  `<godot> --path <repo> --max-fps 30 -- --map=<name>` (the game's `MapLoader` reads the user argument and falls back to
+  the scene's map). The choice is remembered in `god/settings.json` (gitignored). Map memory in the save is kept per
+  map id, so switching maps never touches another map's progress. Note: Start new game deletes the whole save (all maps).
+
 The game is detected even when it was not started by god (any `godot*` process for this repo that is not an
 editor `-e`/`--editor` instance or a headless tool run). Closing asks politely, then kills after 5 s.
 

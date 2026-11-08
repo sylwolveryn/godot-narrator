@@ -100,8 +100,8 @@ class Fake:
         self.killed.append(pid)
         self.procs = [p for p in self.procs if p.pid != pid]
 
-    def spawn(self, godot, root):
-        self.spawned.append((godot, root))
+    def spawn(self, godot, root, map_name=None):
+        self.spawned.append((godot, root) if map_name is None else (godot, root, map_name))
 
     def sleep(self, s):
         self.now += s
@@ -112,6 +112,64 @@ class Fake:
 
 GAME = Proc(10, "godot.exe", 'godot.exe --path E:\\git\\godot-narrator')
 EDITOR = Proc(11, "godot.exe", 'godot.exe -e --path E:\\git\\godot-narrator')
+
+
+class MapChooser(unittest.TestCase):
+    """Map chooser (task-060)."""
+
+    def test_list_maps_sorted_txt_only(self):
+        with tempfile.TemporaryDirectory() as d:
+            maps = Path(d) / "data" / "maps"
+            maps.mkdir(parents=True)
+            for name in ("m2_arena.txt", "m1_awakening.txt", "notes.md", "m3.TXT"):
+                (maps / name).write_text("x")
+            (maps / "sub.txt").mkdir()
+            self.assertEqual(core.list_maps(Path(d)), ["m1_awakening", "m2_arena", "m3"])
+
+    def test_list_maps_missing_folder(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(core.list_maps(Path(d)), [])
+
+    def test_real_maps(self):
+        maps = core.list_maps(core.repo_root())
+        self.assertIn("m1_awakening", maps)
+        self.assertIn("m2_arena", maps)
+
+    def test_game_args(self):
+        base = ["godot", "--path", str(ROOT), "--max-fps", "30"]
+        self.assertEqual(core.game_args("godot", ROOT), base)
+        self.assertEqual(core.game_args("godot", ROOT, "m2_arena"), base + ["--", "--map=m2_arena"])
+
+    def test_chosen_map_is_not_a_tool_run(self):
+        cmd = " ".join(core.game_args("godot.exe", ROOT, "m2_arena"))
+        self.assertTrue(core.is_game(Proc(1, "godot.exe", cmd), ROOT))
+
+    def test_choose_map(self):
+        self.assertEqual(core.choose_map(["a", "b"], "b"), "b")
+        self.assertEqual(core.choose_map(["a", "b"], "gone"), "a")
+        self.assertEqual(core.choose_map(["a"], None), "a")
+        self.assertIsNone(core.choose_map([], "a"))
+
+    def test_settings_round_trip_and_bad_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "settings.json"
+            self.assertEqual(core.load_settings(p), {})
+            core.save_settings(p, {"map": "m2_arena"})
+            self.assertEqual(core.load_settings(p), {"map": "m2_arena"})
+            p.write_text("not json")
+            self.assertEqual(core.load_settings(p), {})
+            p.write_text("[1, 2]")
+            self.assertEqual(core.load_settings(p), {})
+
+    def test_controller_starts_on_chosen_map(self):
+        f = Fake()
+        with tempfile.TemporaryDirectory() as d:
+            c = GameController(ROOT, "godot", Path(d) / "progress.tres", f.list, f.terminate, f.kill, f.spawn,
+                               f.sleep, f.clock, 1.0)
+            c.new_game()
+            c.map_name = "m2_arena"
+            c.new_game()
+        self.assertEqual(f.spawned, [("godot", ROOT), ("godot", ROOT, "m2_arena")])
 
 
 class Controller(unittest.TestCase):

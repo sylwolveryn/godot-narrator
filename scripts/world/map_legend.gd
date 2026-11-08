@@ -25,6 +25,9 @@ const OBJECT: StringName = &"object"
 }
 ## Hazard cell type -> its data-driven definition (see HazardDefinition). Types missing here are harmless.
 @export var hazards: Dictionary[StringName, HazardDefinition] = {}
+## Multi-cell props (task-058): cell type -> definition. Their character (LargeObjectDef.character) needs no entry in
+## `entries`; adjacent cells of one type merge into rectangular objects (LargeObjectMerger).
+@export var large_objects: Dictionary[StringName, LargeObjectDef] = {}
 ## Cell type used for characters not in `entries` (a warning is logged).
 @export var unknown_type: StringName = FLOOR
 
@@ -33,4 +36,28 @@ const OBJECT: StringName = &"object"
 func type_for(ch: String) -> StringName:
 	if entries.has(ch):
 		return entries[ch]
+	for type: StringName in large_objects:
+		var def: LargeObjectDef = large_objects[type]
+		if def != null and def.character == ch:
+			return type
 	return &""
+
+
+## True for the cell type of a multi-cell prop.
+func is_large(type: StringName) -> bool:
+	return large_objects.has(type) and large_objects[type] != null
+
+
+## Definition of a multi-cell prop type, null for any other type.
+func large_def(type: StringName) -> LargeObjectDef:
+	return large_objects.get(type, null)
+
+
+## Large object types whose cells block discovery line of sight.
+func sight_blocking_types() -> Array[StringName]:
+	var out: Array[StringName] = []
+	for type: StringName in large_objects:
+		var def: LargeObjectDef = large_objects[type]
+		if def != null and def.blocks_sight:
+			out.append(type)
+	return out

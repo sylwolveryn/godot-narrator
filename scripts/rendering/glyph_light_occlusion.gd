@@ -49,7 +49,7 @@ static func compute(map: MapData, origin: Vector2i, radius_cells: float, penumbr
 ## True for cells light cannot pass.
 static func blocks(map: MapData, cell: Vector2i) -> bool:
 	var type: StringName = map.type_at(cell)
-	return type == MapLegend.WALL or type == MapLegend.VOID
+	return type == MapLegend.WALL or type == MapLegend.VOID or map.light_blocking_types.has(type)
 
 
 ## True when the straight line a -> b (cell units) crosses no blocking cell before reaching b's cell.

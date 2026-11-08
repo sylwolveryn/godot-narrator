@@ -52,6 +52,8 @@ var _dirty: bool = false
 var _clock: float = 0.0
 ## Running cell animations: cell -> [start time, from_memory (bool)].
 var _animations: Dictionary[Vector2i, Array] = {}
+## Sight blockers of the loaded map: RevealConfig.sight_blockers plus the large prop types that block sight (task-058).
+var _blockers: Array[StringName] = []
 ## Scratch list of the animations that finished in this step (reused, no per-frame allocation).
 var _finished: Array[Vector2i] = []
 
@@ -125,6 +127,11 @@ func begin_run() -> void:
 	if map_loader == null:
 		return
 	_resize_mask(Vector2i(map_loader.data.width, map_loader.data.height))
+	_blockers = config.sight_blockers.duplicate()
+	if map_loader.legend != null:
+		for type in map_loader.legend.sight_blocking_types():
+			if not _blockers.has(type):
+				_blockers.append(type)
 	if save_service != null:
 		var stored: PackedVector2Array = save_service.get_revealed_cells(map_loader.map_id)
 		for v in stored:
@@ -152,7 +159,7 @@ func reveal_around(world_position: Vector3) -> void:
 			var distance: float = Vector2(cell_centre.x - world_position.x, cell_centre.z - world_position.z).length()
 			if distance > reach:
 				continue
-			if config.line_of_sight and not SightLine.can_see(map_loader.data, centre, cell, config.sight_blockers, config.sight_spread):
+			if config.line_of_sight and not SightLine.can_see(map_loader.data, centre, cell, _blockers if not _blockers.is_empty() else config.sight_blockers, config.sight_spread):
 				continue
 			var from_memory: bool = _remembered.has(cell)
 			seen_this_run[cell] = true

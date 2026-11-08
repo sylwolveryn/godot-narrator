@@ -11,6 +11,10 @@ var spawn_cell: Vector2i = Vector2i.ZERO
 var has_spawn: bool = false
 ## Start cells of the small pushable objects (legend OBJECT), row-major; the object id is the index. The cells hold floor in `types`.
 var objects: Array[Vector2i] = []
+## Merged multi-cell props (task-058), row-major by top-left cell. Their cells hold the prop type in `types`.
+var large_objects: Array[LargeObjectPlacement] = []
+## Cell types that block light besides walls and void (large props with LargeObjectDef.blocks_light).
+var light_blocking_types: Dictionary[StringName, bool] = {}
 ## Errors make the map unusable or degrade it (e.g. missing file, no spawn).
 var errors: PackedStringArray = PackedStringArray()
 ## Warnings are recoverable oddities (unknown char, ragged rows).
@@ -33,3 +37,11 @@ func type_at(cell: Vector2i) -> StringName:
 
 func set_type(cell: Vector2i, type: StringName) -> void:
 	types[cell.y * width + cell.x] = type
+
+
+## The merged prop covering a cell, null when there is none.
+func large_object_at(cell: Vector2i) -> LargeObjectPlacement:
+	for placement in large_objects:
+		if placement.has_cell(cell):
+			return placement
+	return null

@@ -92,6 +92,48 @@ pub struct MovementProfile {
     pub deceleration: f32,
 }
 
+/// Look and feel of the player avatar (one row per profile; the game reads "default").
+/// Crystal glow: the glyph slowly shifts through `crystal_palette` per facet.
+/// Ink trail: glyphs from `trail_chars` dropped every `trail_spacing` world units,
+/// fading over `trail_lifetime` seconds. Lean / stretch: the avatar leans into its
+/// motion and stretches when speeding up, squashes when braking.
+#[spacetimedb::table(accessor = avatar_fx, public)]
+pub struct AvatarFx {
+    #[primary_key]
+    pub profile: String,
+    /// Comma separated hex colours "#rrggbb,...".
+    pub crystal_palette: String,
+    /// Palette cycles per second (slow: 0.05..0.2).
+    pub crystal_speed: f32,
+    /// Share of the crystal colour mixed into the glyph and its halo (0..1).
+    pub crystal_strength: f32,
+    /// Facets across the glyph (each facet has its own phase).
+    pub crystal_facets: f32,
+    /// Share of facets that briefly sparkle (0..1, keep small).
+    pub crystal_sparkle: f32,
+    pub trail_enabled: bool,
+    /// Characters the trail drops (one picked per drop).
+    pub trail_chars: String,
+    /// Ink colour and the faint luminous rim around it ("#rrggbb").
+    pub trail_color: String,
+    pub trail_rim: String,
+    /// Seconds a drop takes to fade out.
+    pub trail_lifetime: f32,
+    /// World units travelled between two drops.
+    pub trail_spacing: f32,
+    /// Drop half-size in world units, and how much it spreads (grows) while fading.
+    pub trail_size: f32,
+    pub trail_spread: f32,
+    /// Sideways random offset of a drop, world units.
+    pub trail_jitter: f32,
+    /// Lean into the motion (screen-space shear at full speed).
+    pub lean_amount: f32,
+    /// Stretch when speeding up / squash when braking (fraction of the height).
+    pub stretch_amount: f32,
+    /// Seconds the lean / stretch takes to follow the motion.
+    pub feel_smoothing: f32,
+}
+
 /// (profile, max_speed, acceleration, deceleration)
 const SEED_MOVEMENT: &[(&str, f32, f32, f32)] = &[
     ("default", 4.5, 14.0, 16.0),
@@ -332,6 +374,9 @@ fn seed(ctx: &ReducerContext) {
             });
         }
     }
+    if ctx.db.avatar_fx().profile().find("default".to_string()).is_none() {
+        ctx.db.avatar_fx().insert(default_avatar_fx());
+    }
     if ctx.db.player_stats().id().find(SINGLETON_ID).is_none() {
         ctx.db.player_stats().insert(PlayerStats {
             id: SINGLETON_ID,
@@ -397,6 +442,10 @@ pub fn reset_defaults(ctx: &ReducerContext) {
     let ids: Vec<String> = ctx.db.movement_profile().iter().map(|r| r.profile).collect();
     for id in ids {
         ctx.db.movement_profile().profile().delete(id);
+    }
+    let ids: Vec<String> = ctx.db.avatar_fx().iter().map(|r| r.profile).collect();
+    for id in ids {
+        ctx.db.avatar_fx().profile().delete(id);
     }
     seed(ctx);
 }
@@ -530,6 +579,41 @@ pub fn upsert_movement_profile(
         ctx.db.movement_profile().profile().update(row);
     } else {
         ctx.db.movement_profile().insert(row);
+    }
+    bump_config_version(ctx);
+}
+
+fn default_avatar_fx() -> AvatarFx {
+    AvatarFx {
+        profile: "default".to_string(),
+        crystal_palette: "#9ff0ff,#8fa8ff,#d99cff,#ffe7b0".to_string(),
+        crystal_speed: 0.08,
+        crystal_strength: 0.55,
+        crystal_facets: 5.0,
+        crystal_sparkle: 0.04,
+        trail_enabled: true,
+        trail_chars: ".,:;'`".to_string(),
+        trail_color: "#8a6bff".to_string(),
+        trail_rim: "#efe6ff".to_string(),
+        trail_lifetime: 0.8,
+        trail_spacing: 0.22,
+        trail_size: 0.24,
+        trail_spread: 0.6,
+        trail_jitter: 0.12,
+        lean_amount: 0.18,
+        stretch_amount: 0.12,
+        feel_smoothing: 0.12,
+    }
+}
+
+/// Replaces the avatar look of a profile with a full row; bumps the config version
+/// so a running game re-applies it. Pass every column in table order.
+#[spacetimedb::reducer]
+pub fn upsert_avatar_fx(ctx: &ReducerContext, row: AvatarFx) {
+    if ctx.db.avatar_fx().profile().find(&row.profile).is_some() {
+        ctx.db.avatar_fx().profile().update(row);
+    } else {
+        ctx.db.avatar_fx().insert(row);
     }
     bump_config_version(ctx);
 }

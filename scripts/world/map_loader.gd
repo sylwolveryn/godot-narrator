@@ -17,6 +17,13 @@ signal map_built(data: MapData)
 @export_file("*.txt") var map_path: String = ""
 ## Load and build in _ready.
 @export var auto_load: bool = true
+## Map chooser (task-060): a `--map=<name or path>` user argument (after `--` on the command line) replaces
+## `map_path` in _ready. A bare name is looked up in `maps_dir`.
+@export var use_cmdline_map: bool = true
+@export_dir var maps_dir: String = "res://data/maps/"
+
+const MAP_ARG_PREFIX := "--map="
+const MAP_EXTENSION := "txt"
 
 var data: MapData = MapData.new()
 ## Identifier of the loaded map (file name without extension); key for per-map persistent data.
@@ -41,6 +48,12 @@ func _ready() -> void:
 	if world_config == null:
 		world_config = WorldConfig.new()
 	set_process(false)
+	if use_cmdline_map:
+		var chosen: String = map_path_from_args(OS.get_cmdline_user_args(), map_path, maps_dir)
+		if chosen != map_path and not FileAccess.file_exists(chosen):
+			push_warning("[MapLoader] Map %s from the command line not found; using %s" % [chosen, map_path])
+		else:
+			map_path = chosen
 	map_id = _id_from_path(map_path)
 	if auto_load and map_path != "":
 		build(load_file(map_path))
@@ -106,6 +119,13 @@ func parse_text(text: String) -> MapData:
 				first_floor = cell
 			map.set_type(cell, type)
 
+	# Multi-cell props (task-058): adjacent cells of one large type merge into rectangles; their cells keep the type.
+	map.large_objects = LargeObjectMerger.merge(map, legend.large_objects)
+	for type: StringName in legend.large_objects:
+		var def: LargeObjectDef = legend.large_objects[type]
+		if def != null and def.blocks_light:
+			map.light_blocking_types[type] = true
+
 	if ragged:
 		map.warnings.append("Ragged rows: padded shorter rows to width %d with void" % max_width)
 	for ch: String in unknown_seen:
@@ -156,6 +176,25 @@ func is_drawn(cell: Vector2i) -> bool:
 func world_to_cell(pos: Vector3) -> Vector2i:
 	var size: float = world_config.cell_size
 	return Vector2i(floori(pos.x / size), floori(pos.z / size))
+
+
+## Map path chosen by the user arguments: the last `--map=<value>` wins. A value with a directory (`res://...`,
+## `data/maps/x.txt`) is used as a path (`res://` added when missing); a bare name (`m2_arena` or `m2_arena.txt`) is
+## looked up in `dir`. Without a usable argument `fallback` is returned.
+static func map_path_from_args(args: PackedStringArray, fallback: String, dir: String) -> String:
+	var value: String = ""
+	for arg in args:
+		if arg.begins_with(MAP_ARG_PREFIX):
+			value = arg.substr(MAP_ARG_PREFIX.length()).strip_edges().replace("\\", "/")
+	if value == "":
+		return fallback
+	if value.get_extension() == "":
+		value += "." + MAP_EXTENSION
+	if value.contains("://"):
+		return value
+	if value.contains("/"):
+		return "res://" + value.trim_prefix("/")
+	return dir.path_join(value)
 
 
 func _id_from_path(path: String) -> StringName:
@@ -220,6 +259,10 @@ func _build_geometry(map: MapData) -> void:
 			elif type == MapLegend.CORRUPT:
 				_cells.add_child(_make_corrupt(cell))
 			x += 1
+	for placement in map.large_objects:
+		var def: LargeObjectDef = legend.large_def(placement.type)
+		if def != null and def.blocks_movement:
+			_cells.add_child(_make_large(placement, def))
 
 
 func _run_length(map: MapData, x: int, y: int, type: StringName) -> int:
@@ -246,6 +289,25 @@ func _make_wall(x: int, y: int, run: int) -> StaticBody3D:
 	body.set_meta(&"cell_type", MapLegend.WALL)
 	body.add_child(_collision_box(box_size))
 	return body
+
+
+## One collision box over the whole footprint of a merged multi-cell prop (task-058).
+func _make_large(placement: LargeObjectPlacement, def: LargeObjectDef) -> StaticBody3D:
+	var s: float = world_config.cell_size
+	var r: Rect2i = placement.rect
+	var body := StaticBody3D.new()
+	body.name = "Large_%s_%d_%d" % [String(placement.type), r.position.x, r.position.y]
+	body.position = Vector3((r.position.x + r.size.x * 0.5) * s, def.height * 0.5, (r.position.y + r.size.y * 0.5) * s)
+	body.set_meta(&"cell_type", placement.type)
+	body.add_to_group(&"map_large_objects")
+	body.add_child(_collision_box(Vector3(r.size.x * s, def.height, r.size.y * s)))
+	return body
+
+
+## World position of the centre of a cell rectangle, on the floor plane.
+func rect_to_world(rect: Rect2i) -> Vector3:
+	var size: float = world_config.cell_size
+	return Vector3((rect.position.x + rect.size.x * 0.5) * size, 0.0, (rect.position.y + rect.size.y * 0.5) * size)
 
 
 func _make_cell_area(cell: Vector2i, type: StringName, group: StringName, height: float) -> MapCell:

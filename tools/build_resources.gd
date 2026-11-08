@@ -3,6 +3,8 @@ extends SceneTree
 ## Usage: godot --headless --path . -s tools/build_resources.gd
 
 const DIR := "res://resources/config/"
+## Multi-cell prop definitions (task-058), relative to DIR.
+const LARGE_DIR := "large_objects/"
 
 
 func _init() -> void:
@@ -26,9 +28,15 @@ func _init() -> void:
 	corrupting.tint = Color(0.85, 0.25, 0.95)
 	ok = _save(corrupting, "hazard_corrupting.tres") and ok
 
+	# Multi-cell props (task-058): one LargeObjectDef per prop, registered in the legend by its type.
+	DirAccess.make_dir_recursive_absolute(DIR + LARGE_DIR)
+	ok = _save(_gargoyle_fountain(), LARGE_DIR + "gargoyle_fountain.tres") and ok
+
 	var legend := MapLegend.new()
 	legend.hazards[MapLegend.SPIKES] = load(DIR + "hazard_spikes.tres") as HazardDefinition
 	legend.hazards[MapLegend.CORRUPT] = load(DIR + "hazard_corrupting.tres") as HazardDefinition
+	var gargoyle: LargeObjectDef = load(DIR + LARGE_DIR + "gargoyle_fountain.tres") as LargeObjectDef
+	legend.large_objects[gargoyle.type] = gargoyle
 	ok = _save(legend, "map_legend.tres") and ok
 	ok = _save(SaveConfig.new(), "save_config.tres") and ok
 	ok = _save(GlyphFxConfig.new(), "glyph_fx_config.tres") and ok
@@ -65,8 +73,58 @@ func _init() -> void:
 	ok = _save(DbConfig.new(), "db_config.tres") and ok
 	ok = _save(NarrationLibraryConfig.new(), "narration_library_config.tres") and ok
 	ok = _save(GlyphAnimConfig.new(), "glyph_anim_config.tres") and ok
+	ok = _save(AvatarFxConfig.new(), "avatar_fx_config.tres") and ok
 
 	quit(0 if ok else 1)
+
+
+## The gargoyle fountain `G` (task-058): a horned, winged gargoyle spitting a stream into a basin. Layers: " " stone,
+## "e" glowing eyes, "w" the falling stream, "s" the basin water (both animated).
+func _gargoyle_fountain() -> LargeObjectDef:
+	var def := LargeObjectDef.new()
+	def.type = &"gargoyle"
+	def.character = "G"
+	def.art_lines = PackedStringArray([
+		"   /\\          /\\   ",
+		"  /##\\  ____  /##\\  ",
+		" /####\\/@  @\\/####\\ ",
+		"/######( vv )######\\",
+		"\\##/ \\##\\__/##/ \\##/",
+		" \\/   \\##||##/   \\/ ",
+		"       |#||#|       ",
+		"  .____\\#||#/____.  ",
+		" /  : ' :||: ' :  \\ ",
+		"|~~~~~~~~~~~~~~~~~~|",
+		"|##################|",
+		" \\################/ ",
+	])
+	def.mask_lines = PackedStringArray([
+		"",
+		"",
+		"        e  e",
+		"",
+		"",
+		"         ww",
+		"         ww",
+		"         ww",
+		"    s s swws s s",
+		" ssssssssssssssssss",
+	])
+	def.art_width_ratio = 1.3
+	def.outline_size = 10
+	def.outline_color = Color(0.01, 0.01, 0.03, 0.95)
+	def.base_color = Color(0.58, 0.6, 0.9)
+	def.layer_colors = {
+		"e": Color(1.0, 0.18, 0.22),
+		"w": Color(0.55, 0.9, 1.0),
+		"s": Color(0.25, 0.65, 1.0),
+	}
+	def.layer_anims = {
+		"w": "|:|'|.",
+		"s": "~-~=~-",
+	}
+	def.anim_fps = 5.0
+	return def
 
 
 func _save(res: Resource, file: String) -> bool:
