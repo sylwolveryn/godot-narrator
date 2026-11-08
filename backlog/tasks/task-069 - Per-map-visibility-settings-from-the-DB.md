@@ -1,10 +1,11 @@
 ---
 id: TASK-069
 title: Per-map visibility settings from the DB
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:44:00Z'
+updated_date: '2026-11-08T16:45:00Z'
 labels:
   - world
   - database
