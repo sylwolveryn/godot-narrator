@@ -1,10 +1,11 @@
 ---
 id: TASK-070
 title: Dirt wall D (eatable) and the third map
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:44:00Z'
+updated_date: '2026-11-08T16:57:00Z'
 labels:
   - world
   - gameplay
