@@ -11,6 +11,7 @@ from tkinter import messagebox, ttk
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
 
 import core  # noqa: E402
+import seeds  # noqa: E402
 
 
 class GodApp:
@@ -26,6 +27,8 @@ class GodApp:
         self.table_meta: dict = {}
         self.history = core.EditHistory()
         self.owner_token = None
+        # Seed versions (task-020.06): last DB comparison, None until the first one.
+        self.seed_state = None
         self._editor = None
         self.results: "queue.Queue" = queue.Queue()
         self.running = False
@@ -136,6 +139,7 @@ class GodApp:
         for b in (self.btn_read, self.btn_read_all):
             b.pack(side="left", padx=(0, 6))
             self.db_buttons.append(b)
+        self._build_seed_row(pad)
         # Player movement (DB movement_profile): edit a profile; the running game picks it up on its next poll.
         row3 = ttk.Frame(self.win)
         row3.pack(fill="x", **pad)
@@ -165,6 +169,92 @@ class GodApp:
         self.db_log.tag_configure("err", foreground="#b00020")
         self.tabs.add(log_frame, text="Log")
 
+    def _build_seed_row(self, pad: dict) -> None:
+        """Seed versions (task-020.06): save the DB into data/db/seed.json (rotating current -> previous -> old)
+        and reseed the DB from a chosen version."""
+        row = ttk.Frame(self.win)
+        row.pack(fill="x", **pad)
+        ttk.Label(row, text="Seed:").pack(side="left", padx=(0, 6))
+        self.seed_pick = ttk.Combobox(row, values=seeds.existing_versions(self.ctl.root), state="readonly", width=9)
+        if self.seed_pick["values"]:
+            self.seed_pick.current(0)
+        self.seed_pick.pack(side="left", padx=(0, 6))
+        self.btn_seed_save = ttk.Button(row, text="Save DB to seed", command=self._seed_save)
+        self.btn_seed_load = ttk.Button(row, text="Reseed DB", command=self._seed_reseed)
+        for b in (self.btn_seed_save, self.btn_seed_load):
+            b.pack(side="left", padx=(0, 6))
+        self.seed_status = ttk.Label(row, text="", foreground="#666666")
+        self.seed_status.pack(side="left", padx=(6, 0))
+
+    def _render_seed(self) -> None:
+        versions = seeds.existing_versions(self.ctl.root)
+        chosen = self.seed_pick.get()
+        self.seed_pick.config(values=versions)
+        if chosen not in versions:
+            self.seed_pick.set(versions[0] if versions else "")
+        st = self.seed_state
+        up = self.db_running and st is not None and not self.db_busy
+        # Save only when the DB differs from the current seed (or there is no seed file yet).
+        self.btn_seed_save.config(state="normal" if up and st["match"] != "current" else "disabled")
+        self.btn_seed_load.config(state="normal" if up and self.seed_pick.get() else "disabled")
+        if not self.db_running:
+            text = "DB not running"
+        elif st is None:
+            text = "comparing DB with the seeds..."
+        elif st.get("error"):
+            text = "cannot compare: %s" % st["error"]
+        elif st["match"] == "current":
+            text = "DB = current seed (nothing to save)"
+        elif st["match"]:
+            text = "DB = %s seed; differs from current" % st["match"]
+        else:
+            text = "DB has unsaved changes" if "current" in versions else "no seed file yet"
+        self.seed_status.config(text=text)
+
+    def _seed_compare(self) -> dict:
+        try:
+            snap = seeds.snapshot(self.db.client.read_table)
+        except Exception as e:  # shown next to the buttons
+            return {"match": None, "error": str(e)}
+        return {"match": seeds.matching_version(self.ctl.root, snap), "error": None}
+
+    def _seed_save(self) -> None:
+        def run() -> str:
+            snap = seeds.snapshot(self.db.client.read_table)
+            current = seeds.version_path(self.ctl.root, "current")
+            if current.is_file() and seeds.same(seeds.load_seed(current), snap):
+                return "The DB equals the current seed; nothing saved."
+            versions = seeds.save_rotating(self.ctl.root, snap)
+            self.results.put(("seed_state", {"match": "current", "error": None}))
+            return "Saved the DB to %s (kept: %s)." % (current.relative_to(self.ctl.root).as_posix(), ", ".join(versions))
+
+        self._db_job("Save DB to seed", run)
+
+    def _seed_reseed(self) -> None:
+        label = self.seed_pick.get()
+        if not label:
+            return
+        path = seeds.version_path(self.ctl.root, label)
+        if not messagebox.askyesno("Reseed DB", "Replace the DB lookup tables with the %s seed (%s)?\n\n"
+                                   "Player data (stats, deaths, language understanding, narration counters) is kept. "
+                                   "Unsaved DB changes are lost." % (label, path.name), parent=self.win):
+            return
+
+        def run() -> str:
+            if not self.owner_token:
+                self.owner_token = core.cli_token(self.db.spacetime)
+                if not self.owner_token:
+                    raise RuntimeError("no owner token: run `spacetime login --server-issued-login local`")
+            data = seeds.load_seed(path)
+            log = lambda text: self.results.put(("db_log", (text, False)))
+            rows = seeds.reseed(data, self.db.client.read_table,
+                                lambda q: self.db.client.sql_as(self.owner_token, q),
+                                lambda: self.db.client.call("bump_config_version"), log)
+            self.results.put(("seed_state", self._seed_compare()))
+            return "Reseeded the DB from the %s seed (%d rows); running games reload their tables." % (label, rows)
+
+        self._db_job("Reseed DB from %s seed" % label, run)
+
     # ---------------------------------------------------------------- polling
     def poll(self) -> None:
         self._refresh_file()
@@ -183,7 +273,10 @@ class GodApp:
         return self.db.is_running(), self.db.owns_server()
 
     def _db_query(self) -> None:
-        self.results.put(("db_status", self._db_state()))
+        state = self._db_state()
+        self.results.put(("db_status", state))
+        if state[0] and not self.db_busy:
+            self.results.put(("seed_state", self._seed_compare()))
 
     def _drain(self) -> None:
         try:
@@ -202,6 +295,8 @@ class GodApp:
                     self.db_running, owned = value
                     self.db_status.config(text=core.db_status_text(self.db_running, owned, bool(self.db.spacetime)))
                     self.db_light.itemconfigure(self.db_dot, fill=core.indicator_color(self.db_running))
+                elif kind == "seed_state":
+                    self.seed_state = value
                 elif kind == "db_log":
                     self._log(*value)
                 elif kind == "db_table":
@@ -239,6 +334,7 @@ class GodApp:
         self.btn_new.config(state="disabled" if self.busy else "normal")
         self.btn_fps.config(text="FPS: on" if core.read_perf_overlay(self.fps_flags) else "FPS: off")
         self.message.config(text=st.hint or self.notice)
+        self._render_seed()
 
     def _render_progress(self) -> None:
         state, data = core.read_progress(self.ctl.save)
@@ -357,6 +453,7 @@ class GodApp:
     def _render_db_buttons(self) -> None:
         for b in self.db_buttons:
             b.config(state="disabled" if self.db_busy else "normal")
+        self._render_seed()
 
     def _db_job(self, label: str, fn) -> None:
         """Run fn() in a thread. fn returns a log line (or None); exceptions are logged as errors."""

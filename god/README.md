@@ -55,6 +55,19 @@ the HTTP API (token from `/v1/identity`, cached and refreshed on a 401).
 - **Publish module**: `spacetime publish database-narrator --server local --yes` in `database/`; output goes to the Log tab.
 - **Reload game data**: calls `bump_config_version` so a running game reloads its tables.
 - **Clear missing**: calls `clear_missing`.
+- **Seed versions (task-020.06)**: the `Seed:` box lists the seed files that exist: `current` = `data/db/seed.json`
+  (bundled with the game, loaded when the DB is offline), `previous` = `seed.prev.json`, `old` = `seed.old.json`.
+  - **Save DB to seed** writes the DB lookup tables into `seed.json` after rotating the files (old <- previous <-
+    current). It is disabled while the DB equals the current seed. Rows keep the order of the old file, so a change
+    gives a small diff.
+  - **Reseed DB** (asks first) replaces the DB lookup tables with the chosen version through owner SQL, then bumps
+    `config_version` so a running game reloads. If a step fails, the touched tables are restored from a backup taken
+    first.
+  - Gameplay counters are not tuning. `narration.triggered`, `player_language.understanding` and
+    `config_version.version` are written to seeds as 0, ignored when comparing, and kept by a reseed.
+    `player_language` and `config_version` are never reseeded.
+  - The label next to the buttons shows which version the DB equals, or "DB has unsaved changes".
+
 - **Table + Read table / Read all**: `SELECT * FROM <table>` shown in a grid, one tab per table (floats rounded to
   3 decimals, timestamps in local time).
 - **Editing (task-061)**: double-click a cell, type, press Enter (or click elsewhere) and it is saved at once; Escape
