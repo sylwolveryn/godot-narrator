@@ -1,11 +1,11 @@
 ---
 id: TASK-073
 title: 'Cannon C: turning, firing and destructive bouncing balls'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:54:00Z'
-updated_date: '2026-11-08T18:12:00Z'
+updated_date: '2026-11-08T18:22:00Z'
 labels:
   - world
   - gameplay
@@ -25,10 +25,10 @@ A new map object C that can be small or big (merged like the gargoyle). It alway
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 C cells merge like G into small / big cannons; the cannon turns smoothly away from an adjacent player
-- [ ] #2 Tap interact = 1 ball; holding over 2 s starts autofire whose rate rises smoothly from 1/s to 5/s over 4 s
-- [ ] #3 Balls leave in a 30 degree cone in front of the cannon, travel at most 100 tiles, destroy D / gargoyle / teleport on hit and bounce off walls and the player
-- [ ] #4 Destructible is a generic interface (future enemies can opt in); cannons appear on a test map; tests cover turning, fire timing, cone, range, destroy and bounce
+- [x] #1 C cells merge like G into small / big cannons; the cannon turns smoothly away from an adjacent player
+- [x] #2 Tap interact = 1 ball; holding over 2 s starts autofire whose rate rises smoothly from 1/s to 5/s over 4 s
+- [x] #3 Balls leave in a 30 degree cone in front of the cannon, travel at most 100 tiles, destroy D / gargoyle / teleport on hit and bounce off walls and the player
+- [x] #4 Destructible is a generic interface (future enemies can opt in); cannons appear on a test map; tests cover turning, fire timing, cone, range, destroy and bounce
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -42,3 +42,9 @@ A new map object C that can be small or big (merged like the gargoyle). It alway
 <!-- SECTION:NOTES:BEGIN -->
 Implemented per plan. Destroyed gargoyles/teleport pads are restored at run start (like dirt). test_large_objects arena expectation now counts only gargoyle placements (arena has cannons). Visual capture checked: cannon facing away, balls in cone, dirt patch and gargoyle destroyed, teleport pad cracked.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+C merges like G; Cannon (Interactable) + CannonSystem: turns away from an adjacent player at 220 deg/s; tap = 1 ball, hold >= 2 s autofire 1/s -> 5/s over 4 s; balls in +-15 deg cone, 100-cell range, pooled MultiMesh with trails. Destructibles registry (register(kind, is_at, destroy); destructible_destroyed signal): dirt, gargoyles (LargeObjects owner), teleports; bounce off walls, cannons, props, objects and the player (never hurt). Destroyed props/pads come back at run start like dirt. Arena gets a 1x1 and a 2x2 cannon plus a dirt patch. Tests: test_cannon.
+<!-- SECTION:FINAL_SUMMARY:END -->
