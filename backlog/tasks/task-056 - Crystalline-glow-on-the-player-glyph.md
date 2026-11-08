@@ -1,10 +1,11 @@
 ---
 id: TASK-056
 title: Crystalline glow on the player glyph
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T14:07:00Z'
+updated_date: '2026-11-08T14:07:00Z'
 labels:
   - rendering
 dependencies: []
