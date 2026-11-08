@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:44:00Z'
-updated_date: '2026-11-08T16:52:00Z'
+updated_date: '2026-11-08T17:17:00Z'
 labels:
   - world
   - database
@@ -39,3 +39,9 @@ Maps need different visibility rules: the new dirt map is fully revealed with no
 4. DB: Rust table map_settings + seed row m3_dirt, reset_defaults; seed.json; DbConfig.tables; god DB_TABLES / DB_PRIMARY_KEYS.
 5. tools/test_map_settings.gd: no row = identical uniforms/reveal to the configs; m3_dirt row = all seen, fog/darkness off; DB reload re-applies.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented: MapSettings (scripts/world/map_settings.gd) + MapSettingsResolver (scripts/data/map_settings_resolver.gd, node in main). MapReveal / GlyphWorldView resolve on map build, begin_run and settings_changed (DB reload). New shader uniform ambient_color (default = old hardcoded value). DB table map_settings (Rust + seed.json + DbConfig.tables + god DB_TABLES/DB_PRIMARY_KEYS), seed row m3_dirt; module published locally + seed_defaults. tools/test_map_settings.gd PASS; m1 frame pixel-identical to HEAD apart from the random identity glyph.
+<!-- SECTION:NOTES:END -->
