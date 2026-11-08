@@ -62,11 +62,23 @@ pub struct PlayerDeath {
 }
 
 /// How well the player understands a language, percent 0..100.
+/// `max`: top limit of the understanding when set (>= 0); NO_LANGUAGE_MAX (-1) = no limit. A value over the limit is
+/// brought down to it (by the game and by set_language_understanding).
 #[spacetimedb::table(accessor = player_language, public)]
 pub struct PlayerLanguage {
     #[primary_key]
     pub language: String,
     pub understanding: f32,
+    #[default(-1.0)]
+    pub max: f32,
+}
+
+/// Things the player consumed, by kind ("dirt", "diamond", ...): count ever.
+#[spacetimedb::table(accessor = player_consumed, public)]
+pub struct PlayerConsumed {
+    #[primary_key]
+    pub kind: String,
+    pub count: u64,
 }
 
 /// Narration files the game tried to load but could not find.
@@ -251,6 +263,8 @@ const SINGLETON_ID: u32 = 1;
 const FULL_UNDERSTANDING: f32 = 100.0;
 /// A new game starts with no understanding of any language (task-065); the game pushes its saved values on load.
 const SEED_UNDERSTANDING: f32 = 0.0;
+/// player_language.max meaning "no limit".
+const NO_LANGUAGE_MAX: f32 = -1.0;
 
 const SEED_EVENTS: &[(&str, &str)] = &[
     ("RUN_STARTED", "A new run begins"),
@@ -281,6 +295,7 @@ const SEED_EVENTS: &[(&str, &str)] = &[
     ("DEATH_BY_ENEMY", "The player dies touching an enemy"),
     ("BLACK_HOLE_FORMED", "A destroyed hunter collapses into a black hole"),
     ("DIAMOND_FOUND", "The player picks up a diamond"),
+    ("MANY_FIRED_CANNON", "The many form fires a cannon"),
 ];
 
 const SEED_LANGUAGES: &[(&str, &str)] = &[
@@ -414,6 +429,7 @@ fn seed(ctx: &ReducerContext) {
             ctx.db.player_language().insert(PlayerLanguage {
                 language: id.to_string(),
                 understanding,
+                max: NO_LANGUAGE_MAX,
             });
         }
     }
@@ -605,16 +621,28 @@ pub fn record_death(ctx: &ReducerContext, cause: String) {
 
 #[spacetimedb::reducer]
 pub fn set_language_understanding(ctx: &ReducerContext, language: String, understanding: f32) {
-    let value = if understanding.is_nan() {
-        0.0
-    } else {
-        understanding.clamp(0.0, FULL_UNDERSTANDING)
-    };
-    let row = PlayerLanguage { language, understanding: value };
-    if ctx.db.player_language().language().find(&row.language).is_some() {
+    let existing = ctx.db.player_language().language().find(&language);
+    let max = existing.as_ref().map(|r| r.max).unwrap_or(NO_LANGUAGE_MAX);
+    let top = if max >= 0.0 { max.min(FULL_UNDERSTANDING) } else { FULL_UNDERSTANDING };
+    let value = if understanding.is_nan() { 0.0 } else { understanding.clamp(0.0, top) };
+    let row = PlayerLanguage { language, understanding: value, max };
+    if existing.is_some() {
         ctx.db.player_language().language().update(row);
     } else {
         ctx.db.player_language().insert(row);
+    }
+}
+
+/// Adds `amount` to the consumed count of `kind` (creates the row if missing).
+#[spacetimedb::reducer]
+pub fn record_consumed(ctx: &ReducerContext, kind: String, amount: u64) {
+    match ctx.db.player_consumed().kind().find(&kind) {
+        Some(row) => {
+            ctx.db.player_consumed().kind().update(PlayerConsumed { count: row.count + amount, ..row });
+        }
+        None => {
+            ctx.db.player_consumed().insert(PlayerConsumed { kind, count: amount });
+        }
     }
 }
 

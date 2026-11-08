@@ -8,6 +8,9 @@ extends Node
 ## from the muzzle (footprint edge along the facing + a margin) in a random direction within the cone around the facing,
 ## sized by the footprint, into CannonBalls; SignalBus.cannon_fired announces it (boom, muzzle flash).
 ## The run start puts every cannon back to the start facing.
+## Many form (task-077): while the entity form is CannonConfig.many_form (SignalBus.entity_form_changed), autofire is
+## many_rate_multiplier times faster and each shot launches many_balls_min..many_balls_max balls (random); the first
+## such shot fires the narration event MANY_FIRED_CANNON.
 
 @export var config: CannonConfig
 @export var map_loader: MapLoader
@@ -21,6 +24,8 @@ var rng := RandomNumberGenerator.new()
 var _cannons: Array[Cannon] = []
 ## Balls fired since the map was built (tests).
 var fired: int = 0
+## The entity form last announced (SignalBus.entity_form_changed).
+var form: StringName = EntityForm.SINGLE
 
 
 func _ready() -> void:
@@ -28,6 +33,7 @@ func _ready() -> void:
 		config = CannonConfig.new()
 	rng.randomize()
 	SignalBus.run_started.connect(func(_i: int) -> void: reset_facing())
+	SignalBus.entity_form_changed.connect(_on_entity_form_changed)
 	if map_loader != null:
 		map_loader.map_built.connect(_on_map_built)
 		if not map_loader.data.is_empty():
@@ -49,17 +55,34 @@ func reset_facing() -> void:
 		c.target_facing = NAN
 
 
-## Fires one ball from cannon `c` (Cannon calls it on press and on every autofire beat).
+## True while the many form's cannon rules apply.
+func is_many() -> bool:
+	return form == config.many_form
+
+
+## Balls one shot launches: 1, or a random count in the many range while the many form fires.
+func balls_per_shot() -> int:
+	if not is_many():
+		return 1
+	var lo: int = maxi(config.many_balls_min, 1)
+	return rng.randi_range(lo, maxi(config.many_balls_max, lo))
+
+
+## One shot of cannon `c` (Cannon calls it on press and on every autofire beat): one ball, several in the many form,
+## each in its own random direction within the cone.
 func fire(c: Cannon) -> void:
 	if balls == null or map_loader == null:
 		return
 	var half_cone: float = deg_to_rad(config.cone_degrees) * 0.5
-	var angle: float = c.facing + rng.randf_range(-half_cone, half_cone)
-	var dir := Vector3(cos(angle), 0.0, sin(angle))
 	var muzzle: Vector3 = muzzle_of(c)
-	balls.launch(muzzle, dir, config.ball_size_for(c.footprint.size))
-	fired += 1
-	SignalBus.cannon_fired.emit(c.index, muzzle, dir)
+	for i in balls_per_shot():
+		var angle: float = c.facing + rng.randf_range(-half_cone, half_cone)
+		var dir := Vector3(cos(angle), 0.0, sin(angle))
+		balls.launch(muzzle, dir, config.ball_size_for(c.footprint.size))
+		fired += 1
+		SignalBus.cannon_fired.emit(c.index, muzzle, dir)
+	if is_many():
+		SignalBus.narration_event.emit(NarrationEvents.MANY_FIRED_CANNON)
 
 
 ## Launch point of cannon `c`: on the footprint edge along its facing plus the muzzle margin, at the flight height.
@@ -89,6 +112,13 @@ func _physics_process(delta: float) -> void:
 		c.turn(step)
 
 
+func _on_entity_form_changed(new_form: StringName, _animate: bool) -> void:
+	form = new_form
+	var factor: float = config.many_rate_multiplier if is_many() else 1.0
+	for c in _cannons:
+		c.rate_multiplier = factor
+
+
 func _on_map_built(map: MapData) -> void:
 	for c in _cannons:
 		if interactables != null:
@@ -99,6 +129,7 @@ func _on_map_built(map: MapData) -> void:
 		if p.type != config.cannon_type:
 			continue
 		var c := Cannon.new(_cannons.size(), p, config, fire)
+		c.rate_multiplier = config.many_rate_multiplier if is_many() else 1.0
 		_cannons.append(c)
 		if interactables != null:
 			interactables.register(c)

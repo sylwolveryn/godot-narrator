@@ -1,7 +1,7 @@
 class_name PlayerRecord
 extends Node
-## Keeps the player's track record in the DB `player_*` tables (task-049): played time, steps, transformations and
-## deaths by cause. Listens to SignalBus only; sends the counters to the GameDatabase every DbConfig.flush_seconds and
+## Keeps the player's track record in the DB `player_*` tables (task-049): played time, steps, transformations,
+## deaths by cause and consumed things by kind (task-077, player_consumed). Listens to SignalBus only; sends the counters to the GameDatabase every DbConfig.flush_seconds and
 ## when the run ends, deaths right away. Holds no game state (only not-yet-sent deltas).
 
 @export var database: GameDatabase
@@ -10,6 +10,8 @@ extends Node
 var pending_seconds: float = 0.0
 var pending_steps: int = 0
 var pending_transformations: int = 0
+## Consumable kind -> count not yet sent (DB player_consumed).
+var pending_consumed: Dictionary[StringName, int] = {}
 
 var _run_active: bool = false
 var _flush_timer: float = 0.0
@@ -20,6 +22,7 @@ func _ready() -> void:
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.player_stepped.connect(_on_player_stepped)
 	SignalBus.entity_form_changed.connect(_on_entity_form_changed)
+	SignalBus.consumed.connect(_on_consumed)
 
 
 func _process(delta: float) -> void:
@@ -34,6 +37,10 @@ func _process(delta: float) -> void:
 ## Sends the collected counters (if any) and starts a new flush period.
 func flush() -> void:
 	_flush_timer = database.config.flush_seconds if database != null and database.config != null else 0.0
+	if database != null:
+		for kind: StringName in pending_consumed:
+			database.call_reducer("record_consumed", [String(kind), pending_consumed[kind]])
+	pending_consumed.clear()
 	if pending_seconds <= 0.0 and pending_steps == 0 and pending_transformations == 0:
 		return
 	if database != null:
@@ -52,6 +59,10 @@ func _on_run_ended(cause: StringName) -> void:
 	flush()
 	if database != null:
 		database.call_reducer("record_death", [str(cause)])
+
+
+func _on_consumed(kind: StringName) -> void:
+	pending_consumed[kind] = pending_consumed.get(kind, 0) + 1
 
 
 func _on_player_stepped(_cell: Vector2i) -> void:

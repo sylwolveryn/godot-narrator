@@ -23,6 +23,14 @@ extends Resource
 ## Full opening angle of the cone balls leave in, degrees (30 = +-15 around the facing).
 @export_range(0.0, 180.0) var cone_degrees: float = 30.0
 
+@export_group("Many form")
+## While the player is in this entity form (task-077: "many"), autofire runs `many_rate_multiplier` times faster and
+## every shot (press or autofire beat) launches a random number of balls in many_balls_min..many_balls_max.
+@export var many_form: StringName = &"grown"
+@export var many_rate_multiplier: float = 2.0
+@export_range(1, 32) var many_balls_min: int = 1
+@export_range(1, 32) var many_balls_max: int = 6
+
 @export_group("Balls")
 ## Ball speed, cells per second.
 @export var ball_speed_cells: float = 11.0

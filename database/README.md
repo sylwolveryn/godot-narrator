@@ -36,7 +36,8 @@ plain HTTP; the `god/` launcher has buttons for everything below (Database secti
 | `narration` | `id` (auto_inc) | `event` (indexed), `language`, `triggered`, `text_path`, `sound_path` - one row per event x language |
 | `player_stats` | `id` (always 1) | `played_seconds`, `steps`, `transformations`, `deaths` |
 | `player_death` | `cause` | `count` |
-| `player_language` | `language` | `understanding` (percent 0..100) |
+| `player_language` | `language` | `understanding` (percent 0..100), `max` (top limit in percent; -1 = none; a higher value is brought down to it) |
+| `player_consumed` | `kind` (dirt, diamond, ...) | `count` |
 | `missing_narration` | `key` | `first_seen` (Timestamp) |
 | `glyph_anim` | `surface` (wall, floor, spikes, corruption, item) | `enabled`, `chars`, `palette` ("#rrggbb,..."), `near_intensity`, `far_intensity`, `radius` (cells), `char_speed` (changes/s), `color_speed` (palette cycles/s) |
 | `config_version` | `id` (always 1) | `version` |
@@ -54,6 +55,7 @@ Default narration paths: `narration/event/{EVENT}_{LANG}.json` and `.mp3`.
 | `add_play_stats` | seconds f64, steps u64, transformations u64 | adds to player_stats |
 | `record_death` | cause | deaths += 1, player_death[cause] += 1 |
 | `set_language_understanding` | language, understanding f32 | sets value clamped to 0..100 |
+| `record_consumed` | kind, amount u64 | player_consumed[kind] += amount |
 | `report_missing` | key | inserts once, duplicates ignored |
 | `clear_missing` | - | empties missing_narration |
 | `bump_config_version` | - | version += 1 so running games reload their tables |

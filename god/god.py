@@ -12,6 +12,8 @@ sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
 
 import core  # noqa: E402
 import seeds  # noqa: E402
+import palette  # noqa: E402
+from palette_dialog import PaletteDialog  # noqa: E402
 
 
 class GodApp:
@@ -626,6 +628,8 @@ class GodApp:
         x, y, w, h = bbox
         values = tree.item(item, "values")
         old = str(values[col])
+        if palette.is_palette_cell(column, type_name, old) and self._palette_edit(name, column, old, values, meta):
+            return
         var = tk.StringVar(value=old)
         entry = ttk.Entry(tree, textvariable=var)
         entry.place(x=x, y=y, width=max(w, 80), height=h)
@@ -660,6 +664,25 @@ class GodApp:
         entry.bind("<FocusOut>", commit)
         entry.bind("<Escape>", cancel)
         self._editor = entry
+
+    def _palette_edit(self, name: str, column: str, old: str, values, meta: dict) -> bool:
+        """Palette cells (task-077) open the palette editor; OK saves like a typed edit. False when the cell text is
+        not a valid palette (the plain text entry opens instead)."""
+        try:
+            palette.parse(old)
+        except ValueError as e:
+            self._log("%s.%s: %s; editing as text." % (name, column, e), True)
+            return False
+        table = meta["table"]
+        key_text = str(values[meta["key_index"]])
+        key_type = table.types[meta["key_index"]]
+
+        def save(new: str) -> None:
+            edit = core.CellEdit(name, core.DB_PRIMARY_KEYS[name], key_type, key_text, column, "String", old, new)
+            self._apply_edit(edit, undo=False, record=True)
+
+        PaletteDialog(self.win, "%s.%s  (%s)" % (name, column, key_text), old, palette.limit(name, column), save)
+        return True
 
     def _close_editor(self) -> None:
         if self._editor is not None:

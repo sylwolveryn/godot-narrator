@@ -8,7 +8,7 @@ Saving rotates them: old <- previous, previous <- current, current <- the DB sta
 
 Gameplay counters live in some seed tables too (narration.triggered, player_language.understanding,
 config_version.version). They are written to a seed with their neutral value, ignored when comparing, and never
-overwritten by a reseed. player_language and config_version are not reseeded at all (player data / reload counter).
+overwritten by a reseed (the DB value is carried over by CARRY_KEYS). config_version is not reseeded at all.
 No tkinter here, so it is unit-testable.
 """
 from __future__ import annotations
@@ -43,7 +43,12 @@ VOLATILE = {
     "player_language": {"understanding": 0.0},
     "config_version": {"version": 0},
 }
-NOT_RESEEDED = ("player_language", "config_version")
+NOT_RESEEDED = ("config_version",)
+# How a reseed finds the DB row whose volatile values it keeps (narration ids may differ between seed and DB).
+CARRY_KEYS = {
+    "narration": ("event", "language"),
+    "player_language": ("language",),
+}
 # Comparison precision for floats (F32 columns come back as the nearest double).
 FLOAT_DIGITS = 6
 
@@ -221,9 +226,27 @@ def insert_sql(name: str, rows: list) -> Optional[str]:
     return "INSERT INTO %s (%s) VALUES %s" % (name, ", ".join(columns), ", ".join(values))
 
 
-def plan_reseed(seed: dict, db_tables: dict) -> list:
-    """[(table, insert_sql or None)] to make the DB tables equal the seed. Volatile columns keep their DB values
-    (narration.triggered by event + language). Raises SeedError before anything is written when the seed is unusable."""
+# Value for a DB column a seed does not have (an older seed), when the DB row has none to keep either.
+COLUMN_DEFAULTS = {
+    ("player_language", "max"): -1.0,
+}
+_TYPE_DEFAULTS = {"String": "", "Bool": False}
+
+
+def _column_default(name: str, column: str, type_name: str):
+    if (name, column) in COLUMN_DEFAULTS:
+        return COLUMN_DEFAULTS[(name, column)]
+    if type_name in _TYPE_DEFAULTS:
+        return _TYPE_DEFAULTS[type_name]
+    return 0.0 if type_name.startswith("F") else 0
+
+
+def plan_reseed(seed: dict, live: dict, schemas: Optional[dict] = None) -> list:
+    """[(table, insert_sql or None)] to make the DB tables equal the seed. `live`: table -> DB rows (dicts, real
+    values); the volatile columns of the CARRY_KEYS tables keep the DB values (neutral for rows new in the seed).
+    `schemas`: table -> (columns, types) of the DB. When given, rows are written in the DB's columns: a column the seed
+    lacks keeps the DB row's value (same key) or gets a default; a seed column the DB lacks is dropped.
+    Raises SeedError before anything is written when the seed is unusable."""
     plan = []
     for name in TABLE_KEYS:
         if name in NOT_RESEEDED:
@@ -232,11 +255,23 @@ def plan_reseed(seed: dict, db_tables: dict) -> list:
         if not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
             raise SeedError("seed has no usable %s table" % name)
         rows = [dict(r) for r in rows]
-        if name == "narration":
-            triggered = {(r.get("event"), r.get("language")): r.get("triggered", 0)
-                         for r in db_tables.get("_narration_live", [])}
+        if name in CARRY_KEYS:
+            keys = CARRY_KEYS[name]
+            by_key = {tuple(r.get(k) for k in keys): r for r in live.get(name, [])}
             for r in rows:
-                r["triggered"] = triggered.get((r.get("event"), r.get("language")), 0)
+                old = by_key.get(tuple(r.get(k) for k in keys), {})
+                for column, neutral in VOLATILE[name].items():
+                    r[column] = old.get(column, neutral)
+        if schemas and name in schemas:
+            columns, types = schemas[name]
+            key = TABLE_KEYS[name]
+            current = {r.get(key): r for r in live.get(name, [])}
+            shaped = []
+            for r in rows:
+                old = current.get(r.get(key), {})
+                shaped.append({c: r[c] if c in r else old.get(c, _column_default(name, c, t))
+                               for c, t in zip(columns, types)})
+            rows = shaped
         plan.append((name, insert_sql(name, rows)))
     return plan
 
@@ -244,14 +279,16 @@ def plan_reseed(seed: dict, db_tables: dict) -> list:
 def reseed(seed: dict, read_table: Callable, run_sql: Callable, bump: Callable, log: Callable = lambda _t: None) -> int:
     """Replace the reseedable DB tables with the seed's rows. run_sql(statement) runs one owner SQL statement.
     On a failure the touched tables are restored from a backup taken first. Returns the number of rows written."""
-    # The real narration counters (not neutralised), carried over into the new rows.
-    raw = read_table("narration")
-    live = [dict(zip(raw.columns, r)) for r in raw.rows]
-    plan = plan_reseed(seed, {"_narration_live": live})
-    backup = []
-    for name, _sql in plan:
+    # The DB rows as they are (real counters, not neutralised): carried over, shaped to the DB columns, and the backup.
+    live, schemas, backup = {}, {}, []
+    for name in TABLE_KEYS:
+        if name in NOT_RESEEDED:
+            continue
         t = read_table(name)
-        backup.append((name, insert_sql(name, [dict(zip(t.columns, r)) for r in t.rows])))
+        live[name] = [dict(zip(t.columns, r)) for r in t.rows]
+        schemas[name] = (list(t.columns), list(t.types))
+        backup.append((name, insert_sql(name, live[name])))
+    plan = plan_reseed(seed, live, schemas)
     done = []
     written = 0
     try:

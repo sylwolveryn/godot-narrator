@@ -36,6 +36,11 @@ var _ledger_shown: bool = false
 ## True while the Language list is shown instead of the item list; its language ids (the back entry follows them).
 var _language_shown: bool = false
 var _language_ids: PackedStringArray = PackedStringArray()
+## True while the Items list is shown (task-077); its entry count without the back entry.
+var _items_shown: bool = false
+var _items_count: int = 0
+## Whether unseen items are offered (task-077); null until the first check.
+var _new_pending: Variant = null
 ## Selection of the item list while a sub view is shown (restored on going back).
 var _list_selected: int = 0
 ## True during a teleport trip: the menu does not open.
@@ -48,12 +53,15 @@ func _ready() -> void:
 	if save_service == null:
 		return
 	save_service.progress_changed.connect(_check_unlock)
+	save_service.progress_changed.connect(_update_new_items)
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.menu_item_pointed.connect(_on_item_pointed)
 	SignalBus.teleport_started.connect(_on_teleport_started)
 	SignalBus.teleport_finished.connect(_on_teleport_finished)
 	_check_unlock()
+	# Entity and ledger answer their own _ready later in the tree: check the new items once everything is ready.
+	_update_new_items.call_deferred()
 
 
 func _input(event: InputEvent) -> void:
@@ -81,6 +89,8 @@ func _input(event: InputEvent) -> void:
 			back_to_list()
 		elif _language_shown:
 			confirm_language()
+		elif _items_shown:
+			confirm_items()
 		else:
 			confirm()
 		get_viewport().set_input_as_handled()
@@ -128,8 +138,11 @@ func open() -> bool:
 	_open = true
 	_ledger_shown = false
 	_language_shown = false
+	_items_shown = false
 	_selected = 0
 	SignalBus.menu_opened.emit(current_labels(), _selected)
+	if save_service != null:
+		save_service.mark_menu_items_seen(_ids(_offered))
 	return true
 
 
@@ -139,6 +152,7 @@ func close() -> void:
 	_open = false
 	_ledger_shown = false
 	_language_shown = false
+	_items_shown = false
 	SignalBus.menu_closed.emit()
 
 
@@ -150,9 +164,12 @@ func move_selection(step: int) -> void:
 
 ## Confirms the selected item: a close item closes the menu, anything else is requested from the data layer.
 func confirm() -> void:
-	if not _open or _ledger_shown or _language_shown or _selected >= _offered.size():
+	if not _open or _ledger_shown or _language_shown or _items_shown or _selected >= _offered.size():
 		return
 	var item: MenuItemDef = _offered[_selected]
+	if item.action == MenuItemDef.ACTION_ITEMS:
+		show_items()
+		return
 	if item.action == MenuItemDef.ACTION_REMEMBER:
 		show_ledger()
 		return
@@ -180,10 +197,11 @@ func show_ledger() -> void:
 
 ## Leaves the ledger row or the Language list and shows the item list again with its item selected.
 func back_to_list() -> void:
-	if not _open or not (_ledger_shown or _language_shown):
+	if not _open or not (_ledger_shown or _language_shown or _items_shown):
 		return
-	if _language_shown:
+	if _language_shown or _items_shown:
 		_language_shown = false
+		_items_shown = false
 		_selected = _list_selected
 	_ledger_shown = false
 	SignalBus.menu_opened.emit(current_labels(), _selected)
@@ -228,6 +246,48 @@ func confirm_language() -> void:
 	close()
 
 
+## True while the Items list is shown.
+func is_items_shown() -> bool:
+	return _items_shown
+
+
+## Shows the Items list (task-077): what was consumed, one entry per kind with a label, then the back entry.
+func show_items() -> void:
+	if not _open or _ledger_shown or _language_shown or _items_shown:
+		return
+	_list_selected = _selected
+	_items_shown = true
+	var labels: PackedStringArray = items_labels()
+	_items_count = labels.size() - 1
+	_selected = 0
+	SignalBus.menu_opened.emit(labels, _selected)
+
+
+## The Items list text: "<label> <count>" per consumed kind (MenuConfig.items_labels order), then the back entry.
+func items_labels() -> PackedStringArray:
+	var labels := PackedStringArray()
+	if save_service != null:
+		for kind: StringName in config.items_labels:
+			var count: int = save_service.consumed_count(kind)
+			if count > 0:
+				labels.append(config.items_format % [config.items_labels[kind], count])
+	labels.append(config.items_back_label)
+	return labels
+
+
+## Confirms the selected Items entry: the back entry returns to the item list; a count entry does nothing.
+func confirm_items() -> void:
+	if not _open or not _items_shown:
+		return
+	if _selected >= _items_count:
+		back_to_list()
+
+
+## True while the menu offers an item the player has not seen in an open menu yet (task-077).
+func has_new_items() -> bool:
+	return _new_pending == true
+
+
 ## One entry per hypothesis, in the ledger's order, read from the ledger's public API.
 func ledger_entries() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
@@ -265,8 +325,41 @@ func _available_items() -> Array[MenuItemDef]:
 			continue
 		if item.action == MenuItemDef.ACTION_LANGUAGE and language == null:
 			continue
+		if item.requires_consumed and (save_service == null or not save_service.any_consumed()):
+			continue
 		out.append(item)
 	return out
+
+
+func _ids(items: Array[MenuItemDef]) -> PackedStringArray:
+	var ids := PackedStringArray()
+	for item in items:
+		ids.append(String(item.id))
+	return ids
+
+
+## Re-checks whether unseen items are offered and tells the presentation when that changes. The first check after the
+## menu is unlocked marks the items offered at that moment as seen (except announce_new items), so an old save does not
+## pulse for items the player already knows.
+func _update_new_items() -> void:
+	var pending: bool = false
+	if save_service != null and is_unlocked():
+		var available: Array[MenuItemDef] = _available_items()
+		if not save_service.progress.menu_seen_initialized:
+			var known := PackedStringArray()
+			for item in available:
+				if not item.announce_new:
+					known.append(String(item.id))
+			# Emits progress_changed, which runs this check again with the list initialised.
+			save_service.mark_menu_items_seen(known, true)
+			return
+		for item in available:
+			if not save_service.progress.seen_menu_items.has(String(item.id)):
+				pending = true
+				break
+	if pending != _new_pending:
+		_new_pending = pending
+		SignalBus.menu_new_items_changed.emit(pending)
 
 
 func _check_unlock() -> void:
@@ -284,13 +377,19 @@ func _on_item_pointed(index: int, activate: bool) -> void:
 	if activate:
 		if _language_shown:
 			confirm_language()
+		elif _items_shown:
+			confirm_items()
 		else:
 			confirm()
 
 
 ## Entries of the page shown right now (the item list, or the Language list with its back entry).
 func _page_size() -> int:
-	return _language_ids.size() + 1 if _language_shown else _offered.size()
+	if _language_shown:
+		return _language_ids.size() + 1
+	if _items_shown:
+		return _items_count + 1
+	return _offered.size()
 
 
 func _on_run_started(_run_index: int) -> void:

@@ -27,6 +27,7 @@ func _ready() -> void:
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.cells_revealed.connect(_on_cells_revealed)
 	SignalBus.beat_heard.connect(_on_beat_heard)
+	SignalBus.consumed.connect(_on_consumed)
 
 
 ## Reads the progress file. Missing, corrupt or foreign files give fresh progress and a warning.
@@ -47,6 +48,7 @@ func load_progress() -> void:
 		push_warning("[SaveService] Save at %s did not load as PersistentProgress, starting fresh" % path)
 		return
 	progress = _sanitized(loaded as PersistentProgress)
+	_migrate_consumed()
 	progress_loaded.emit()
 	progress_changed.emit()
 
@@ -141,6 +143,35 @@ func set_entity_form(form: StringName) -> void:
 	save_progress()
 
 
+## How many of a consumable kind the player consumed ever.
+func consumed_count(kind: StringName) -> int:
+	return int(progress.consumed.get(String(kind), 0))
+
+
+## True once anything was consumed (the Items menu entry is offered from then on).
+func any_consumed() -> bool:
+	for kind in progress.consumed:
+		if int(progress.consumed[kind]) > 0:
+			return true
+	return false
+
+
+## Records menu item ids as seen (MenuController, when the menu shows them) and saves when something was new.
+## `initialize` marks the first fill of the list (items offered before tracking began).
+func mark_menu_items_seen(ids: PackedStringArray, initialize: bool = false) -> void:
+	var changed: bool = initialize and not progress.menu_seen_initialized
+	if initialize:
+		progress.menu_seen_initialized = true
+	for id in ids:
+		if not progress.seen_menu_items.has(id):
+			progress.seen_menu_items.append(id)
+			changed = true
+	if changed:
+		_dirty = true
+		progress_changed.emit()
+		save_progress()
+
+
 ## Records that the grow moment has played.
 func mark_entity_grow_played() -> void:
 	if progress.entity_grow_played:
@@ -149,6 +180,20 @@ func mark_entity_grow_played() -> void:
 	_dirty = true
 	progress_changed.emit()
 	save_progress()
+
+
+## Saves made before task-077 counted dirt and diamonds in their own fields: carry them into `consumed` once.
+func _migrate_consumed() -> void:
+	if not progress.consumed.has(String(Consumable.DIRT)) and progress.walls_eaten > 0:
+		progress.consumed[String(Consumable.DIRT)] = progress.walls_eaten
+	if not progress.consumed.has(String(Consumable.DIAMOND)) and progress.diamonds > 0:
+		progress.consumed[String(Consumable.DIAMOND)] = progress.diamonds
+
+
+func _on_consumed(kind: StringName) -> void:
+	progress.consumed[String(kind)] = consumed_count(kind) + 1
+	_dirty = true
+	progress_changed.emit()
 
 
 func _on_cells_revealed(map_id: StringName, cells: PackedVector2Array) -> void:

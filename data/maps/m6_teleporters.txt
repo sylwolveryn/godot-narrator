@@ -6,11 +6,11 @@
 #DD..@.................DDDDDD...TTT...D# #.................TTT....................#
 #DD......DDDDDDDDDDDDDDDDDDDD.........D# #........................................#
 #DD......DDDDDDDDDDDDDDDDDDDD.......*.D# #........................................#
-#DDDDD.DDDDD####DDDDDDDDDDDDD.........D# #GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG#
-#DDDDD.DDDDD####DDDDDDDDDDDDDDDDDDDDDDD# #GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG#
-#DDDDD.DDDDD####DDDDDDDDDDDDDDDDDDDDDDD# #GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG#
-#DDDDD.DDDDDDDDDDDDDDDDDDD##DDDDDDDDDDD# #GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG#
-#DD##D.DDDDDDDDDD........D##DDDD####DDD# #GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG#
+#DDDDD.DDDDD####DDDDDDDDDDDDD.........D# #............GGGGGGGGG...................#
+#DDDDD.DDDDD####DDDDDDDDDDDDDDDDDDDDDDD# #............GGGGGGGGG...................#
+#DDDDD.DDDDD####DDDDDDDDDDDDDDDDDDDDDDD# #............GGGGGGGGG...................#
+#DDDDD.DDDDDDDDDDDDDDDDDDD##DDDDDDDDDDD# #............GGGGGGGGG...................#
+#DD##D.DDDDDDDDDD........D##DDDD####DDD# #............GGGGGGGGG...................#
 #DD##D.DDDDDDDDDD..GG....D##DDDD####DDD# #.................TTT....................#
 #DD##D.DDDDDDDDDD..GG.....##DDDD####DDD# #.................T1T....................#
 #DDDDD.DDDDDDDDDD........D##....DDDDDDD# #.................TTT....................#

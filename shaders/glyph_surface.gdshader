@@ -135,6 +135,9 @@ uniform int wave_count = 0;
 uniform vec4 wave_geo[MAX_WAVES];        // xz centre, z ring radius, w band half width (world units)
 uniform vec4 wave_col[MAX_WAVES];        // rgb colour, a strength
 uniform vec4 wave_style = vec4(0.12, 0.6, 0.55, 0.6);   // x rainbow phase per world unit, y per second, z rainbow mix, w glyph density gain
+// New menu item pulse (task-077, GlyphWorldView): one small rainbow ring out of the player's centre. w 0 = off, no cost.
+uniform vec4 pulse_geo = vec4(0.0);      // xz centre, z ring radius, w band half width (world units)
+uniform vec3 pulse_style = vec3(0.0, 1.0, 0.8);   // x strength, y rainbow turns around the ring, z turns per second
 
 varying flat vec3 w_nrm;
 varying flat float v_type;
@@ -410,6 +413,17 @@ void fragment() {
 			wave_c += mix(wave_col[i].rgb, rainbow, wave_style.z) * wk;
 		}
 		b += max(wave_c.r, max(wave_c.g, wave_c.b)) * wave_style.w;
+	}
+	if (pulse_geo.w > 0.0) {
+		vec2 pv = pc.xz - pulse_geo.xy;
+		float px = (length(pv) - pulse_geo.z) / pulse_geo.w;
+		if (abs(px) <= WAVE_REACH) {
+			float pk = exp(-px * px) * pulse_style.x;
+			float turn = atan(pv.y, pv.x) / TAU * pulse_style.y + TIME * pulse_style.z;
+			vec3 prism = (0.5 + 0.5 * cos(TAU * (turn + vec3(0.0, 0.33, 0.67)))) * pk;
+			wave_c += prism;
+			b += max(prism.r, max(prism.g, prism.b)) * wave_style.w;
+		}
 	}
 	if (lift_zone.w > 0.0) {
 		b *= 1.0 - lift_zone.w * (1.0 - smoothstep(lift_zone.z * 0.4, lift_zone.z, distance(hp.xz, lift_zone.xy)));

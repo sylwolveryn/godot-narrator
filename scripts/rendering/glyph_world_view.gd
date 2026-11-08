@@ -9,6 +9,9 @@ extends Node
 ## the share of glyph cells drawn layered (floor < hazards < items / objects, see glyph_surface.gdshader); the per-cell
 ## layer map (order, type, box height and half extent of items, hazards and pushable objects) is a tiny texture built
 ## here on map build and patched when an object is pushed.
+## New menu item pulse (task-077): while SignalBus.menu_new_items_changed says items are new, a small rainbow ring
+## pulses out of the player's centre every GlyphWorldConfig.pulse_interval seconds (shader uniforms pulse_geo /
+## pulse_style, separate from the teleport waves).
 ## Read-only towards the game: it never writes data, it only sets shader uniforms.
 
 const MAX_LIGHTS: int = 8
@@ -55,6 +58,10 @@ var _dirty: bool = true
 var _understanding: float = 0.0
 var _layer_image: Image
 var _layer_texture: ImageTexture
+## New menu item pulse: on while items are new; seconds into the current interval; whether a ring is drawn.
+var _pulse_on: bool = false
+var _pulse_clock: float = 0.0
+var _pulse_drawn: bool = false
 ## Ray height of the layer search (the tallest layered box), world units.
 var _layer_height: float = 1.0
 
@@ -67,6 +74,7 @@ func _ready() -> void:
 	SignalBus.player_spawned.connect(_on_player_spawned)
 	SignalBus.language_understanding_changed.connect(_on_understanding_changed)
 	SignalBus.object_moved.connect(_on_object_moved)
+	SignalBus.menu_new_items_changed.connect(_on_new_items_changed)
 	if pushables != null:
 		pushables.objects_reset.connect(_rebuild_layer_map)
 	if map_reveal != null:
@@ -99,6 +107,47 @@ func _process(delta: float) -> void:
 		_visibility.step(delta)
 	_light_pos[PLAYER_LIGHT_SLOT] = Vector4(pos.x, config.player_light_height, pos.z, map_settings.player_light_radius)
 	material.set_shader_parameter(&"light_pos", _light_pos)
+	_step_pulse(delta, pos)
+
+
+## True while the new menu item pulse runs.
+func is_pulsing() -> bool:
+	return _pulse_on
+
+
+## The pulse ring right now: xz centre, radius, band (w 0 = no ring drawn).
+func pulse_geo() -> Vector4:
+	return material.get_shader_parameter(&"pulse_geo") if material != null else Vector4.ZERO
+
+
+func _on_new_items_changed(pending: bool) -> void:
+	if pending == _pulse_on:
+		return
+	_pulse_on = pending
+	# The first ring starts at once.
+	_pulse_clock = 0.0
+
+
+## One ring per pulse_interval while items are new: it grows from the centre to pulse_radius_tiles over pulse_life and
+## fades out (quadratic). Between rings, and while nothing is new, the uniform says "off" (band 0, no shader cost).
+func _step_pulse(delta: float, pos: Vector3) -> void:
+	var t: float = -1.0
+	if _pulse_on:
+		t = _pulse_clock / maxf(config.pulse_life, 0.01)
+		_pulse_clock = fmod(_pulse_clock + delta, maxf(config.pulse_interval, config.pulse_life))
+	if t < 0.0 or t >= 1.0:
+		if _pulse_drawn:
+			_pulse_drawn = false
+			material.set_shader_parameter(&"pulse_geo", Vector4.ZERO)
+		return
+	var tile: float = map_loader.world_config.cell_size
+	var grow: float = 1.0 - (1.0 - t) * (1.0 - t)
+	var fade: float = (1.0 - t) * (1.0 - t)
+	_pulse_drawn = true
+	material.set_shader_parameter(&"pulse_geo", Vector4(pos.x, pos.z, grow * config.pulse_radius_tiles * tile,
+			maxf(config.pulse_band_tiles * tile, 0.001)))
+	material.set_shader_parameter(&"pulse_style", Vector3(config.pulse_strength * fade, config.pulse_hue_turns,
+			config.pulse_hue_speed))
 
 
 ## Pushes the static look of the config into the material, with the visibility rules of the loaded map (task-069):

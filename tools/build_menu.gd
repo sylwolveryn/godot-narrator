@@ -41,6 +41,17 @@ func _init() -> void:
 	ok = _save(language, ITEM_DIR + "language.tres") and ok
 	items.append(load(ITEM_DIR + "language.tres") as MenuItemDef)
 
+	# Items list (task-077): offered once anything was consumed; announced as new even on an old save.
+	var items_item := MenuItemDef.new()
+	items_item.id = &"items"
+	items_item.action = MenuItemDef.ACTION_ITEMS
+	items_item.label = "items"
+	items_item.requires_consumed = true
+	items_item.announce_new = true
+	items_item.closes_menu = false
+	ok = _save(items_item, ITEM_DIR + "items.tres") and ok
+	items.append(load(ITEM_DIR + "items.tres") as MenuItemDef)
+
 	var close := MenuItemDef.new()
 	close.id = &"close"
 	close.action = MenuItemDef.ACTION_CLOSE

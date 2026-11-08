@@ -14,6 +14,8 @@ var facing: float = 0.0
 var target_facing: float = NAN
 
 var _config: CannonConfig
+## Autofire rate factor (CannonSystem sets it from the entity form, task-077).
+var rate_multiplier: float = 1.0
 ## Called with this cannon for every ball to fire.
 var _fire: Callable
 var _autofire: bool = false
@@ -53,7 +55,7 @@ func interact_held(delta: float, held: float) -> void:
 		_autofire = true
 		_phase = 1.0
 	else:
-		_phase += _config.autofire_rate(held) * delta
+		_phase += _config.autofire_rate(held) * rate_multiplier * delta
 	while _phase >= 1.0:
 		_phase -= 1.0
 		_fire.call(self)

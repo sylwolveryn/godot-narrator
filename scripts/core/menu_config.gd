@@ -15,6 +15,13 @@ extends Resource
 ## Extra characters rasterised into the menu atlas for the Language entries (names and whole percents).
 @export var extra_glyphs: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789%"
 
+@export_group("Items list")
+## The Items list (task-077): one entry per consumed kind, in this order, as "<label> <count>" (items_format), then the
+## back entry. Kinds without a label are not listed.
+@export var items_labels: Dictionary[StringName, String] = {&"dirt": "dirt", &"diamond": "diamonds"}
+@export var items_format: String = "%s %d"
+@export var items_back_label: String = "back"
+
 @export_group("Input actions")
 ## InputMap action names (defined by tools/build_input_map.gd).
 @export var action_toggle: StringName = &"menu_toggle"

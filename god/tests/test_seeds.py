@@ -94,16 +94,34 @@ class Sql(unittest.TestCase):
         self.assertIsNone(seeds.insert_sql("t", []))
 
     def test_plan_skips_player_tables_and_keeps_counters(self):
-        plan = dict(seeds.plan_reseed(tiny_seed(), {"_narration_live": [{"event": "E", "language": "EN", "triggered": 7}]}))
-        self.assertNotIn("player_language", plan)
+        seed = tiny_seed()
+        seed["player_language"] = [{"language": "EN", "understanding": 0.0, "max": 40.0},
+                                   {"language": "HU", "understanding": 0.0, "max": -1.0}]
+        live = {"narration": [{"event": "E", "language": "EN", "triggered": 7}],
+                "player_language": [{"language": "EN", "understanding": 55.5, "max": -1.0}]}
+        plan = dict(seeds.plan_reseed(seed, live))
         self.assertNotIn("config_version", plan)
-        self.assertIn("7,", plan["narration"].replace("7)", "7,"))
+        self.assertIn("'E', 'EN', 7, 't'", plan["narration"])
+        self.assertIn("('EN', 55.5, 40.0)", plan["player_language"])
+        self.assertIn("('HU', 0.0, -1.0)", plan["player_language"])
 
     def test_plan_refuses_broken_seed(self):
         bad = tiny_seed()
         del bad["enemy_def"]
         with self.assertRaises(seeds.SeedError):
             seeds.plan_reseed(bad, {})
+
+
+class Shape(unittest.TestCase):
+    def test_old_seed_gets_db_columns(self):
+        seed = tiny_seed()
+        seed["player_language"] = [{"language": "EN", "understanding": 0.0, "gone": 1},
+                                   {"language": "NEW", "understanding": 0.0}]
+        live = {"player_language": [{"language": "EN", "understanding": 12.0, "max": 40.0}]}
+        schemas = {"player_language": (["language", "understanding", "max"], ["String", "F32", "F32"])}
+        sql = dict(seeds.plan_reseed(seed, live, schemas))["player_language"]
+        self.assertEqual(sql, "INSERT INTO player_language (language, understanding, max) "
+                              "VALUES ('EN', 12.0, 40.0), ('NEW', 0.0, -1.0)")
 
 
 class Reseed(unittest.TestCase):

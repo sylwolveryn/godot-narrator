@@ -103,6 +103,7 @@ func destroy(cell: Vector2i, cause: StringName = CAUSE_EATEN) -> bool:
 	SignalBus.dirt_destroyed.emit(map_loader.map_id, cell, cause)
 	SignalBus.destructible_destroyed.emit(KIND, Rect2i(cell, Vector2i.ONE), map_loader.cell_to_world(cell), cause)
 	if cause == CAUSE_EATEN:
+		SignalBus.consumed.emit(Consumable.DIRT)
 		_count_eaten()
 	return true
 

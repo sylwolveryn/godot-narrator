@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_1fftr"]
+
+[resource]
+script = ExtResource("1_1fftr")
+id = "many_cannon_narrator_thousand"
+text = "Thousand year question"
+event = &"MANY_FIRED_CANNON"
+mood = &"low_drone"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 40

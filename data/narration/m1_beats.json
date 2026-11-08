@@ -41,6 +41,8 @@
 		{"id": "death_enemy_caught", "text": "Caught. It knew where you would be.", "trigger": "EVENT", "event": "DEATH_BY_ENEMY", "min_run": 1, "max_run": -1, "min_deaths": 0, "once": true, "mood": "low_drone", "supports": [], "contradicts": [], "role": "STORY", "layer": "NARRATOR"},
 		{"id": "death_enemy_they_know", "text": "They learn your way home. So do I.", "trigger": "EVENT", "event": "DEATH_BY_ENEMY", "min_run": 3, "max_run": -1, "min_deaths": 2, "once": true, "mood": "hum", "supports": [], "contradicts": [], "role": "STORY", "layer": "NARRATOR"},
 		{"id": "black_hole_world_collapse", "text": "Collapse, fold, nothing", "trigger": "EVENT", "event": "BLACK_HOLE_FORMED", "min_run": 1, "max_run": -1, "min_deaths": 0, "once": true, "mood": "static", "supports": [], "contradicts": [], "role": "STORY", "layer": "WORLD"},
+		{"id": "many_cannon_own_weapon", "text": "Am I the weapon, or am I the solution?", "trigger": "EVENT", "event": "MANY_FIRED_CANNON", "min_run": 1, "max_run": -1, "min_deaths": 0, "once": true, "mood": "hum", "supports": [], "contradicts": [], "role": "STORY", "layer": "OWN"},
+		{"id": "many_cannon_narrator_thousand", "text": "Thousand year question", "trigger": "EVENT", "event": "MANY_FIRED_CANNON", "min_run": 1, "max_run": -1, "min_deaths": 0, "once": true, "mood": "low_drone", "supports": [], "contradicts": [], "role": "STORY", "layer": "NARRATOR"},
 		{"id": "diamond_world_cold", "text": "Cold, bright, yours", "trigger": "EVENT", "event": "DIAMOND_FOUND", "min_run": 1, "max_run": -1, "min_deaths": 0, "once": true, "mood": "chime", "supports": [], "contradicts": [], "role": "STORY", "layer": "WORLD"}
 	]
 }

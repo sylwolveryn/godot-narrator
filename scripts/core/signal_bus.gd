@@ -147,3 +147,10 @@ signal diamond_collected(cell: Vector2i, total: int)
 signal black_hole_formed(cell: Vector2i, world_position: Vector3)
 ## Emitted by EnemyRemains when diamonds and black holes went back to the map file's picture (map build, run start).
 signal remains_reset
+
+## Consumption (task-077). Emitted by the owner of a consumable when the player consumed one: DirtWalls (a dirt cell
+## eaten), EnemyRemains (a diamond picked up). `kind` a Consumable name. SaveService counts it, PlayerRecord sends it.
+signal consumed(kind: StringName)
+## Emitted by MenuController when the menu gets or loses items the player has not seen yet (`pending`). The player pulse
+## (GlyphWorldView) follows it.
+signal menu_new_items_changed(pending: bool)

@@ -63,6 +63,21 @@ extends Resource
 ## Height of the light above the floor.
 @export var player_light_height: float = 1.1
 
+@export_group("New menu item pulse")
+## While the menu offers an item the player has not seen (task-077), a rainbow ring pulses out of the player's centre
+## every `pulse_interval` seconds, like the teleport waves but small. Sizes are in tiles (map cells).
+@export var pulse_interval: float = 5.0
+## Seconds one ring lives (it grows from the centre to pulse_radius_tiles while fading out).
+@export var pulse_life: float = 1.2
+@export var pulse_radius_tiles: float = 0.3
+## Half width of the bright band of the ring.
+@export var pulse_band_tiles: float = 0.12
+## Brightness / colour gain at the start of a ring.
+@export var pulse_strength: float = 2.5
+## Rainbow turns around the ring and per second.
+@export var pulse_hue_turns: float = 1.0
+@export var pulse_hue_speed: float = 0.8
+
 @export_group("Static lights")
 ## Static lights the shader can use besides the player light (the shader loop holds 8 in total).
 @export_range(0, 7) var max_static_lights: int = 7

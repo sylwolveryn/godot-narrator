@@ -123,6 +123,7 @@ func collect(cell: Vector2i) -> bool:
 	if save_service != null:
 		save_service.progress.diamonds += 1
 		save_service.commit_progress()
+	SignalBus.consumed.emit(Consumable.DIAMOND)
 	SignalBus.diamond_collected.emit(cell, total_collected())
 	SignalBus.narration_event.emit(NarrationEvents.DIAMOND_FOUND)
 	return true

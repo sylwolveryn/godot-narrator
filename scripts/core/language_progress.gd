@@ -8,6 +8,8 @@ extends Node
 ## unlock the next language and start a glyph storm) and for a selection (language_select_requested).
 ## Speaks through SignalBus: language_understanding_changed / language_selected / language_unlocked.
 ## Sits right after SaveService and before the Narrator so its run-start announcement comes first.
+## Top limit (task-077): the DB column player_language.max (>= 0) caps a language below LanguageConfig.max_percent;
+## a value already over it is brought down to it at once (saved and mirrored). -1 / missing = no extra limit.
 
 @export var config: LanguageConfig
 @export var save_service: SaveService
@@ -19,9 +21,13 @@ extends Node
 @export var player: Node3D
 
 const REDUCER: String = "set_language_understanding"
+const LANGUAGE_TABLE: String = "player_language"
+const MAX_COLUMN: String = "max"
 
 ## Language id -> whole percent last sent to the DB.
 var _pushed: Dictionary = {}
+## Language id (String) -> top limit in percent from the DB (only languages with a limit set).
+var _limits: Dictionary = {}
 
 
 func _ready() -> void:
@@ -36,6 +42,9 @@ func _ready() -> void:
 	SignalBus.cells_revealed.connect(_on_cells_revealed)
 	SignalBus.language_list_requested.connect(_on_list_requested)
 	SignalBus.language_select_requested.connect(select)
+	if database != null:
+		database.tables_loaded.connect(_on_tables_loaded)
+		_read_limits(database.tables)
 	repair()
 	# Listeners further down the tree connect in their own _ready: announce once everything is ready.
 	announce.call_deferred(true)
@@ -49,6 +58,15 @@ func selected_language() -> StringName:
 ## Understanding of a language in percent (0 when locked or unknown).
 func percent(language: StringName) -> float:
 	return float(_progress().language_understanding.get(String(language), 0.0))
+
+
+## Highest understanding a language may reach: LanguageConfig.max_percent, or the DB top limit when that is lower.
+func cap(language: StringName) -> float:
+	var top: float = config.max_percent
+	var key: String = String(language)
+	if _limits.has(key):
+		top = minf(top, float(_limits[key]))
+	return maxf(top, 0.0)
 
 
 ## Understanding of the selected language as 0..1 (of max_percent).
@@ -99,7 +117,7 @@ func repair() -> void:
 	var values: Dictionary = {}
 	for id in unlocked:
 		var start: float = config.start_percent if id == String(config.start_language) else config.unlocked_start_percent
-		values[id] = clampf(float(p.language_understanding.get(id, start)), 0.0, config.max_percent)
+		values[id] = clampf(float(p.language_understanding.get(id, start)), 0.0, cap(StringName(id)))
 	if values != p.language_understanding:
 		p.language_understanding = values
 		changed = true
@@ -130,7 +148,7 @@ func announce(push_db: bool = false) -> void:
 func add_percent(amount: float) -> bool:
 	var language: StringName = selected_language()
 	var before: float = percent(language)
-	var after: float = clampf(before + amount, 0.0, config.max_percent)
+	var after: float = clampf(before + amount, 0.0, cap(language))
 	if is_equal_approx(before, after):
 		return false
 	_progress().language_understanding[String(language)] = after
@@ -165,7 +183,7 @@ func try_unlock() -> StringName:
 		return &""
 	var p: PersistentProgress = _progress()
 	p.unlocked_languages.append(String(next))
-	p.language_understanding[String(next)] = clampf(config.unlocked_start_percent, 0.0, config.max_percent)
+	p.language_understanding[String(next)] = clampf(config.unlocked_start_percent, 0.0, cap(next))
 	save_service.commit_progress()
 	_push(next, true)
 	SignalBus.language_unlocked.emit(next)
@@ -205,6 +223,42 @@ func _discovery_type(cell: Vector2i) -> StringName:
 	if config.ignored_types.has(String(type)):
 		return &""
 	return type
+
+
+## The DB tables arrived (seed, server or reload): take the top limits and bring values over them down.
+func _on_tables_loaded(tables: Dictionary) -> void:
+	_read_limits(tables)
+	apply_limits()
+
+
+func _read_limits(tables: Dictionary) -> void:
+	_limits.clear()
+	for row in tables.get(LANGUAGE_TABLE, []):
+		if not row is Dictionary or not row.has(MAX_COLUMN):
+			continue
+		var top: float = float(row[MAX_COLUMN])
+		if top >= 0.0:
+			_limits[String(row.get("language", ""))] = top
+
+
+## Brings every language over its top limit down to it (saved and mirrored to the DB). Returns true when any changed.
+func apply_limits() -> bool:
+	if save_service == null:
+		return false
+	var values: Dictionary = _progress().language_understanding
+	var lowered: Array[StringName] = []
+	for id in values.keys():
+		var top: float = cap(StringName(id))
+		if float(values[id]) > top:
+			values[id] = top
+			lowered.append(StringName(id))
+	if lowered.is_empty():
+		return false
+	save_service.commit_progress()
+	for id in lowered:
+		_push(id, true)
+	SignalBus.language_understanding_changed.emit(selected_language(), understanding())
+	return true
 
 
 func _on_progress_loaded() -> void:

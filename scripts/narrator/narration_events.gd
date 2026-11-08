@@ -47,5 +47,7 @@ const DEATH_BY_ENEMY: StringName = &"DEATH_BY_ENEMY"
 ## Enemy remains (task-076): a black hole formed (a destroyed hunter), a diamond was picked up.
 const BLACK_HOLE_FORMED: StringName = &"BLACK_HOLE_FORMED"
 const DIAMOND_FOUND: StringName = &"DIAMOND_FOUND"
+## The many form fires a cannon (task-077, CannonSystem; every shot, the beats are once-only).
+const MANY_FIRED_CANNON: StringName = &"MANY_FIRED_CANNON"
 ## Priority key used for TIME beats (they have no event name).
 const TIME: StringName = &"TIME"

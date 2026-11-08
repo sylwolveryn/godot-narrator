@@ -2182,13 +2182,13 @@
 			"char_speed": 1.5,
 			"color_speed": 0.15
 		},
-		{
+	{
 			"surface": "floor",
 			"enabled": true,
-			"chars": ".,:;+o0",
+			"chars": "o0O°()",
 			"palette": "#5a5a7a,#ffbd70,#ff8c5a,#b48cff",
-			"near_intensity": 0.55,
-			"far_intensity": 0.06,
+			"near_intensity": 0.20,
+			"far_intensity": 0.09,
 			"radius": 6.0,
 			"char_speed": 2.5,
 			"color_speed": 0.25
@@ -2196,9 +2196,9 @@
 		{
 			"surface": "spikes",
 			"enabled": true,
-			"chars": "'^!AV",
+			"chars": "💀⚰️🪦˖ . ݁་༘.,:;+'^!AV",
 			"palette": "#ff6a3a,#ffb07a",
-			"near_intensity": 0.4,
+			"near_intensity": 0.8,
 			"far_intensity": 0.1,
 			"radius": 5.0,
 			"char_speed": 3.0,

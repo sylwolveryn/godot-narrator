@@ -10,5 +10,5 @@ event = &"DIAMOND_FOUND"
 mood = &"chime"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 39
+order = 41
 layer = 0

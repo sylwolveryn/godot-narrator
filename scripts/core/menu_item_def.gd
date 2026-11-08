@@ -11,6 +11,8 @@ const ACTION_SWITCH_FORM: StringName = &"switch_form"
 const ACTION_REMEMBER: StringName = &"remember"
 ## Shows the Language list (task-065); handled by MenuController, which asks LanguageProgress through SignalBus.
 const ACTION_LANGUAGE: StringName = &"language"
+## Shows the Items list (task-077): what the player consumed, per kind; handled by MenuController.
+const ACTION_ITEMS: StringName = &"items"
 
 @export var id: StringName = &""
 @export var action: StringName = ACTION_CLOSE
@@ -23,6 +25,10 @@ const ACTION_LANGUAGE: StringName = &"language"
 @export var requires_entity: bool = false
 ## Only offered once any origin claim has been heard (OriginLedger.any_claim_heard).
 @export var requires_claim: bool = false
+## Only offered once anything was consumed (task-077: the first dirt eaten or diamond picked up).
+@export var requires_consumed: bool = false
+## Pulses as new (task-077) even when it was already offered before new-item tracking began (a save from before it).
+@export var announce_new: bool = false
 ## Confirming it closes the menu (the player then sees the result in the world).
 @export var closes_menu: bool = true
 

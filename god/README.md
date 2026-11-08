@@ -75,6 +75,11 @@ the HTTP API (token from `/v1/identity`, cached and refreshed on a 401).
   the Log tab. Each save runs an SQL `UPDATE` with the database owner's token (the identity the `spacetime` CLI is
   logged in with, read via `spacetime login show --token`; anonymous callers may not run DML) and then calls
   `bump_config_version`, so a running game picks the change up within a few seconds.
+- **Palette editor (task-077)**: double-clicking a colour cell opens a palette editor instead of the text entry. A
+  colour cell is any String column named `*palette*` or holding `#rrggbb[,#rrggbb...]` (`glyph_anim.palette`,
+  `avatar_fx.crystal_palette`, `trail_color`, ...). It shows swatches and the colour cycle as a strip. You can Add...,
+  Change... (or double-click a swatch), Remove, move a colour left or right, or type a hex code. OK saves it like a
+  typed edit (undo / redo included). It warns when a palette has more colours than the game uses (6).
 - **Ctrl+Z / Ctrl+Y** (also Ctrl+Shift+Z): undo / redo the last saved cell edits (up to 200), written back to the DB
   the same way. They are ignored while a text field has the focus, so its own typing undo is not hijacked.
 

@@ -47,3 +47,9 @@ extends Resource
 @export var next_devour_at: int = 0
 ## Enemy remains (task-076). Written ONLY by EnemyRemains. Diamonds picked up ever, on every map.
 @export var diamonds: int = 0
+## Consumption (task-077). Written ONLY by SaveService (from SignalBus.consumed). Consumable kind (String) -> count ever.
+@export var consumed: Dictionary = {}
+## Menu item ids the player has seen in an open menu (task-077); written ONLY by SaveService for MenuController.
+@export var seen_menu_items: PackedStringArray = PackedStringArray()
+## True once seen_menu_items was first filled (items already offered before tracking began count as seen).
+@export var menu_seen_initialized: bool = false
