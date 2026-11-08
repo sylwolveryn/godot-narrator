@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T14:07:00Z'
-updated_date: '2026-11-08T14:07:00Z'
+updated_date: '2026-11-08T14:24:00Z'
 labels:
   - world
   - rendering
@@ -27,3 +27,9 @@ Bigger props should be authored by repeating their character in the map. Adjacen
 - [ ] #2 G renders as one ASCII-art gargoyle fountain scaled to its footprint, blocks movement and line of sight
 - [ ] #3 Tests cover the merging (1x1, 2x1, 2x2, L-shape)
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+LargeObjectDef (scripts/world/large_object_def.gd) + MapLegend.large_objects; LargeObjectMerger row-major rectangles -> MapData.large_objects; MapLoader collision box per object; MapReveal adds blocks_sight types to sight blockers; GlyphLightOcclusion honours MapData.light_blocking_types; LargeObjectView draws one Y-billboard Label3D per colour layer, scaled (w, h) by footprint, reveal-aware with memory tint + fade, animated water at 5 fps from prebuilt texts. Gargoyle def built by tools/build_resources.gd -> resources/config/large_objects/gargoyle_fountain.tres. Label3D needs autowrap_trim_flags = 0 or layers misalign. tools/test_large_objects.gd passes.
+<!-- SECTION:NOTES:END -->
