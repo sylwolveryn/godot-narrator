@@ -658,6 +658,14 @@ class DbClient:
         self._authed("/v1/database/%s/call/%s" % (self.database, reducer),
                      json.dumps(args or []).encode("utf-8"), "application/json")
 
+    def sql_as(self, token: str, query: str) -> list:
+        """Runs SQL with a given token (the owner's, for UPDATE statements; anonymous callers may only read)."""
+        headers = {"Authorization": "Bearer " + token, "Content-Type": "text/plain"}
+        status, text = self._request("POST", "/v1/database/%s/sql" % self.database, query.encode("utf-8"), headers)
+        if status != 200:
+            raise DbError("HTTP %d: %s" % (status, text.strip()))
+        return parse_sql_response(text)
+
 
 def find_spacetime(env: Optional[dict] = None, which: Callable[[str], Optional[str]] = shutil.which) -> Optional[str]:
     """SPACETIME_BIN override, else `spacetime` on PATH."""
@@ -818,3 +826,157 @@ def movement_row(table: "SqlTable", profile: str) -> Optional[dict]:
         if values.get("profile") == profile:
             return values
     return None
+
+
+# --------------------------------------------------------------------------- Table editing (TASK-061)
+
+# Primary key column per table: rows are updated by it; the key itself is not editable.
+DB_PRIMARY_KEYS = {
+    "event_def": "id", "language_def": "id", "narration": "id", "player_stats": "id", "player_death": "cause",
+    "player_language": "language", "missing_narration": "key", "glyph_anim": "surface",
+    "movement_profile": "profile", "avatar_fx": "profile", "config_version": "id",
+}
+# Tables whose edits are not followed by a config_version bump (bumping config_version would edit itself).
+DB_NO_RELOAD_TABLES = ("config_version",)
+EDITABLE_TYPES = ("String", "Bool", "F32", "F64", "U8", "U16", "U32", "U64", "I8", "I16", "I32", "I64")
+HISTORY_LIMIT = 200
+DB_INDICATOR_COLORS = {"running": "#2ecc71", "stopped": "#e74c3c", "unknown": "#9e9e9e"}
+_TRUE_WORDS = ("true", "1", "yes", "y", "on")
+_FALSE_WORDS = ("false", "0", "no", "n", "off")
+
+
+def is_editable(table: str, column: str, type_name: str) -> bool:
+    """True when a cell can be edited in god: the table has a known key, the column is not the key and its type
+    has an SQL literal form."""
+    key = DB_PRIMARY_KEYS.get(table)
+    return key is not None and column != key and type_name in EDITABLE_TYPES
+
+
+def sql_literal(text: str, type_name: str) -> str:
+    """The SQL literal for a cell value typed in god. Raises ValueError for text that does not fit the type."""
+    if type_name == "String":
+        return "'" + text.replace("'", "''") + "'"
+    word = text.strip().lower()
+    if type_name == "Bool":
+        if word in _TRUE_WORDS:
+            return "true"
+        if word in _FALSE_WORDS:
+            return "false"
+        raise ValueError("expected true or false, got %r" % text)
+    if type_name in ("F32", "F64"):
+        try:
+            number = float(word)
+        except ValueError:
+            raise ValueError("expected a number, got %r" % text) from None
+        if number != number or number in (float("inf"), float("-inf")):
+            raise ValueError("expected a finite number, got %r" % text)
+        return repr(number)
+    if type_name[:1] in ("U", "I") and type_name[1:].isdigit():
+        try:
+            number = int(word)
+        except ValueError:
+            raise ValueError("expected a whole number, got %r" % text) from None
+        if type_name.startswith("U") and number < 0:
+            raise ValueError("expected a non-negative number, got %r" % text)
+        return str(number)
+    raise ValueError("%s cells cannot be edited" % type_name)
+
+
+def update_sql(table: str, key: str, key_literal: str, column: str, value_literal: str) -> str:
+    if not is_valid_table(table):
+        raise ValueError("unknown table: %s" % table)
+    for name in (key, column):
+        if not name.replace("_", "").isalnum():
+            raise ValueError("bad column name: %s" % name)
+    return "UPDATE %s SET %s = %s WHERE %s = %s" % (table, column, value_literal, key, key_literal)
+
+
+@dataclass
+class CellEdit:
+    """One cell change: enough to apply it again (redo) or take it back (undo)."""
+    table: str
+    key: str
+    key_type: str
+    key_text: str
+    column: str
+    column_type: str
+    old_text: str
+    new_text: str
+
+    def sql(self, undo: bool = False) -> str:
+        value = self.old_text if undo else self.new_text
+        return update_sql(self.table, self.key, sql_literal(self.key_text, self.key_type), self.column,
+                          sql_literal(value, self.column_type))
+
+
+class EditHistory:
+    """Undo / redo stacks of CellEdits. A new edit clears the redo stack."""
+
+    def __init__(self, limit: int = HISTORY_LIMIT):
+        self.limit = limit
+        self._undo: list = []
+        self._redo: list = []
+
+    def push(self, edit: CellEdit) -> None:
+        self._undo.append(edit)
+        del self._undo[:-self.limit]
+        self._redo.clear()
+
+    def can_undo(self) -> bool:
+        return bool(self._undo)
+
+    def can_redo(self) -> bool:
+        return bool(self._redo)
+
+    def undo(self) -> Optional[CellEdit]:
+        """The edit to take back (apply its old value), or None. Moves it to the redo stack."""
+        if not self._undo:
+            return None
+        edit = self._undo.pop()
+        self._redo.append(edit)
+        return edit
+
+    def redo(self) -> Optional[CellEdit]:
+        if not self._redo:
+            return None
+        edit = self._redo.pop()
+        self._undo.append(edit)
+        return edit
+
+    def restore_undo(self, edit: CellEdit) -> None:
+        """Puts back an undo that failed to apply."""
+        if self._redo and self._redo[-1] is edit:
+            self._redo.pop()
+        self._undo.append(edit)
+
+    def restore_redo(self, edit: CellEdit) -> None:
+        """Puts back a redo that failed to apply."""
+        if self._undo and self._undo[-1] is edit:
+            self._undo.pop()
+        self._redo.append(edit)
+
+
+def parse_cli_token(output: str) -> Optional[str]:
+    """The auth token from `spacetime login show --token` output (a JWT: three dot-separated parts)."""
+    match = re.search(r"([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)\s*$", output.strip())
+    return match.group(1) if match else None
+
+
+def cli_token(spacetime: Optional[str], run: Callable = subprocess.run) -> Optional[str]:
+    """The database owner's token: the identity the local `spacetime` CLI is logged in with (it published the
+    module, so it may run SQL UPDATEs). None when the CLI is missing or not logged in."""
+    if not spacetime:
+        return None
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    try:
+        out = run([spacetime, "login", "show", "--token"], capture_output=True, text=True, timeout=20,
+                  creationflags=flags).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return parse_cli_token(out or "")
+
+
+def indicator_color(running: Optional[bool]) -> str:
+    if running is None:
+        return DB_INDICATOR_COLORS["unknown"]
+    return DB_INDICATOR_COLORS["running" if running else "stopped"]

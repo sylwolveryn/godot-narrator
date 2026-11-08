@@ -22,6 +22,11 @@ class GodApp:
         self.db_busy = False
         self.db_query_in_flight = False
         self.table_tabs: dict = {}
+        # Table editing (task-061): per tab {tree, table, key_index, items: key text -> tree item}; undo/redo history.
+        self.table_meta: dict = {}
+        self.history = core.EditHistory()
+        self.owner_token = None
+        self._editor = None
         self.results: "queue.Queue" = queue.Queue()
         self.running = False
         self.busy = False
@@ -31,6 +36,10 @@ class GodApp:
         root.title("god - Narrator launcher")
         root.minsize(640, 760)
         self._build()
+        for seq in ("<Control-z>", "<Control-Z>"):
+            root.bind_all(seq, self._undo)
+        for seq in ("<Control-y>", "<Control-Y>", "<Control-Shift-z>", "<Control-Shift-Z>"):
+            root.bind_all(seq, self._redo)
         self.poll()
         self._drain()
 
@@ -93,8 +102,14 @@ class GodApp:
         head = ttk.Frame(self.win)
         head.pack(fill="x", **pad)
         ttk.Label(head, text="Database", font=("Segoe UI", 10, "bold")).pack(side="left", padx=(0, 10))
+        # Running / stopped light: green / red dot (grey until the first poll).
+        self.db_light = tk.Canvas(head, width=16, height=16, highlightthickness=0, background=self.win.cget("background"))
+        self.db_dot = self.db_light.create_oval(2, 2, 14, 14, fill=core.indicator_color(None), outline="#333333")
+        self.db_light.pack(side="left", padx=(0, 6))
         self.db_status = ttk.Label(head, text="DB: ...", font=("Segoe UI", 10, "bold"))
         self.db_status.pack(side="left")
+        ttk.Label(head, text="   double-click a cell to edit (saved at once), Ctrl+Z / Ctrl+Y undo / redo",
+                  foreground="#666666").pack(side="left")
         row1 = ttk.Frame(self.win)
         row1.pack(fill="x", **pad)
         self.db_buttons = [
@@ -184,6 +199,7 @@ class GodApp:
                     self.db_query_in_flight = False
                     self.db_running, owned = value
                     self.db_status.config(text=core.db_status_text(self.db_running, owned, bool(self.db.spacetime)))
+                    self.db_light.itemconfigure(self.db_dot, fill=core.indicator_color(self.db_running))
                 elif kind == "db_log":
                     self._log(*value)
                 elif kind == "db_table":
@@ -191,6 +207,8 @@ class GodApp:
                 elif kind == "move_fill":
                     for field, var in self.move_vars.items():
                         var.set("%g" % float(value.get(field, 0.0)))
+                elif kind == "cell_set":
+                    self._set_cell(*value)
                 elif kind == "db_confirm":
                     self._confirm_kill(value)
                 elif kind == "db_done":
@@ -451,14 +469,147 @@ class GodApp:
         for i, c in enumerate(cols):
             tree.heading(c, text=c)
             tree.column(c, width=core.column_width(c, [r[i] for r in rows if i < len(r)]), stretch=False, anchor="w")
+        key = core.DB_PRIMARY_KEYS.get(name)
+        key_index = cols.index(key) if key in cols else -1
+        items = {}
         for r in rows:
-            tree.insert("", "end", values=r)
-        ttk.Label(frame, text="%d row(s)" % len(rows)).pack(side="bottom", anchor="w")
+            item = tree.insert("", "end", values=r)
+            if key_index >= 0:
+                items[str(r[key_index])] = item
+        self.table_meta[name] = {"tree": tree, "table": table, "key_index": key_index, "items": items}
+        tree.bind("<Double-1>", lambda e, n=name: self._begin_edit(n, e))
+        note = "" if key_index >= 0 else "  (read only)"
+        ttk.Label(frame, text="%d row(s)%s" % (len(rows), note)).pack(side="bottom", anchor="w")
         xs.pack(side="bottom", fill="x")
         ys.pack(side="right", fill="y")
         tree.pack(side="left", fill="both", expand=True)
         self.tabs.tab(frame, text="%s (%d)" % (name, len(rows)))
         self.tabs.select(frame)
+
+
+    # ---------------------------------------------------------------- table editing (task-061)
+    def _begin_edit(self, name: str, event) -> None:
+        """Double-click on a cell: an entry over the cell; Enter or leaving it saves, Escape cancels."""
+        meta = self.table_meta.get(name)
+        if meta is None or meta["key_index"] < 0 or self.db_busy:
+            return
+        tree = meta["tree"]
+        item, col_id = tree.identify_row(event.y), tree.identify_column(event.x)
+        if not item or not col_id:
+            return
+        col = int(col_id[1:]) - 1
+        table = meta["table"]
+        column, type_name = table.columns[col], table.types[col]
+        if not core.is_editable(name, column, type_name):
+            why = "the row key" if column == core.DB_PRIMARY_KEYS.get(name) else type_name
+            self._log("%s.%s is not editable (%s)." % (name, column, why))
+            return
+        self._close_editor()
+        bbox = tree.bbox(item, col_id)
+        if not bbox:
+            return
+        x, y, w, h = bbox
+        values = tree.item(item, "values")
+        old = str(values[col])
+        var = tk.StringVar(value=old)
+        entry = ttk.Entry(tree, textvariable=var)
+        entry.place(x=x, y=y, width=max(w, 80), height=h)
+        entry.focus_set()
+        entry.select_range(0, "end")
+        key_text = str(values[meta["key_index"]])
+        key_type = table.types[meta["key_index"]]
+        done = {"closed": False}
+
+        def commit(_e=None) -> None:
+            if done["closed"]:
+                return
+            done["closed"] = True
+            new = var.get()
+            self._close_editor()
+            if new == old:
+                return
+            edit = core.CellEdit(name, core.DB_PRIMARY_KEYS[name], key_type, key_text, column, type_name, old, new)
+            try:
+                edit.sql()
+            except ValueError as e:
+                self._log("%s.%s: %s" % (name, column, e), True)
+                return
+            self._apply_edit(edit, undo=False, record=True)
+
+        def cancel(_e=None) -> None:
+            done["closed"] = True
+            self._close_editor()
+
+        entry.bind("<Return>", commit)
+        entry.bind("<KP_Enter>", commit)
+        entry.bind("<FocusOut>", commit)
+        entry.bind("<Escape>", cancel)
+        self._editor = entry
+
+    def _close_editor(self) -> None:
+        if self._editor is not None:
+            editor, self._editor = self._editor, None
+            editor.destroy()
+
+    def _apply_edit(self, edit, undo: bool, record: bool = False) -> None:
+        """Writes the edit (or takes it back) with the owner's token, then bumps config_version so a running game
+        reloads its tables. The grid cell follows once the DB accepted it."""
+        verb = "Undo" if undo else ("Save" if record else "Redo")
+        value = edit.old_text if undo else edit.new_text
+
+        def run() -> str:
+            try:
+                if not self.owner_token:
+                    self.owner_token = core.cli_token(self.db.spacetime)
+                    if not self.owner_token:
+                        raise core.DbError("no owner token: log the spacetime CLI in (spacetime login) to edit tables")
+                self.db.client.sql_as(self.owner_token, edit.sql(undo=undo))
+            except core.DbError:
+                if not record:
+                    (self.history.restore_undo if undo else self.history.restore_redo)(edit)
+                raise
+            if record:
+                self.history.push(edit)
+            self.results.put(("cell_set", (edit.table, edit.key_text, edit.column, value)))
+            if edit.table not in core.DB_NO_RELOAD_TABLES:
+                self.db.client.call("bump_config_version")
+            return "%s %s[%s].%s = %s" % (verb, edit.table, edit.key_text, edit.column, value)
+
+        self._db_job("%s %s.%s" % (verb, edit.table, edit.column), run)
+
+    def _undo(self, _event=None):
+        if self._editor is not None or self.db_busy or self._typing_elsewhere():
+            return None
+        edit = self.history.undo()
+        if edit is None:
+            self._log("Nothing to undo.")
+        else:
+            self._apply_edit(edit, undo=True)
+        return "break"
+
+    def _redo(self, _event=None):
+        if self._editor is not None or self.db_busy or self._typing_elsewhere():
+            return None
+        edit = self.history.redo()
+        if edit is None:
+            self._log("Nothing to redo.")
+        else:
+            self._apply_edit(edit, undo=False)
+        return "break"
+
+    def _typing_elsewhere(self) -> bool:
+        """True while another text field has the focus (its own Ctrl+Z / Ctrl+Y stay with it)."""
+        focus = self.win.focus_get()
+        return isinstance(focus, (tk.Entry, ttk.Entry, tk.Text, ttk.Combobox))
+
+    def _set_cell(self, table: str, key_text: str, column: str, value: str) -> None:
+        meta = self.table_meta.get(table)
+        if meta is None or key_text not in meta["items"] or column not in meta["table"].columns:
+            return
+        tree, item = meta["tree"], meta["items"][key_text]
+        values = list(tree.item(item, "values"))
+        values[meta["table"].columns.index(column)] = value
+        tree.item(item, values=values)
 
 
 class _Note(Exception):

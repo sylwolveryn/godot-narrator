@@ -38,7 +38,8 @@ Controls for the local SpacetimeDB server (`http://127.0.0.1:3000`, database `da
 `database/README.md`). The `spacetime` CLI is found via `SPACETIME_BIN`, else on PATH. Everything else goes through
 the HTTP API (token from `/v1/identity`, cached and refreshed on a 401).
 
-- **Status**: `DB: running` / `DB: stopped`, from `GET /v1/ping` on the same 3 s poll.
+- **Status**: a green (running) / red (stopped) dot plus `DB: running` / `DB: stopped`, from `GET /v1/ping` on the
+  same 3 s poll (grey until the first answer).
 - **Start DB**: runs `spacetime start` detached (output in `%TEMP%/narrator_spacetimedb.log`); does nothing if the
   server already answers.
 - **Stop DB**: kills the process tree god started. If the server was started elsewhere, lists the `spacetime*`
@@ -48,6 +49,13 @@ the HTTP API (token from `/v1/identity`, cached and refreshed on a 401).
 - **Clear missing**: calls `clear_missing`.
 - **Table + Read table / Read all**: `SELECT * FROM <table>` shown in a grid, one tab per table (floats rounded to
   3 decimals, timestamps in local time).
+- **Editing (task-061)**: double-click a cell, type, press Enter (or click elsewhere) and it is saved at once; Escape
+  cancels. The row key column and timestamps are read only; a value that does not fit the column type is refused in
+  the Log tab. Each save runs an SQL `UPDATE` with the database owner's token (the identity the `spacetime` CLI is
+  logged in with, read via `spacetime login show --token`; anonymous callers may not run DML) and then calls
+  `bump_config_version`, so a running game picks the change up within a few seconds.
+- **Ctrl+Z / Ctrl+Y** (also Ctrl+Shift+Z): undo / redo the last saved cell edits (up to 200), written back to the DB
+  the same way. They are ignored while a text field has the focus, so its own typing undo is not hijacked.
 
 ## Tests
 

@@ -553,3 +553,63 @@ class MovementFormTest(unittest.TestCase):
         table = core.SqlTable(columns=["profile", "max_speed"], types=["String", "F32"], rows=[["default", 4.5], ["grown", 5.3]])
         self.assertEqual(core.movement_row(table, "grown"), {"profile": "grown", "max_speed": 5.3})
         self.assertIsNone(core.movement_row(table, "single"))
+
+
+class TableEditTest(unittest.TestCase):
+    def test_sql_literals(self):
+        self.assertEqual(core.sql_literal("it's", "String"), "'it''s'")
+        self.assertEqual(core.sql_literal("", "String"), "''")
+        self.assertEqual(core.sql_literal(" Yes ", "Bool"), "true")
+        self.assertEqual(core.sql_literal("0", "Bool"), "false")
+        self.assertEqual(core.sql_literal("0.25", "F32"), "0.25")
+        self.assertEqual(core.sql_literal("7", "U64"), "7")
+        self.assertEqual(core.sql_literal("-3", "I32"), "-3")
+        for text, kind in (("maybe", "Bool"), ("abc", "F32"), ("nan", "F64"), ("1.5", "U32"), ("-1", "U8"), ("x", "Timestamp")):
+            with self.assertRaises(ValueError, msg=(text, kind)):
+                core.sql_literal(text, kind)
+
+    def test_editable(self):
+        self.assertTrue(core.is_editable("avatar_fx", "trail_lifetime", "F32"))
+        self.assertFalse(core.is_editable("avatar_fx", "profile", "String"))
+        self.assertFalse(core.is_editable("missing_narration", "first_seen", "Timestamp"))
+        self.assertFalse(core.is_editable("nope", "x", "String"))
+
+    def test_update_sql_and_undo(self):
+        edit = core.CellEdit("glyph_anim", "surface", "String", "floor", "radius", "F32", "6", "7.5")
+        self.assertEqual(edit.sql(), "UPDATE glyph_anim SET radius = 7.5 WHERE surface = 'floor'")
+        self.assertEqual(edit.sql(undo=True), "UPDATE glyph_anim SET radius = 6.0 WHERE surface = 'floor'")
+        with self.assertRaises(ValueError):
+            core.update_sql("evil; DROP", "id", "1", "x", "1")
+        with self.assertRaises(ValueError):
+            core.update_sql("avatar_fx", "profile", "'x'", "a b", "1")
+
+    def test_history(self):
+        h = core.EditHistory(limit=2)
+        a, b, c = (core.CellEdit("avatar_fx", "profile", "String", "default", "crystal_speed", "F32", str(i), str(i + 1)) for i in range(3))
+        self.assertIsNone(h.undo())
+        for e in (a, b, c):
+            h.push(e)
+        self.assertIs(h.undo(), c)
+        self.assertIs(h.undo(), b)
+        self.assertIsNone(h.undo(), "limit 2 dropped the oldest edit")
+        self.assertIs(h.redo(), b)
+        h.push(a)
+        self.assertFalse(h.can_redo(), "a new edit clears redo")
+        self.assertIs(h.undo(), a)
+        h.restore_undo(a)
+        self.assertIs(h.undo(), a, "a failed undo goes back on the undo stack")
+        self.assertIs(h.redo(), a)
+        h.restore_redo(a)
+        self.assertIs(h.redo(), a, "a failed redo goes back on the redo stack")
+
+    def test_cli_token(self):
+        out = "You are logged in as c200abc\nYour auth token (don't share this!) is aaa.bbb-c.d_d\n"
+        self.assertEqual(core.parse_cli_token(out), "aaa.bbb-c.d_d")
+        self.assertIsNone(core.parse_cli_token("You are not logged in"))
+        self.assertIsNone(core.cli_token(None))
+
+    def test_indicator(self):
+        self.assertEqual(core.indicator_color(True), core.DB_INDICATOR_COLORS["running"])
+        self.assertEqual(core.indicator_color(False), core.DB_INDICATOR_COLORS["stopped"])
+        self.assertEqual(core.indicator_color(None), core.DB_INDICATOR_COLORS["unknown"])
+
