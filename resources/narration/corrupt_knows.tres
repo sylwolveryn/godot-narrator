@@ -6,7 +6,7 @@
 script = ExtResource("1_2blo6")
 id = "corrupt_knows"
 text = "It knows the shape."
-event = &"corruption_entered"
+event = &"CORRUPTION_ENTERED"
 mood = &"static"
 supports = PackedStringArray("demonic", "ai")
 contradicts = PackedStringArray()

@@ -1,0 +1,9 @@
+{
+	"event": "DEATH_BY_SPIKES",
+	"language": "EN_GB",
+	"lines": {
+		"death_spikes_down": "Down.",
+		"death_spikes_willing": "You fell for them once. Willingly.",
+		"death_spikes_watch": "I'm sorry. I watch every time."
+	}
+}

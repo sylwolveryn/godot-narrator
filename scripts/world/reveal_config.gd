@@ -2,8 +2,13 @@ class_name RevealConfig
 extends Resource
 ## How the world is discovered. Instance: resources/config/reveal_config.tres.
 
-## Cells within this distance (in cells) of the player are revealed.
-@export var reveal_radius: float = 2.75
+## Cells within this distance (in cells) of the player are revealed (when in line of sight).
+@export var reveal_radius: float = 5.5
+## Only cells the player can see are revealed: cells of these types hide what lies behind them (they are seen themselves).
+@export var line_of_sight: bool = true
+@export var sight_blockers: Array[StringName] = [MapLegend.WALL, MapLegend.ITEM, MapLegend.VOID]
+## Sideways offset (cells) of the two extra sight rays; a cell is seen when any of the three rays gets through.
+@export_range(0.0, 0.49) var sight_spread: float = 0.35
 ## When false the floor surfaces are never drawn: only walls, items and hazards appear.
 @export var reveal_floor: bool = true
 ## Cell type -> narration event announced the first time a cell of that type is revealed in a run.

@@ -6,7 +6,7 @@
 script = ExtResource("1_wofa0")
 id = "broken_ai"
 text = "...Still one. Then not built. Or built to lie."
-event = &"origin_struck"
+event = &"ORIGIN_STRUCK"
 min_run = 4
 min_deaths = 3
 once = false

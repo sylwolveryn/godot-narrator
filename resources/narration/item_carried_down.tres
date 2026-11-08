@@ -6,7 +6,7 @@
 script = ExtResource("1_l3ata")
 id = "item_carried_down"
 text = "Not across stars. I watched something carry you down."
-event = &"item_revealed"
+event = &"ITEM_REVEALED"
 min_run = 6
 min_deaths = 5
 mood = &"chime"

@@ -4,7 +4,8 @@ extends RefCounted
 ## Per vertex: COLOR.r = GlyphSurfaceType id / TYPE_DIV, UV = the map cell the vertex belongs to (the
 ## shader reads the reveal mask with it), NORMAL = the flat face normal.
 ## Every non-void cell has a floor quad (under walls it shows where the cut-away opens a wall).
-## Only the faces an isometric camera at +x,+z (yaw 45) can see are emitted: tops, +x faces, +z faces.
+## Tops and all four side faces are emitted (the player can orbit the camera, task-051); faces between two wall cells
+## are skipped, and the material back-face culls the sides turned away from the camera.
 ## Per vertex (carved-stone look, task-036): COLOR.g = edge bits / EDGE_DIV for wall faces (top face: bit0 -x,
 ## bit1 +x, bit2 -z, bit3 +z side has no wall neighbour; side face: bit0 / bit1 = low / high end of the face is a
 ## free corner), COLOR.b = 1 on the floor quad under a wall (the shader samples wall-region light data there).
@@ -77,7 +78,7 @@ func build(map: MapData, config: WorldConfig) -> ArrayMesh:
 
 
 ## Mesh of ONE small pushable object (task-019), centred on the origin of its cell, standing on y = 0: a stone block
-## with a top and the +x / +z faces. Wall-type surface; COLOR.b = FREE_STANDING tells the shader it is not a wall cell
+## with a top and its four side faces. Wall-type surface; COLOR.b = FREE_STANDING tells the shader it is not a wall cell
 ## (UV is zero: the shader takes the cell from the instance origin).
 func build_object(config: WorldConfig) -> ArrayMesh:
 	_config = config
@@ -123,6 +124,8 @@ func _wall(map: MapData) -> void:
 	var o: Vector3 = _origin() + Vector3(s, 0, s) * 0.5
 	var face_x: bool = not _is_wall(map, _cell + Vector2i(1, 0))
 	var face_z: bool = not _is_wall(map, _cell + Vector2i(0, 1))
+	var face_nx: bool = not _is_wall(map, _cell + Vector2i(-1, 0))
+	var face_nz: bool = not _is_wall(map, _cell + Vector2i(0, -1))
 	var top_bits: int = 0
 	for i in SIDE_STEPS.size():
 		if not _is_wall(map, _cell + SIDE_STEPS[i]):
@@ -135,6 +138,12 @@ func _wall(map: MapData) -> void:
 	if face_z:
 		_edge_bits = _end_bits(map, Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, 1))
 		_box_side_z(o, s)
+	if face_nx:
+		_edge_bits = _end_bits(map, Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0))
+		_box_side_nx(o, s)
+	if face_nz:
+		_edge_bits = _end_bits(map, Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1))
+		_box_side_nz(o, s)
 	_edge_bits = 0
 
 
@@ -168,6 +177,18 @@ func _box_side_z(o: Vector3, s: float) -> void:
 	var h: float = s * 0.5
 	var y1: float = _config.wall_height
 	_quad(Vector3(o.x - h, 0.0, o.z + h), Vector3(o.x + h, 0.0, o.z + h), Vector3(o.x + h, y1, o.z + h), Vector3(o.x - h, y1, o.z + h), Vector3.BACK, GlyphSurfaceType.WALL)
+
+
+func _box_side_nx(o: Vector3, s: float) -> void:
+	var h: float = s * 0.5
+	var y1: float = _config.wall_height
+	_quad(Vector3(o.x - h, 0.0, o.z - h), Vector3(o.x - h, 0.0, o.z + h), Vector3(o.x - h, y1, o.z + h), Vector3(o.x - h, y1, o.z - h), Vector3.LEFT, GlyphSurfaceType.WALL)
+
+
+func _box_side_nz(o: Vector3, s: float) -> void:
+	var h: float = s * 0.5
+	var y1: float = _config.wall_height
+	_quad(Vector3(o.x - h, 0.0, o.z - h), Vector3(o.x + h, 0.0, o.z - h), Vector3(o.x + h, y1, o.z - h), Vector3(o.x - h, y1, o.z - h), Vector3.FORWARD, GlyphSurfaceType.WALL)
 
 
 func _item() -> void:
@@ -212,13 +233,17 @@ func _hash(c: Vector2i, salt: float) -> float:
 	return fposmod(sin(float(c.x) * CORRUPT_SEED_A + float(c.y) * CORRUPT_SEED_B + salt * CORRUPT_SEED_SALT) * CORRUPT_HASH_MUL, 1.0)
 
 
-## Box with a top and optionally the +x / +z faces (the only side faces the camera can see).
+## Box with a top and optionally the x / z side faces (both signs each: the camera can orbit, task-051).
 func _box(cx: float, cz: float, y0: float, y1: float, hx: float, hz: float, type: int, face_x: bool, face_z: bool) -> void:
 	_quad(Vector3(cx - hx, y1, cz - hz), Vector3(cx + hx, y1, cz - hz), Vector3(cx + hx, y1, cz + hz), Vector3(cx - hx, y1, cz + hz), Vector3.UP, type)
 	if face_x:
 		_quad(Vector3(cx + hx, y0, cz - hz), Vector3(cx + hx, y0, cz + hz), Vector3(cx + hx, y1, cz + hz), Vector3(cx + hx, y1, cz - hz), Vector3.RIGHT, type)
 	if face_z:
 		_quad(Vector3(cx - hx, y0, cz + hz), Vector3(cx + hx, y0, cz + hz), Vector3(cx + hx, y1, cz + hz), Vector3(cx - hx, y1, cz + hz), Vector3.BACK, type)
+	if face_x:
+		_quad(Vector3(cx - hx, y0, cz - hz), Vector3(cx - hx, y0, cz + hz), Vector3(cx - hx, y1, cz + hz), Vector3(cx - hx, y1, cz - hz), Vector3.LEFT, type)
+	if face_z:
+		_quad(Vector3(cx - hx, y0, cz - hz), Vector3(cx + hx, y0, cz - hz), Vector3(cx + hx, y1, cz - hz), Vector3(cx - hx, y1, cz - hz), Vector3.FORWARD, type)
 
 
 func _vertex(p: Vector3, n: Vector3, type: int) -> void:

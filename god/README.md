@@ -27,6 +27,23 @@ editor `-e`/`--editor` instance or a headless tool run). Closing asks politely, 
 Shows the fields of `progress.tres` (everything except `revealed_cells`), refreshed by the same 3 s poll when the file
 appears, disappears or changes. The file is only ever read. Missing save shows an empty state; a malformed file shows an error.
 
+## Database section
+
+Controls for the local SpacetimeDB server (`http://127.0.0.1:3000`, database `database-narrator`, see
+`database/README.md`). The `spacetime` CLI is found via `SPACETIME_BIN`, else on PATH. Everything else goes through
+the HTTP API (token from `/v1/identity`, cached and refreshed on a 401).
+
+- **Status**: `DB: running` / `DB: stopped`, from `GET /v1/ping` on the same 3 s poll.
+- **Start DB**: runs `spacetime start` detached (output in `%TEMP%/narrator_spacetimedb.log`); does nothing if the
+  server already answers.
+- **Stop DB**: kills the process tree god started. If the server was started elsewhere, lists the `spacetime*`
+  processes and asks for confirmation before killing them (`taskkill /T /F`).
+- **Publish module**: `spacetime publish database-narrator --server local --yes` in `database/`; output goes to the Log tab.
+- **Reload game data**: calls `bump_config_version` so a running game reloads its tables.
+- **Clear missing**: calls `clear_missing`.
+- **Table + Read table / Read all**: `SELECT * FROM <table>` shown in a grid, one tab per table (floats rounded to
+  3 decimals, timestamps in local time).
+
 ## Tests
 
     python -m unittest discover -s god/tests

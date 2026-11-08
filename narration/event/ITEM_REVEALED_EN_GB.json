@@ -1,0 +1,10 @@
+{
+	"event": "ITEM_REVEALED",
+	"language": "EN_GB",
+	"lines": {
+		"item_not_yet": "Not yours. Not yet.",
+		"item_across_stars": "You carried things like this. Across stars.",
+		"claim_alien_weight": "If you came from the stars, nothing here would move for you.",
+		"item_carried_down": "Not across stars. I watched something carry you down."
+	}
+}

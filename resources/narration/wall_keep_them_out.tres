@@ -6,7 +6,7 @@
 script = ExtResource("1_jmh68")
 id = "wall_keep_them_out"
 text = "You built walls like these. To keep them out."
-event = &"wall_revealed"
+event = &"WALL_REVEALED"
 min_run = 4
 min_deaths = 3
 supports = PackedStringArray("hero", "villain")

@@ -113,7 +113,7 @@ func is_showing() -> bool:
 
 
 func _on_beat_started(beat: NarrationBeat) -> void:
-	show_beat(beat, narrator.current_doubt)
+	show_beat(beat, narrator.current_doubt, narrator.current_text)
 
 
 ## True when part of the current line is unsettled.
@@ -123,8 +123,9 @@ func _has_doubt() -> bool:
 
 ## Lays the beat out and starts assembling it. Any previous line is replaced. `doubt_fraction` > 0 leaves that
 ## share of the letters unsettled (a doubt line, see Narrator.doubt_fraction).
-func show_beat(beat: NarrationBeat, doubt_fraction: float = 0.0) -> void:
-	_text = beat.text
+## `text` replaces the beat's own text (the line resolved from the narration files); empty = the beat's text.
+func show_beat(beat: NarrationBeat, doubt_fraction: float = 0.0, text: String = "") -> void:
+	_text = text if text != "" else beat.text
 	_doubt_fraction = clampf(doubt_fraction, 0.0, 1.0)
 	_doubt_time = 0.0
 	_glow_color = config.mood_glow_colors.get(beat.mood, config.default_glow_color)

@@ -6,7 +6,7 @@
 script = ExtResource("1_deny0")
 id = "recant_angelic"
 text = "I spoke too soon. Light can rest. Just never for long."
-event = &"origin_recanted"
+event = &"ORIGIN_RECANTED"
 min_run = 4
 min_deaths = 3
 once = false

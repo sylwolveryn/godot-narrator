@@ -6,7 +6,7 @@
 script = ExtResource("1_qccqx")
 id = "erosion_true_name"
 text = "Hold on. Don't let it read your name."
-event = &"erosion_high"
+event = &"EROSION_HIGH"
 min_run = 4
 min_deaths = 3
 mood = &"low_drone"

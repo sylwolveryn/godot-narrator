@@ -1,0 +1,8 @@
+{
+	"event": "WALL_REVEALED",
+	"language": "EN_GB",
+	"lines": {
+		"wall_edges": "Edges. Always edges.",
+		"wall_keep_them_out": "You built walls like these. To keep them out."
+	}
+}

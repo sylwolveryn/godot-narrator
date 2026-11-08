@@ -6,7 +6,7 @@
 script = ExtResource("1_5olrb")
 id = "idle_burned"
 text = "Rest, then. You burned so many."
-event = &"idle"
+event = &"IDLE_FOR_SHORT"
 min_run = 3
 min_deaths = 2
 mood = &"low_drone"

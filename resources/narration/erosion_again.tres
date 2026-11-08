@@ -6,7 +6,7 @@
 script = ExtResource("1_2mt5g")
 id = "erosion_again"
 text = "Coming apart. Again."
-event = &"erosion_high"
+event = &"EROSION_HIGH"
 mood = &"static"
 supports = PackedStringArray("ai")
 contradicts = PackedStringArray()

@@ -15,7 +15,7 @@
 // visibility of its open neighbours and is fetched nearest (wall tops, floor under walls). Wall side faces sample the
 // open cell in front of the face, so a light behind a wall does not light the far side.
 // Fragment cost: 1 mask fetch, 1 atlas fetch (textureGrad), 1-2 visibility fetches (the 2nd only above 4 lights),
-// 1 loop over <= 8 analytic point lights, ~60 extra ALU for the carved look, depth and the cut-away.
+// 1 loop over <= 8 analytic point lights, ~60 extra ALU for the carved look and depth.
 // Assumes a yaw-only isometric camera; the grid axes are derived from INV_VIEW_MATRIX.
 shader_type spatial;
 render_mode unshaded, cull_back, depth_draw_opaque, fog_disabled;
@@ -29,6 +29,8 @@ const float EDGE_DIV = 16.0;             // WorldMeshBuilder.EDGE_DIV
 const int T_WALL = 0;
 const int T_FLOOR = 1;
 const int T_CORRUPT = 3;
+const int ANIM_COLS = 8;                 // GlyphAnimConfig.max_chars
+const int ANIM_PAL = 6;                  // GlyphAnimConfig.max_palette
 const float MASK_GAIN = 1.25;            // MapReveal.MASK_BRIGHTNESS_MAX
 const float TOP_NORMAL_Y = 0.7;          // |n.y| above this is a top face
 const float MIN_SIDE_FACTOR = 0.2;       // guards the side-face width against a face seen edge-on
@@ -62,9 +64,6 @@ uniform float memory_floor = 0.3;        // brightness every remembered glyph ce
 uniform float memory_emit = 0.25;        // share of the self-lit glow kept on remembered cells
 uniform float reveal_spread = 0.8;       // how far apart (in reveal progress) the glyphs of a cell materialise, 0 = all at once
 uniform vec3 glint_color = vec3(0.2, 0.8, 1.0);
-uniform vec4 cut_center = vec4(0.0, 0.5, 0.0, 1.1);   // xyz view-ray point (the player), w radius
-uniform vec2 cut_params = vec2(0.6, 0.15);            // x soft edge width, y margin towards the camera
-uniform float cut_edge_dim = 0.35;       // brightness kept by the glyphs at the very edge of the cut-away
 uniform float light_falloff_sharp = 0.6; // 0 = linear light falloff, 1 = quadratic (light concentrates near the source)
 // carved stone
 uniform vec2 wall_block = vec2(0.66, 0.5);  // block width / course height of the wall masonry, world units
@@ -88,6 +87,12 @@ uniform float fog_start = 0.3;              // fraction of the screen height (fr
 uniform vec2 object_params = vec2(0.5, 0.31);   // x block height, y half edge length (world units)
 uniform vec4 lift_zone = vec4(0.0, 0.0, 1.0, 0.0);   // in-world menu (task-018): xz centre, radius, dim amount while its glyphs are away
 uniform vec4 storm_zone = vec4(0.0, 0.0, 1.0, 0.0);  // glyph storm (task-030): same, while the storm's glyphs are away
+// DB-driven glyph animation (task-054, GlyphAnimView). Per surface type:
+uniform sampler2D anim_atlas : filter_linear, repeat_disable;   // ANIM_COLS characters per row, one row per type
+uniform vec4 anim_params[TYPE_COUNT];    // x share animating at the player, y share at radius+, z radius (world), w 1 = on
+uniform vec4 anim_speed[TYPE_COUNT];     // x character changes / s, y palette cycles / s, z character count, w palette size
+uniform vec4 anim_palette[30];           // TYPE_COUNT * ANIM_PAL colours
+uniform vec2 anim_brightness = vec2(0.55, 1.25);   // brightness of an animated glyph unlit / fully lit
 
 varying flat vec3 w_nrm;
 varying flat float v_type;
@@ -155,22 +160,6 @@ void fragment() {
 	vec2 loc = uv - cell;
 	vec3 pc = w_pos + axu * ((cell.x + 0.5 - uv.x) * v_cellsize.x) + axv * ((cell.y + 0.5 - uv.y) * v_cellsize.y);
 	float h = hash12(cell + vec2(float(t) * 7.31, dot(n, vec3(1.7, 2.9, 3.3)) + floor(dot(w_pos, n) * 4.0)));
-
-	// Cut-away: surfaces between the camera and the player never hide the player. Decided per glyph cell:
-	// glyphs dim towards the edge, then whole glyphs drop out, so the edge reads as dissolving glyphs.
-	float cut_keep = 1.0;
-	if (t != T_FLOOR && v_under < 0.25) {   // small objects (v_under 0.5) never dissolve: the entity glyph is never hidden by them
-		vec3 to_cam = INV_VIEW_MATRIX[2].xyz;
-		vec3 dc = pc - cut_center.xyz;
-		float along = dot(dc, to_cam);
-		if (along > cut_params.y) {
-			float pd = length(dc - to_cam * along);
-			cut_keep = smoothstep(cut_center.w, cut_center.w + cut_params.x, pd);
-			if (hash12(cell.yx * 1.618 + vec2(7.7, float(t) + h)) >= cut_keep) {
-				discard;
-			}
-		}
-	}
 
 	// Light visibility per slot (occlusion), see the header.
 	float cs = vis_params.z;
@@ -251,7 +240,7 @@ void fragment() {
 				e = max(e, float((fl >> 3) & 1) * step(cs - lo.y, edge_width));
 				edge = e;
 			} else {
-				float la = n.x > 0.5 ? pc.z - v_cell.y * cs : pc.x - v_cell.x * cs;
+				float la = abs(n.x) > 0.5 ? pc.z - v_cell.y * cs : pc.x - v_cell.x * cs;
 				float top_y = free_stand ? object_params.x : wall_height;
 				float e = step((top_y - pc.y) / v_cellsize.y, 0.5);
 				e = max(e, float(fl & 1) * step(la / v_cellsize.x, 0.5));
@@ -268,7 +257,7 @@ void fragment() {
 	float pulse = 0.04 * sin(TIME * 0.55 + h * 6.2832);
 	float b = max(lit.r, max(lit.g, lit.b)) * stone + emit[t] * mix(memory_emit, 1.0, seen) * (0.8 + 1.5 * pulse) + (h - 0.5) * 0.10 + pulse;
 	b += edge * edge_gain * (lum_l + edge_ambient);
-	b *= min(vis, 1.0) * mix(cut_edge_dim, 1.0, cut_keep) * mix(1.0, memory_density, mem);
+	b *= min(vis, 1.0) * mix(1.0, memory_density, mem);
 	b = max(b, memory_floor * mem * (t == T_FLOOR ? 0.8 : 1.0));
 	if (lift_zone.w > 0.0) {
 		b *= 1.0 - lift_zone.w * (1.0 - smoothstep(lift_zone.z * 0.4, lift_zone.z, distance(w_pos.xz, lift_zone.xy)));
@@ -295,6 +284,25 @@ void fragment() {
 	vec3 hue = lit / (max(lit.r, max(lit.g, lit.b)) + 0.001);
 	float inten = mix(0.42, 1.0, smoothstep(0.0, 0.75, s));
 	vec3 col = pal * mix(vec3(1.0), hue, t >= 2 ? 0.0 : tint_mix * m.g) * inten * cov;
+	// DB-driven glyph animation: near the player more (or fewer, per the table) glyphs of a live cell swap to cycling
+	// characters whose colour blends through the surface's palette. Decided per glyph cell and per tick.
+	vec4 ap = anim_params[t];
+	if (ap.w > 0.5 && seen > 0.5) {
+		float prox = 1.0 - smoothstep(0.0, max(ap.z, 0.001), length(pc.xz - light_pos[0].xz));
+		vec4 sp = anim_speed[t];
+		float tick = floor(TIME * sp.x + h * 17.0);
+		if (hash12(cell * 1.91 + vec2(tick * 0.371, float(t) * 2.3)) < mix(ap.y, ap.x, prox)) {
+			float ci = min(floor(hash12(cell * 0.73 + vec2(tick * 1.13, 5.9)) * sp.z), sp.z - 1.0);
+			vec2 a_uv = vec2((ci + 0.5 + (loc.x - 0.5) * glyph_crop) / float(ANIM_COLS), (float(t) + 0.03 + loc.y * 0.94) / float(TYPE_COUNT));
+			float acov = clamp((textureLod(anim_atlas, a_uv, 0.0).r - 0.08) * 1.5, 0.0, 1.0) * grow;
+			float pp = fract(TIME * sp.y + h) * sp.w;
+			int i0 = min(int(pp), ANIM_PAL - 1);
+			int i1 = int(mod(float(i0 + 1), max(sp.w, 1.0)));
+			vec3 acol = mix(anim_palette[t * ANIM_PAL + i0].rgb, anim_palette[t * ANIM_PAL + i1].rgb, fract(pp));
+			col = acol * mix(anim_brightness.x, anim_brightness.y, s) * acov;
+			cov = acov;
+		}
+	}
 	vec3 fill = pal_dark[t].rgb * (0.05 + 0.10 * s) * (top ? 1.0 : 0.8) * grow;
 	vec3 c = col + fill;
 

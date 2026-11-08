@@ -6,7 +6,7 @@
 script = ExtResource("1_1yaw5")
 id = "wake_first"
 text = "...a shape. Waking."
-event = &"run_started"
+event = &"RUN_STARTED"
 max_run = 1
 supports = PackedStringArray()
 contradicts = PackedStringArray()

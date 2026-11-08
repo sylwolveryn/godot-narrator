@@ -6,7 +6,7 @@
 script = ExtResource("1_v4vu2")
 id = "spikes_teeth"
 text = "Teeth."
-event = &"spikes_revealed"
+event = &"SPIKES_REVEALED"
 mood = &"static"
 supports = PackedStringArray()
 contradicts = PackedStringArray()

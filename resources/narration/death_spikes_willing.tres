@@ -6,7 +6,7 @@
 script = ExtResource("1_2lms2")
 id = "death_spikes_willing"
 text = "You fell for them once. Willingly."
-event = &"died_spikes"
+event = &"DEATH_BY_SPIKES"
 min_run = 2
 min_deaths = 1
 mood = &"chime"

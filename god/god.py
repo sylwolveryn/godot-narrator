@@ -4,8 +4,9 @@ from __future__ import annotations
 import queue
 import sys
 import threading
+import time
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
 
@@ -13,9 +14,14 @@ import core  # noqa: E402
 
 
 class GodApp:
-    def __init__(self, root: tk.Tk, controller: core.GameController):
+    def __init__(self, root: tk.Tk, controller: core.GameController, db: core.DbServer):
         self.win = root
         self.ctl = controller
+        self.db = db
+        self.db_running = False
+        self.db_busy = False
+        self.db_query_in_flight = False
+        self.table_tabs: dict = {}
         self.results: "queue.Queue" = queue.Queue()
         self.running = False
         self.busy = False
@@ -23,7 +29,7 @@ class GodApp:
         self.last_sig = object()  # forces the first render
         self.notice = ""
         root.title("god - Narrator launcher")
-        root.minsize(480, 420)
+        root.minsize(640, 760)
         self._build()
         self.poll()
         self._drain()
@@ -49,11 +55,55 @@ class GodApp:
         self.message.pack(anchor="w", **pad)
         ttk.Separator(self.win).pack(fill="x", padx=10, pady=4)
         ttk.Label(self.win, text="Progress", font=("Segoe UI", 10, "bold")).pack(anchor="w", **pad)
-        self.progress = tk.Text(self.win, height=14, wrap="word", state="disabled", relief="flat", background=self.win.cget("background"))
-        self.progress.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self.progress = tk.Text(self.win, height=8, wrap="word", state="disabled", relief="flat", background=self.win.cget("background"))
+        self.progress.pack(fill="x", padx=10, pady=(0, 4))
         self.progress.tag_configure("key", font=("Segoe UI", 9, "bold"))
         self.progress.tag_configure("err", foreground="#b00020")
         self.progress.tag_configure("empty", foreground="#666666")
+        self._build_db()
+
+    def _build_db(self) -> None:
+        pad = {"padx": 10, "pady": 4}
+        ttk.Separator(self.win).pack(fill="x", padx=10, pady=4)
+        head = ttk.Frame(self.win)
+        head.pack(fill="x", **pad)
+        ttk.Label(head, text="Database", font=("Segoe UI", 10, "bold")).pack(side="left", padx=(0, 10))
+        self.db_status = ttk.Label(head, text="DB: ...", font=("Segoe UI", 10, "bold"))
+        self.db_status.pack(side="left")
+        row1 = ttk.Frame(self.win)
+        row1.pack(fill="x", **pad)
+        self.db_buttons = [
+            ttk.Button(row1, text="Start DB", command=self._db_start),
+            ttk.Button(row1, text="Stop DB", command=self._db_stop),
+            ttk.Button(row1, text="Publish module", command=self._db_publish),
+            ttk.Button(row1, text="Reload game data", command=lambda: self._db_call(
+                "bump_config_version", "Config version bumped: running games reload their tables.")),
+            ttk.Button(row1, text="Clear missing", command=lambda: self._db_call(
+                "clear_missing", "Missing narration list cleared.")),
+        ]
+        for b in self.db_buttons:
+            b.pack(side="left", padx=(0, 6))
+        row2 = ttk.Frame(self.win)
+        row2.pack(fill="x", **pad)
+        ttk.Label(row2, text="Table:").pack(side="left", padx=(0, 6))
+        self.table_pick = ttk.Combobox(row2, values=core.DB_TABLES, state="readonly", width=20)
+        self.table_pick.current(0)
+        self.table_pick.pack(side="left", padx=(0, 6))
+        self.btn_read = ttk.Button(row2, text="Read table", command=lambda: self._db_read([self.table_pick.get()]))
+        self.btn_read_all = ttk.Button(row2, text="Read all", command=lambda: self._db_read(list(core.DB_TABLES)))
+        for b in (self.btn_read, self.btn_read_all):
+            b.pack(side="left", padx=(0, 6))
+            self.db_buttons.append(b)
+        self.tabs = ttk.Notebook(self.win)
+        self.tabs.pack(fill="both", expand=True, padx=10, pady=(4, 10))
+        log_frame = ttk.Frame(self.tabs)
+        self.db_log = tk.Text(log_frame, height=10, wrap="word", state="disabled", font=("Consolas", 9))
+        log_scroll = ttk.Scrollbar(log_frame, orient="vertical", command=self.db_log.yview)
+        self.db_log.configure(yscrollcommand=log_scroll.set)
+        log_scroll.pack(side="right", fill="y")
+        self.db_log.pack(side="left", fill="both", expand=True)
+        self.db_log.tag_configure("err", foreground="#b00020")
+        self.tabs.add(log_frame, text="Log")
 
     # ---------------------------------------------------------------- polling
     def poll(self) -> None:
@@ -61,10 +111,19 @@ class GodApp:
         if not self.query_in_flight and not self.busy:
             self.query_in_flight = True
             threading.Thread(target=self._query, daemon=True).start()
+        if not self.db_query_in_flight:
+            self.db_query_in_flight = True
+            threading.Thread(target=self._db_query, daemon=True).start()
         self.win.after(core.POLL_MS, self.poll)
 
     def _query(self) -> None:
         self.results.put(("running", self.ctl.is_running()))
+
+    def _db_state(self) -> tuple:
+        return self.db.is_running(), self.db.owns_server()
+
+    def _db_query(self) -> None:
+        self.results.put(("db_status", self._db_state()))
 
     def _drain(self) -> None:
         try:
@@ -78,6 +137,21 @@ class GodApp:
                     self.busy = False
                     self.notice = value
                     self.last_sig = object()
+                elif kind == "db_status":
+                    self.db_query_in_flight = False
+                    self.db_running, owned = value
+                    self.db_status.config(text=core.db_status_text(self.db_running, owned, bool(self.db.spacetime)))
+                elif kind == "db_log":
+                    self._log(*value)
+                elif kind == "db_table":
+                    self._show_table(*value)
+                elif kind == "db_confirm":
+                    self._confirm_kill(value)
+                elif kind == "db_done":
+                    self.db_busy = False
+                    if value:
+                        self._log(*value)
+                    self._render_db_buttons()
                 self._render()
         except queue.Empty:
             pass
@@ -190,6 +264,130 @@ class GodApp:
         threading.Thread(target=work, daemon=True).start()
 
 
+    # ---------------------------------------------------------------- database
+    def _log(self, text: str, error: bool = False) -> None:
+        t = self.db_log
+        t.config(state="normal")
+        t.insert("end", text.rstrip() + "\n", "err" if error else ())
+        t.see("end")
+        t.config(state="disabled")
+
+    def _render_db_buttons(self) -> None:
+        for b in self.db_buttons:
+            b.config(state="disabled" if self.db_busy else "normal")
+
+    def _db_job(self, label: str, fn) -> None:
+        """Run fn() in a thread. fn returns a log line (or None); exceptions are logged as errors."""
+        if self.db_busy:
+            return
+        self.db_busy = True
+        self._render_db_buttons()
+        self._log("> " + label)
+
+        def work() -> None:
+            try:
+                msg = fn()
+                self.results.put(("db_done", (msg, False) if msg else None))
+            except Exception as e:  # surfaced in the log, not fatal
+                self.results.put(("db_done", ("Error: %s" % e, True)))
+            self.results.put(("db_status", self._db_state()))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _db_start(self) -> None:
+        def run() -> str:
+            if self.db.start() == "already":
+                return "DB is already running at %s." % core.DB_URL
+            for _ in range(core.DB_START_WAIT_TRIES):
+                if self.db.is_running():
+                    return "DB started (PID %s). Log: %s" % (self.db.own_pid, core.db_log_path())
+                time.sleep(core.DB_START_WAIT_STEP)
+            return "DB process started (PID %s) but %s does not answer yet. Log: %s" % (
+                self.db.own_pid, core.DB_URL, core.db_log_path())
+
+        self._db_job("Start DB", run)
+
+    def _db_stop(self) -> None:
+        def run():
+            if self.db.stop_own():
+                return "DB stopped (process tree started by god)."
+            procs = self.db.external_processes()
+            if not procs:
+                if self.db.is_running():
+                    return "DB answers at %s but no spacetime process was found to stop." % core.DB_URL
+                return "No SpacetimeDB process found."
+            self.results.put(("db_confirm", procs))
+            return None
+
+        self._db_job("Stop DB", run)
+
+    def _confirm_kill(self, procs: list) -> None:
+        lines = "\n".join("%s (PID %d)" % (p.name, p.pid) for p in procs)
+        if not messagebox.askyesno("Stop SpacetimeDB",
+                                   "The DB was not started by god. Kill these processes?\n\n" + lines,
+                                   parent=self.win):
+            self._log("Stop cancelled.")
+            return
+
+        def run() -> str:
+            self.db.kill_processes(procs)
+            return "Killed %d SpacetimeDB process(es)." % len(procs)
+
+        self._db_job("Kill external DB", run)
+
+    def _db_publish(self) -> None:
+        def run() -> str:
+            ok, out = self.db.publish()
+            self.results.put(("db_log", (out or "(no output)", not ok)))
+            if not ok:
+                raise core.DbError("publish failed")
+            return "Module published to %s." % core.DB_NAME
+
+        self._db_job("Publish module", run)
+
+    def _db_call(self, reducer: str, done_text: str) -> None:
+        def run() -> str:
+            self.db.client.call(reducer)
+            return done_text
+
+        self._db_job("Call %s" % reducer, run)
+
+    def _db_read(self, tables: list) -> None:
+        def run() -> str:
+            for name in tables:
+                self.results.put(("db_table", (name, self.db.client.read_table(name))))
+            return "Read %s." % (tables[0] if len(tables) == 1 else "%d tables" % len(tables))
+
+        self._db_job("Read " + ", ".join(tables), run)
+
+    def _show_table(self, name: str, table: core.SqlTable) -> None:
+        """One notebook tab per table, replaced on every read."""
+        frame = self.table_tabs.get(name)
+        if frame is None:
+            frame = ttk.Frame(self.tabs)
+            self.tabs.add(frame, text=name)
+            self.table_tabs[name] = frame
+        for child in frame.winfo_children():
+            child.destroy()
+        cols = list(table.columns)
+        rows = core.format_table(table)
+        tree = ttk.Treeview(frame, columns=cols, show="headings")
+        ys = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+        xs = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+        tree.configure(yscrollcommand=ys.set, xscrollcommand=xs.set)
+        for i, c in enumerate(cols):
+            tree.heading(c, text=c)
+            tree.column(c, width=core.column_width(c, [r[i] for r in rows if i < len(r)]), stretch=False, anchor="w")
+        for r in rows:
+            tree.insert("", "end", values=r)
+        ttk.Label(frame, text="%d row(s)" % len(rows)).pack(side="bottom", anchor="w")
+        xs.pack(side="bottom", fill="x")
+        ys.pack(side="right", fill="y")
+        tree.pack(side="left", fill="both", expand=True)
+        self.tabs.tab(frame, text="%s (%d)" % (name, len(rows)))
+        self.tabs.select(frame)
+
+
 class _Note(Exception):
     """A successful outcome with a message to show."""
 
@@ -197,8 +395,9 @@ class _Note(Exception):
 def main(auto_close_ms: int = 0) -> None:
     root_path = core.repo_root()
     ctl = core.GameController(root_path, core.find_godot(), core.save_path(root_path))
+    db = core.DbServer(root_path, core.find_spacetime(), core.DbClient())
     win = tk.Tk()
-    GodApp(win, ctl)
+    GodApp(win, ctl, db)
     if auto_close_ms:
         win.after(auto_close_ms, win.destroy)
     win.mainloop()

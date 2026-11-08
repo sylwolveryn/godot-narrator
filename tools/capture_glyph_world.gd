@@ -71,8 +71,7 @@ func _tick() -> void:
 		_player.global_position = _loader.cell_to_world(Vector2i(int(xy[0]), int(xy[1])))
 	elif action.begins_with("cut:"):
 		var cfg: GlyphWorldConfig = (_view.get("config") as GlyphWorldConfig).duplicate()
-		cfg.cutaway_radius = 1.1 if action.ends_with("on") else 0.0
-		cfg.cutaway_soft = 0.6 if action.ends_with("on") else 0.0001
+		pass  # The wall cut-away was removed (task-052); the marks stay so older contact sheets line up.
 		_view.set("config", cfg)
 		_view.call("apply_static")
 	elif action == "wide":

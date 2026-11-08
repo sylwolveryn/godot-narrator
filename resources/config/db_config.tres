@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="DbConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/db_config.gd" id="1_dkh6s"]
+
+[resource]
+script = ExtResource("1_dkh6s")
+tables = PackedStringArray("event_def", "language_def", "narration", "glyph_anim", "config_version")

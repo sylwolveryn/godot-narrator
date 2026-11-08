@@ -6,7 +6,7 @@
 script = ExtResource("1_h7b8n")
 id = "item_not_yet"
 text = "Not yours. Not yet."
-event = &"item_revealed"
+event = &"ITEM_REVEALED"
 mood = &"chime"
 supports = PackedStringArray()
 contradicts = PackedStringArray()

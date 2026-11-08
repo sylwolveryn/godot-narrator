@@ -34,6 +34,22 @@ func _build() -> void:
 	loader.map_path = MAP_PATH
 	_add(world, loader)
 
+	# Data layer (task-048): the SpacetimeDB link first, so every reader can connect to it in _ready.
+	var database: Node = load("res://scripts/data/game_database.gd").new()
+	database.name = "GameDatabase"
+	database.set("config", load(CFG + "db_config.tres"))
+	_add(root, database)
+	var library_cfg: NarrationLibraryConfig = load(CFG + "narration_library_config.tres")
+	var library: Node = load("res://scripts/narrator/narration_library.gd").new()
+	library.name = "NarrationLibrary"
+	library.set("config", library_cfg)
+	library.set("database", database)
+	_add(root, library)
+	var record: Node = load("res://scripts/core/player_record.gd").new()
+	record.name = "PlayerRecord"
+	record.set("database", database)
+	_add(root, record)
+
 	var save: Node = load("res://scripts/core/save_service.gd").new()
 	save.name = "SaveService"
 	save.set("config", load(CFG + "save_config.tres"))
@@ -75,6 +91,7 @@ func _build() -> void:
 	narrator.set("config", narrator_cfg)
 	narrator.set("save_service", save)
 	narrator.set("ledger", ledger)
+	narrator.set("library", library)
 	_add(root, narrator)
 
 	var rig: Node3D = load("res://scripts/rendering/camera_rig.gd").new()
@@ -167,6 +184,14 @@ func _build() -> void:
 	storm_view.set("surface_material", load(GLYPH_MATERIAL))
 	_add(root, storm_view)
 
+	# DB-driven glyph animation (task-054): cycling characters and palettes per surface, from the glyph_anim table.
+	var anim_view: Node = load("res://scripts/rendering/glyph_anim_view.gd").new()
+	anim_view.name = "GlyphAnimView"
+	anim_view.set("config", load(CFG + "glyph_anim_config.tres"))
+	anim_view.set("database", database)
+	anim_view.set("map_loader", loader)
+	_add(root, anim_view)
+
 	# Soft halos over items, spikes and corruption: one MultiMesh, reveal-aware in the shader.
 	var halos: Node3D = load("res://scripts/rendering/glyph_halo_field.gd").new()
 	halos.name = "GlyphHaloField"
@@ -187,6 +212,7 @@ func _build() -> void:
 	sfx.name = "NarrationSfx"
 	sfx.set("narrator", narrator)
 	sfx.set("config", narrator_cfg)
+	sfx.set("voice_volume_db", library_cfg.voice_volume_db)
 	_add(root, sfx)
 
 	# Layer 20: intro veil + wave, above everything.

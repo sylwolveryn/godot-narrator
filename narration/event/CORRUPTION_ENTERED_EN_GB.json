@@ -1,0 +1,9 @@
+{
+	"event": "CORRUPTION_ENTERED",
+	"language": "EN_GB",
+	"lines": {
+		"corrupt_knows": "It knows the shape.",
+		"corrupt_after_war": "Static. Like after the war.",
+		"claim_demonic_name": "Once the static reads your name, it never lets go."
+	}
+}

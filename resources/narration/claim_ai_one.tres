@@ -6,7 +6,7 @@
 script = ExtResource("1_pdgdg")
 id = "claim_ai_one"
 text = "Built things never choose to be one. Not for long."
-event = &"entity_form_changed"
+event = &"TRANSFORMED"
 min_run = 4
 min_deaths = 3
 mood = &"static"

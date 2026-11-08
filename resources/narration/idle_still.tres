@@ -6,7 +6,7 @@
 script = ExtResource("1_nvigh")
 id = "idle_still"
 text = "Still. As it was kept."
-event = &"idle"
+event = &"IDLE_FOR_SHORT"
 mood = &"low_drone"
 supports = PackedStringArray("villain", "demonic")
 contradicts = PackedStringArray()

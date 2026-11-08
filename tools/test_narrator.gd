@@ -261,16 +261,16 @@ func _test_ladder() -> void:
 	n.set("death_count", 4)
 	var order: PackedStringArray = []
 	for i in 3:
-		var pick: NarrationBeat = n.call("pick_for_event", &"died_spikes")
+		var pick: NarrationBeat = n.call("pick_for_event", &"DEATH_BY_SPIKES")
 		order.append(pick.id if pick != null else "none")
 		if pick != null:
 			(n.get("_heard") as Dictionary)[pick.id] = true
 	_check(order == PackedStringArray(["death_spikes_down", "death_spikes_willing", "death_spikes_watch"]), "ladder out of order: %s" % [order])
-	_check(n.call("pick_for_event", &"died_spikes") == null, "ladder exhausted should give nothing")
+	_check(n.call("pick_for_event", &"DEATH_BY_SPIKES") == null, "ladder exhausted should give nothing")
 	# A late first encounter still gets the lowest rung first.
 	var cleared: Dictionary[String, bool] = {}
 	n.set("_heard", cleared)
-	_check((n.call("pick_for_event", &"spikes_revealed") as NarrationBeat).id == "spikes_teeth", "late first encounter must start with the cryptic rung")
+	_check((n.call("pick_for_event", &"SPIKES_REVEALED") as NarrationBeat).id == "spikes_teeth", "late first encounter must start with the cryptic rung")
 	_teardown(rig)
 
 
@@ -289,13 +289,13 @@ func _test_class_priority() -> void:
 	var rig := _rig()
 	var n: Node = rig["narrator"]
 	_start_run(rig)
-	_bus.emit_signal("narration_event", &"wall_revealed")
-	_bus.emit_signal("narration_event", &"spikes_revealed")
-	_bus.emit_signal("narration_event", &"idle")
+	_bus.emit_signal("narration_event", &"WALL_REVEALED")
+	_bus.emit_signal("narration_event", &"SPIKES_REVEALED")
+	_bus.emit_signal("narration_event", &"IDLE_FOR_SHORT")
 	_wait(n, STEP)
 	_check(_started == PackedStringArray(["spikes_teeth"]), "highest class should win simultaneous triggers, got %s" % [_started])
 	_check(not (rig["svc"].get("progress") as PersistentProgress).heard_beats.has("wake_first"), "a beat that lost the frame must stay unheard")
-	_check(n.call("pick_for_event", &"run_started") != null, "dropped run_started beat should stay eligible")
+	_check(n.call("pick_for_event", &"RUN_STARTED") != null, "dropped run_started beat should stay eligible")
 	_teardown(rig)
 
 
@@ -306,14 +306,14 @@ func _test_display_cap_and_queue() -> void:
 	_start_run(rig)
 	_wait(n, STEP)
 	_check(_started == PackedStringArray(["wake_first"]), "setup: wake_first first")
-	_bus.emit_signal("narration_event", &"wall_revealed")
+	_bus.emit_signal("narration_event", &"WALL_REVEALED")
 	_wait(n, STEP)
 	_check((n.get("queued") as NarrationBeat) != null and (n.get("queued") as NarrationBeat).id == "wall_edges", "second beat should queue")
 	_check(_started.size() == 1, "only one beat on screen")
-	_bus.emit_signal("narration_event", &"item_revealed")
+	_bus.emit_signal("narration_event", &"ITEM_REVEALED")
 	_wait(n, STEP)
 	_check((n.get("queued") as NarrationBeat).id == "wall_edges", "equal class must not replace the queued beat")
-	_bus.emit_signal("narration_event", &"corruption_entered")
+	_bus.emit_signal("narration_event", &"CORRUPTION_ENTERED")
 	_wait(n, STEP)
 	_check((n.get("queued") as NarrationBeat).id == "corrupt_knows", "higher class should replace the queued beat")
 	# TTL: the beat waits longer than queue_ttl_seconds behind the current one, so it is dropped.
@@ -321,7 +321,7 @@ func _test_display_cap_and_queue() -> void:
 	_check(n.get("queued") == null, "queued beat should be dropped after the TTL")
 	_check(_started == PackedStringArray(["wake_first"]), "dropped beat must not play, got %s" % [_started])
 	_check(not (rig["svc"].get("progress") as PersistentProgress).heard_beats.has("corrupt_knows"), "dropped beat stays unheard")
-	_check(n.call("pick_for_event", &"corruption_entered") != null, "dropped beat stays eligible")
+	_check(n.call("pick_for_event", &"CORRUPTION_ENTERED") != null, "dropped beat stays eligible")
 	_teardown(rig)
 
 	# Queued beat plays after the gap when the TTL allows it; never two on screen.
@@ -334,7 +334,7 @@ func _test_display_cap_and_queue() -> void:
 	n = rig["narrator"]
 	_start_run(rig)
 	_wait(n, STEP)
-	_bus.emit_signal("narration_event", &"wall_revealed")
+	_bus.emit_signal("narration_event", &"WALL_REVEALED")
 	_wait(n, STEP)
 	var box: Dictionary = {"overlap": false, "showing": 1}
 	n.connect("beat_started", func(_b: NarrationBeat) -> void:
@@ -353,7 +353,7 @@ func _test_preempt() -> void:
 	var config: NarratorConfig = rig["config"]
 	_start_run(rig)
 	_wait(n, STEP)
-	_bus.emit_signal("narration_event", &"wall_revealed")
+	_bus.emit_signal("narration_event", &"WALL_REVEALED")
 	_wait(n, STEP)
 	_check(n.get("queued") != null, "setup: a beat is queued")
 	_bus.emit_signal("run_ended", &"spikes")
@@ -546,7 +546,7 @@ func _test_run_start_after_death() -> void:
 	_check(_started == PackedStringArray(["wake_first"]), "setup: wake_first first")
 	_wait(n, STEP)
 	_check((n.get("queued") as NarrationBeat) != null and (n.get("queued") as NarrationBeat).id == "start_came_back", "start beat should queue")
-	_bus.emit_signal("narration_event", &"corruption_entered")
+	_bus.emit_signal("narration_event", &"CORRUPTION_ENTERED")
 	_wait(n, STEP)
 	_check((n.get("queued") as NarrationBeat).id == "corrupt_knows", "higher class replaces the queued start beat")
 	_wait(n, 40.0)
@@ -690,7 +690,7 @@ func _test_origin_claims() -> void:
 	_bus.connect("origin_claim_heard", on_claim)
 	_check(not ledger.call("is_armed", &"demonic"), "setup: nothing armed")
 
-	_bus.emit_signal("narration_event", &"corruption_entered")
+	_bus.emit_signal("narration_event", &"CORRUPTION_ENTERED")
 	_wait(n, STEP)
 	_check(_started == PackedStringArray(["claim_demonic_name"]), "the demonic claim plays on corruption_entered, got %s" % [_started])
 	_check(heard == [&"demonic"], "hearing the claim emits origin_claim_heard(demonic), got %s" % [heard])
@@ -698,7 +698,7 @@ func _test_origin_claims() -> void:
 	_check(not (rig["svc"].get("progress") as PersistentProgress).armed_trials.has("ai"), "armed state is saved by the ledger")
 
 	_wait(n, 12.0)
-	_bus.emit_signal("narration_event", &"idle")
+	_bus.emit_signal("narration_event", &"IDLE_FOR_SHORT")
 	_wait(n, STEP)
 	_check(_started == PackedStringArray(["claim_demonic_name", "claim_angelic_dark"]), "the angelic claim plays on idle, got %s" % [_started])
 	_check(ledger.call("is_armed", &"angelic"), "angelic armed by its claim")
@@ -706,7 +706,7 @@ func _test_origin_claims() -> void:
 	# The alien claim is no longer dormant (task-045): item_revealed plays it and arms the trial.
 	_check(ledger.call("is_claimable", &"alien"), "alien is claimable")
 	_wait(n, 12.0)
-	_bus.emit_signal("narration_event", &"item_revealed")
+	_bus.emit_signal("narration_event", &"ITEM_REVEALED")
 	_wait(n, STEP)
 	_check(_started.size() == 3 and _started[2] == "claim_alien_weight" and ledger.call("is_armed", &"alien"), "the alien claim plays on item_revealed, got %s" % [_started])
 
@@ -749,13 +749,13 @@ func _test_origin_reactions() -> void:
 	_check(not ledger.call("is_armed", &"demonic"), "a strike disarms the trial")
 
 	# A broken line queued behind a showing line outlives the queue TTL, while an ordinary queued beat expires.
-	_bus.emit_signal("narration_event", &"wall_revealed")
+	_bus.emit_signal("narration_event", &"WALL_REVEALED")
 	ledger.call("strike", &"ai", ORIGIN_RUN)
 	_wait(n, 20.0)
 	_check(_started == PackedStringArray(["broken_demonic", "broken_ai"]), "the reactive broken_ai is not dropped by the queue TTL, got %s" % [_started])
 
 	# At the floor the next strike recants the oldest strike (demonic): recant line first, then the broken line.
-	_bus.emit_signal("narration_event", &"wall_revealed")
+	_bus.emit_signal("narration_event", &"WALL_REVEALED")
 	ledger.call("strike", &"angelic", ORIGIN_RUN)
 	_wait(n, 30.0)
 	var tail: PackedStringArray = _started.slice(2)
@@ -818,7 +818,7 @@ func _test_origin_doubt() -> void:
 		_check(is_equal_approx(n.call("doubt_fraction", b), expected), "doubt flag of %s" % b.id)
 	# End to end: the narrator hands the flag to the overlay when the line starts.
 	_wait(n, 30.0)
-	_bus.emit_signal("narration_event", &"erosion_high")
+	_bus.emit_signal("narration_event", &"EROSION_HIGH")
 	_wait(n, STEP)
 	_check(_started[_started.size() - 1] == "erosion_again" and is_equal_approx(n.get("current_doubt"), scramble), "erosion_again plays with the doubt flag, got %s" % [_started])
 	_teardown(rig)

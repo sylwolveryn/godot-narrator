@@ -61,6 +61,11 @@ func _init() -> void:
 	tilted.distance = 14.0
 	ok = _save(tilted, "camera_tilted.tres") and ok
 
+	# Data layer (task-048): SpacetimeDB link and the narration file lookup.
+	ok = _save(DbConfig.new(), "db_config.tres") and ok
+	ok = _save(NarrationLibraryConfig.new(), "narration_library_config.tres") and ok
+	ok = _save(GlyphAnimConfig.new(), "glyph_anim_config.tres") and ok
+
 	quit(0 if ok else 1)
 
 

@@ -7,8 +7,11 @@ extends Resource
 @export var moods: Array[NarrationMood] = []
 
 @export_group("Timing (seconds)")
-## No movement for this long fires the `idle` event (once per run).
+## No movement for this long fires IDLE_FOR_SHORT, then IDLE_FOR_MID and IDLE_FOR_LONG (each at most once per run;
+## the stillness clock restarts whenever the player moves).
 @export var idle_seconds: float = 8.0
+@export var idle_mid_seconds: float = 20.0
+@export var idle_long_seconds: float = 45.0
 ## Erosion fraction (0..1 of the lethal threshold) that fires `erosion_high` (once per run).
 @export_range(0.0, 1.0) var erosion_high_threshold: float = 0.7
 ## Fully legible time of a beat, between morph-in and morph-out.
@@ -27,17 +30,25 @@ extends Resource
 @export_group("Priority")
 ## Event -> class priority (higher wins when triggers are simultaneous or compete for the queue).
 @export var event_priority: Dictionary[StringName, int] = {
-	NarrationEvents.DIED_SPIKES: 5,
-	NarrationEvents.DIED_CORRUPTION: 5,
+	NarrationEvents.DEATH: 5,
+	NarrationEvents.DEATH_BY_SPIKES: 5,
+	NarrationEvents.DEATH_BY_CORRUPTION: 5,
 	NarrationEvents.EROSION_HIGH: 4,
 	NarrationEvents.CORRUPTION_ENTERED: 3,
-	NarrationEvents.ENTITY_FORM_CHANGED: 3,
+	NarrationEvents.TRANSFORMED: 3,
+	NarrationEvents.TRANSFORMED_TO_ONE: 3,
+	NarrationEvents.TRANSFORMED_TO_MANY: 3,
+	NarrationEvents.HIT_SPIKES: 3,
 	NarrationEvents.SPIKES_REVEALED: 3,
 	NarrationEvents.ITEM_REVEALED: 2,
 	NarrationEvents.WALL_REVEALED: 2,
 	NarrationEvents.RUN_STARTED: 1,
 	NarrationEvents.FIRST_MOVE: 1,
-	NarrationEvents.IDLE: 0,
+	NarrationEvents.HIT_WALL: 1,
+	NarrationEvents.HIT_UNKNOWN: 1,
+	NarrationEvents.IDLE_FOR_SHORT: 0,
+	NarrationEvents.IDLE_FOR_MID: 0,
+	NarrationEvents.IDLE_FOR_LONG: 0,
 	NarrationEvents.TIME: 0,
 }
 ## Reactive events (the death-beat class of docs/narration_origin.md, without the preempt): their beats answer
@@ -49,8 +60,18 @@ extends Resource
 @export var preempt_priority: int = 5
 ## Run end cause -> death event.
 @export var death_events: Dictionary[StringName, StringName] = {
-	&"spikes": NarrationEvents.DIED_SPIKES,
-	&"corruption": NarrationEvents.DIED_CORRUPTION,
+	&"spikes": NarrationEvents.DEATH_BY_SPIKES,
+	&"corruption": NarrationEvents.DEATH_BY_CORRUPTION,
+}
+## Death event for a run end cause missing from `death_events`.
+@export var default_death_event: StringName = NarrationEvents.DEATH
+## Event -> event whose beats answer it when it has no eligible beat of its own (a specific transformation falls back
+## to any transformation, a specific death to the plain DEATH).
+@export var event_fallbacks: Dictionary[StringName, StringName] = {
+	NarrationEvents.TRANSFORMED_TO_ONE: NarrationEvents.TRANSFORMED,
+	NarrationEvents.TRANSFORMED_TO_MANY: NarrationEvents.TRANSFORMED,
+	NarrationEvents.DEATH_BY_SPIKES: NarrationEvents.DEATH,
+	NarrationEvents.DEATH_BY_CORRUPTION: NarrationEvents.DEATH,
 }
 
 @export_group("Presentation")

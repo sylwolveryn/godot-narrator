@@ -3,7 +3,8 @@ extends Node
 ## Hides the built map at the start of every run and reveals it around the player.
 ##  - Cells never seen are hidden.
 ##  - Cells seen in earlier runs (PersistentProgress.revealed_cells) show in the memory style.
-##  - Cells within RevealConfig.reveal_radius of the player show normally and stay so for the run.
+##  - Cells within RevealConfig.reveal_radius of the player that are in its line of sight (SightLine: walls and items
+##    hide what is behind them) show normally and stay so for the run.
 ## Cells seen for the first time ever are announced upward via SignalBus.cells_revealed;
 ## SaveService records them. This node only reads persistent data.
 ##
@@ -150,6 +151,8 @@ func reveal_around(world_position: Vector3) -> void:
 			var cell_centre: Vector3 = map_loader.cell_to_world(cell)
 			var distance: float = Vector2(cell_centre.x - world_position.x, cell_centre.z - world_position.z).length()
 			if distance > reach:
+				continue
+			if config.line_of_sight and not SightLine.can_see(map_loader.data, centre, cell, config.sight_blockers, config.sight_spread):
 				continue
 			var from_memory: bool = _remembered.has(cell)
 			seen_this_run[cell] = true

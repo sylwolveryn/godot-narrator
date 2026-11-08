@@ -6,7 +6,7 @@
 script = ExtResource("1_wfw6e")
 id = "start_bright_or_crashed"
 text = "You fell from somewhere bright. Or you crashed."
-event = &"run_started"
+event = &"RUN_STARTED"
 min_run = 6
 max_run = 6
 min_deaths = 5

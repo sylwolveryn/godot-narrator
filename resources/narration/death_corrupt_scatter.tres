@@ -6,7 +6,7 @@
 script = ExtResource("1_5m4ga")
 id = "death_corrupt_scatter"
 text = "Scattered. Gathering."
-event = &"died_corruption"
+event = &"DEATH_BY_CORRUPTION"
 mood = &"static"
 supports = PackedStringArray("ai")
 contradicts = PackedStringArray()

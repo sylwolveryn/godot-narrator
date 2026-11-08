@@ -6,7 +6,7 @@
 script = ExtResource("1_d20lh")
 id = "broken_alien"
 text = "...It moved for you. Then not the stars."
-event = &"origin_struck"
+event = &"ORIGIN_STRUCK"
 min_run = 4
 min_deaths = 3
 once = false

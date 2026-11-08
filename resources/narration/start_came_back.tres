@@ -6,7 +6,7 @@
 script = ExtResource("1_n6hs0")
 id = "start_came_back"
 text = "Again. You came back."
-event = &"run_started"
+event = &"RUN_STARTED"
 min_run = 2
 max_run = 2
 min_deaths = 1

@@ -6,7 +6,7 @@
 script = ExtResource("1_wsgyl")
 id = "move_first"
 text = "So. It moves."
-event = &"first_move"
+event = &"FIRST_MOVE"
 max_run = 1
 mood = &"chime"
 supports = PackedStringArray()

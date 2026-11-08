@@ -18,8 +18,31 @@ extends Resource
 ## Multiplier applied to every timing when the intro replays after a death.
 @export_range(0.0, 1.0, 0.05) var restart_time_scale: float = 0.35
 
-@export_group("Wave")
+@export_group("Skip")
+## InputMap action that skips the intro (its events are swallowed while the intro is up).
+@export var skip_action: StringName = &"intro_skip"
+## Veil and wave dissolve after a skip (the run starts at once, then the veil lifts this fast).
+@export_range(0.0, 2.0, 0.05) var skip_dissolve_seconds: float = 0.35
+
+@export_group("Wave colour")
+## When on, every play picks a random wave colour from the HSV ranges below; otherwise `wave_color` is used.
+@export var random_color: bool = true
+## Hue range (0..1, wraps) the random colour is drawn from.
+@export var hue_range: Vector2 = Vector2(0.0, 1.0)
+## Saturation range of the random colour.
+@export var saturation_range: Vector2 = Vector2(0.55, 0.85)
+## Value (brightness) range of the random colour.
+@export var value_range: Vector2 = Vector2(0.9, 1.0)
+## Fixed colour used when `random_color` is off.
 @export var wave_color: Color = Color("#5FF2E8")
+
+@export_group("Glow")
+## Brightness of the soft halo around the wave lines (0 disables the glow).
+@export_range(0.0, 2.0, 0.05) var glow_strength: float = 0.5
+## Halo falloff width, in line thicknesses (larger = wider, softer halo).
+@export_range(0.1, 20.0, 0.1) var glow_width: float = 1.6
+
+@export_group("Wave")
 ## Number of horizontal wave lines.
 @export_range(1, 12) var line_count: int = 5
 ## Crests across the screen width.

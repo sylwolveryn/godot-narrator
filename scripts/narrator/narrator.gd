@@ -29,11 +29,17 @@ enum State { FREE, SHOWING, DISSOLVING, GAP, PREEMPTING }
 @export var save_service: SaveService
 ## Read-only: the rule-out state (claim eligibility, doubt, floor tie-break) and its config. Optional.
 @export var ledger: OriginLedger
+## Optional (task-048): resolves the text and voice of a beat from the narration files (plugin overrides first) and
+## records every triggered event. Without it a beat shows its own text and has no voice.
+@export var library: NarrationLibrary
 
 var state: State = State.FREE
 var current: NarrationBeat
 ## Share of the current line's letters that stay unsettled (0 = a normal line). Set before beat_started is emitted.
 var current_doubt: float = 0.0
+## Text and voice of the current beat (resolved through the library). Set before beat_started is emitted.
+var current_text: String = ""
+var current_voice: AudioStream
 var queued: NarrationBeat
 ## Run bookkeeping; refreshed on every run_started.
 var run_count: int = 1
@@ -55,7 +61,8 @@ var _run_active: bool = false
 var _run_time: float = 0.0
 var _moving: bool = false
 var _still_time: float = 0.0
-var _idle_fired: bool = false
+## Idle steps fired this run (0 = none, 1 = short, 2 = mid, 3 = long).
+var _idle_step: int = 0
 var _erosion_high_fired: bool = false
 var _time_fired: Dictionary[String, bool] = {}
 
@@ -83,11 +90,9 @@ func advance(delta: float) -> void:
 	_clock += delta
 	if _run_active:
 		_run_time += delta
-		if not _moving and not _idle_fired:
+		if not _moving:
 			_still_time += delta
-			if _still_time >= config.idle_seconds:
-				_idle_fired = true
-				trigger_event(NarrationEvents.IDLE)
+			_check_idle()
 		_check_time_beats()
 	_tick_state(delta)
 	if queued != null and _clock - _queued_at > config.queue_ttl_seconds and not config.ttl_exempt_events.has(queued.event):
@@ -130,8 +135,19 @@ func is_heard(beat_id: String) -> bool:
 
 ## The beat an event would play right now: lowest min_run first. In a tie the beat that supports both surviving
 ## natures wins when the ledger is at its floor (OriginConfig.tie_prefer_dual_support), then table order.
-## A beat with an event_param only answers an event carrying that parameter.
+## A beat with an event_param only answers an event carrying that parameter. With no beat of its own the event
+## falls back to NarratorConfig.event_fallbacks (e.g. TRANSFORMED_TO_ONE -> TRANSFORMED).
 func pick_for_event(event: StringName, param: StringName = &"") -> NarrationBeat:
+	var beat: NarrationBeat = _pick_exact(event, param)
+	var hops: int = 0
+	while beat == null and config.event_fallbacks.has(event) and hops < config.event_fallbacks.size():
+		event = config.event_fallbacks[event]
+		beat = _pick_exact(event, param)
+		hops += 1
+	return beat
+
+
+func _pick_exact(event: StringName, param: StringName) -> NarrationBeat:
 	var survivors: PackedStringArray = floor_survivors()
 	var best: NarrationBeat
 	for beat: NarrationBeat in config.beats:
@@ -205,6 +221,8 @@ func _offer(event: StringName, param: StringName = &"") -> void:
 	var reactive: bool = config.reactive_events.has(event)
 	if not _run_active and not is_death and not reactive:
 		return
+	if library != null:
+		library.note_triggered(event)
 	var beat: NarrationBeat = pick_for_event(event, param)
 	if beat == null:
 		return
@@ -276,6 +294,8 @@ func _start(beat: NarrationBeat) -> void:
 	state = State.SHOWING
 	_timer = config.morph_in_seconds + config.beat_hold_seconds
 	current_doubt = doubt_fraction(beat)
+	current_text = library.line_for(beat) if library != null else beat.text
+	current_voice = library.audio_for(NarrationLibrary.event_of(beat)) if library != null else null
 	if beat.once:
 		_heard[beat.id] = true
 		SignalBus.beat_heard.emit(beat.id)
@@ -332,7 +352,7 @@ func _on_run_started(run_index: int) -> void:
 	_run_time = 0.0
 	_moving = false
 	_still_time = 0.0
-	_idle_fired = false
+	_idle_step = 0
 	_erosion_high_fired = false
 	_time_fired.clear()
 	_candidates.clear()
@@ -349,7 +369,7 @@ func _on_run_ended(cause: StringName) -> void:
 		death_count = save_service.progress.death_count
 	else:
 		death_count += 1
-	var event: StringName = config.death_events.get(cause, &"")
+	var event: StringName = config.death_events.get(cause, config.default_death_event)
 	if event != &"":
 		_offer(event)
 
@@ -362,10 +382,20 @@ func _on_origin_recanted(id: StringName) -> void:
 	_offer(NarrationEvents.ORIGIN_RECANTED, id)
 
 
-## Only a chosen switch counts (animate = true); the restore at run start is not a choice.
-func _on_entity_form_changed(_form: StringName, animate: bool) -> void:
+## Only a chosen switch counts (animate = true); the restore at run start is not a choice. The specific direction is
+## offered; beats on TRANSFORMED answer it through the fallback.
+func _on_entity_form_changed(form: StringName, animate: bool) -> void:
 	if animate:
-		trigger_event(NarrationEvents.ENTITY_FORM_CHANGED)
+		trigger_event(NarrationEvents.TRANSFORMED_TO_ONE if form == EntityForm.SINGLE else NarrationEvents.TRANSFORMED_TO_MANY)
+
+
+## Fires the next idle step once the stillness reached its threshold (each step once per run).
+func _check_idle() -> void:
+	var thresholds: Array[float] = [config.idle_seconds, config.idle_mid_seconds, config.idle_long_seconds]
+	var events: Array[StringName] = [NarrationEvents.IDLE_FOR_SHORT, NarrationEvents.IDLE_FOR_MID, NarrationEvents.IDLE_FOR_LONG]
+	if _idle_step < thresholds.size() and _still_time >= thresholds[_idle_step]:
+		trigger_event(events[_idle_step])
+		_idle_step += 1
 
 
 func _on_player_motion_changed(moving: bool) -> void:

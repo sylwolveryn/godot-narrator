@@ -6,7 +6,7 @@
 script = ExtResource("1_s5jio")
 id = "item_across_stars"
 text = "You carried things like this. Across stars."
-event = &"item_revealed"
+event = &"ITEM_REVEALED"
 min_run = 3
 min_deaths = 2
 mood = &"pulse"

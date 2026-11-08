@@ -137,6 +137,7 @@ func _run() -> void:
 	var cfg := SaveConfig.new()
 	cfg.save_path = PATH
 	main.get_node("SaveService").set("config", cfg)
+	Support.isolate_data(main, "save")
 	var intro := IntroConfig.new()
 	intro.black_hold = 0.05
 	intro.wave_fade_in = 0.05

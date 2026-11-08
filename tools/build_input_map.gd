@@ -1,5 +1,5 @@
 extends SceneTree
-## Writes the movement, menu and toggle_fullscreen InputMap actions into project.godot ([input]) and removes the legacy
+## Writes the movement, menu, intro_skip, camera_* and toggle_fullscreen InputMap actions into project.godot ([input]) and removes the legacy
 ## prototype `transform` action. Idempotent.
 ## Usage: godot --headless --path . -s tools/build_input_map.gd
 
@@ -19,12 +19,20 @@ func _init() -> void:
 	_set_action("move_pointer", [click])
 	# In-world menu (task-018): open/close, move the selection (same keys as moving), confirm. The pointer clicks items
 	# through the menu view, so left click is not bound here.
-	var right_click := InputEventMouseButton.new()
-	right_click.button_index = MOUSE_BUTTON_RIGHT
-	_set_action("menu_toggle", [_key(KEY_TAB), _button(JOY_BUTTON_START), right_click])
+	# The right mouse button is the camera drag (task-051), so the menu opens with Tab / Start only.
+	_set_action("menu_toggle", [_key(KEY_TAB), _button(JOY_BUTTON_START)])
 	_set_action("menu_up", [_key(KEY_W), _key(KEY_UP), _axis(JOY_AXIS_LEFT_Y, -1.0), _button(JOY_BUTTON_DPAD_UP)])
 	_set_action("menu_down", [_key(KEY_S), _key(KEY_DOWN), _axis(JOY_AXIS_LEFT_Y, 1.0), _button(JOY_BUTTON_DPAD_DOWN)])
 	_set_action("menu_confirm", [_key(KEY_ENTER), _key(KEY_KP_ENTER), _key(KEY_SPACE), _button(JOY_BUTTON_A)])
+	# Intro skip (task-050): swallowed by IntroSequence while the intro is up, so it never leaks into the game.
+	_set_action("intro_skip", [_key(KEY_ESCAPE), _key(KEY_SPACE), _mouse(MOUSE_BUTTON_LEFT), _mouse(MOUSE_BUTTON_RIGHT),
+		_button(JOY_BUTTON_A), _button(JOY_BUTTON_START)])
+	# Camera rotation and zoom (task-051).
+	_set_action("camera_rotate_left", [_key(KEY_Q)])
+	_set_action("camera_rotate_right", [_key(KEY_E)])
+	_set_action("camera_drag", [_mouse(MOUSE_BUTTON_RIGHT)])
+	_set_action("camera_zoom_in", [_mouse(MOUSE_BUTTON_WHEEL_UP), _key(KEY_PAGEUP)])
+	_set_action("camera_zoom_out", [_mouse(MOUSE_BUTTON_WHEEL_DOWN), _key(KEY_PAGEDOWN)])
 	var alt_enter := _key(KEY_ENTER)
 	alt_enter.alt_pressed = true
 	_set_action("toggle_fullscreen", [_key(KEY_F11), alt_enter])
@@ -45,6 +53,12 @@ func _set_action(action: String, events: Array) -> void:
 func _key(code: Key) -> InputEventKey:
 	var e := InputEventKey.new()
 	e.physical_keycode = code
+	return e
+
+
+func _mouse(index: MouseButton) -> InputEventMouseButton:
+	var e := InputEventMouseButton.new()
+	e.button_index = index
 	return e
 
 

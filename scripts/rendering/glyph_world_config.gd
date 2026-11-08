@@ -13,7 +13,7 @@ extends Resource
 
 @export_group("Light and colour")
 ## Light level of unlit surfaces.
-@export_range(0.0, 1.0) var ambient_level: float = 0.46
+@export_range(0.0, 1.0) var ambient_level: float = 0.58
 ## How strongly the light colour tints floor and wall glyphs (0 = palette only).
 @export_range(0.0, 1.0) var tint_mix: float = 0.75
 ## Per surface type (GlyphSurfaceType order: wall, floor, spikes, corruption, item).
@@ -52,8 +52,8 @@ extends Resource
 
 @export_group("Player light")
 @export var player_light_color: Color = Color(1.0, 0.82, 0.5)
-@export var player_light_intensity: float = 1.7
-@export var player_light_radius: float = 7.5
+@export var player_light_intensity: float = 2.0
+@export var player_light_radius: float = 11.0
 ## Height of the light above the floor.
 @export var player_light_height: float = 1.1
 
@@ -120,11 +120,11 @@ extends Resource
 
 @export_group("Depth")
 ## Ambient light fades from full to depth_ambient_min between these distances from the player light (world units).
-@export var depth_near: float = 3.0
-@export var depth_far: float = 9.0
-@export_range(0.0, 1.0) var depth_ambient_min: float = 0.72
+@export var depth_near: float = 5.5
+@export var depth_far: float = 14.0
+@export_range(0.0, 1.0) var depth_ambient_min: float = 0.82
 ## Darkening towards the top of the screen (far side of the map), starting at fog_start (fraction of the screen height from the bottom).
-@export_range(0.0, 1.0) var fog_strength: float = 0.15
+@export_range(0.0, 1.0) var fog_strength: float = 0.1
 @export_range(0.0, 1.0) var fog_start: float = 0.3
 
 @export_group("Light occlusion")
@@ -139,16 +139,3 @@ extends Resource
 ## Seconds a static light takes to fade in when it is revealed or comes into range, and to fade out again.
 @export var static_light_fade_in: float = 0.9
 @export var static_light_fade_out: float = 0.6
-
-@export_group("Wall cut-away")
-## Surfaces closer to the camera than the player, within this radius of the view ray through the
-## player, are cut away so walls never hide the player.
-@export var cutaway_radius: float = 1.1
-## Width of the soft edge around the cut-away: glyphs dim and drop out (per glyph cell) across it.
-@export var cutaway_soft: float = 0.9
-## Height above the player's feet the view ray is aimed at.
-@export var cutaway_height: float = 0.5
-## Distance along the view ray (towards the camera) before the cut starts, so the floor under the player stays.
-@export var cutaway_margin: float = 0.15
-## Brightness kept by the glyphs at the very edge of the cut-away (they dim before they drop out).
-@export_range(0.0, 1.0) var cutaway_edge_dim: float = 0.35

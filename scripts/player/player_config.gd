@@ -36,3 +36,11 @@ extends Resource
 @export var glyph_color: Color = Color("#FFF6E6")
 ## Height above the player's feet where the in-world glyph is centred (world units).
 @export var glyph_height: float = 0.55
+
+@export_group("Contacts")
+## Seconds before another HIT_WALL / HIT_UNKNOWN can be announced after one.
+@export var hit_cooldown_seconds: float = 2.5
+## How directly the input must push into the obstacle (dot of the push direction and the contact normal, 0..1).
+@export_range(0.0, 1.0) var hit_min_facing: float = 0.6
+## Distance behind the contact point (world units) used to find the cell that was hit.
+@export var hit_probe_depth: float = 0.1

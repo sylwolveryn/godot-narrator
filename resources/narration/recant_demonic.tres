@@ -6,7 +6,7 @@
 script = ExtResource("1_yygfe")
 id = "recant_demonic"
 text = "I was too sure. Some names hide longer in the static."
-event = &"origin_recanted"
+event = &"ORIGIN_RECANTED"
 min_run = 4
 min_deaths = 3
 once = false

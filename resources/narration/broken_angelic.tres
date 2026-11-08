@@ -6,7 +6,7 @@
 script = ExtResource("1_u1ddr")
 id = "broken_angelic"
 text = "...You rested there. Then not the light. Not yet."
-event = &"origin_struck"
+event = &"ORIGIN_STRUCK"
 min_run = 4
 min_deaths = 3
 once = false

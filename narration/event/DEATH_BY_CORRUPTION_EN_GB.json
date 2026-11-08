@@ -1,0 +1,8 @@
+{
+	"event": "DEATH_BY_CORRUPTION",
+	"language": "EN_GB",
+	"lines": {
+		"death_corrupt_scatter": "Scattered. Gathering.",
+		"death_corrupt_halo": "The halo slips. It always slipped."
+	}
+}

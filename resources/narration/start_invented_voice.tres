@@ -6,7 +6,7 @@
 script = ExtResource("1_7sa86")
 id = "start_invented_voice"
 text = "I remember your voice. Or I invented it."
-event = &"run_started"
+event = &"RUN_STARTED"
 min_run = 4
 max_run = 4
 min_deaths = 3

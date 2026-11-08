@@ -390,3 +390,348 @@ def file_signature(path: Path):
     except OSError:
         return None
     return st.st_mtime_ns, st.st_size
+
+
+# --------------------------------------------------------------------------- SpacetimeDB (TASK-047)
+
+DB_URL = "http://127.0.0.1:3000"
+DB_NAME = "database-narrator"
+DB_SERVER = "local"
+DB_DIR = "database"
+DB_TABLES = (
+    "event_def", "language_def", "narration", "player_stats", "player_death",
+    "player_language", "missing_narration", "glyph_anim", "config_version",
+)
+DB_HTTP_TIMEOUT = 5.0
+DB_PING_TIMEOUT = 1.0
+DB_PUBLISH_TIMEOUT = 600
+FLOAT_DECIMALS = 3
+TIMESTAMP_FIELD = "__timestamp_micros_since_unix_epoch__"
+DURATION_FIELD = "__time_duration_micros__"
+DB_PROCESS_PREFIX = "spacetime"
+DB_LOG_NAME = "narrator_spacetimedb.log"
+DB_START_WAIT_TRIES = 30
+DB_START_WAIT_STEP = 0.5
+COLUMN_CHAR_PX = 7
+COLUMN_PAD_PX = 16
+COLUMN_MIN_PX = 50
+COLUMN_MAX_PX = 360
+
+
+class DbError(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
+class SqlTable:
+    columns: list
+    types: list
+    rows: list
+
+
+def _type_name(algebraic_type) -> str:
+    """'String', 'F32', 'U64', 'Bool', 'Timestamp', 'TimeDuration', 'Product', 'Sum', ..."""
+    if not isinstance(algebraic_type, dict) or len(algebraic_type) != 1:
+        return "?"
+    (kind, body), = algebraic_type.items()
+    if kind == "Product" and isinstance(body, dict):
+        names = [(e.get("name") or {}).get("some") for e in body.get("elements", [])]
+        if names == [TIMESTAMP_FIELD]:
+            return "Timestamp"
+        if names == [DURATION_FIELD]:
+            return "TimeDuration"
+    return kind
+
+
+def parse_sql_response(text: str) -> list:
+    """Parse the JSON body of POST /v1/database/<db>/sql into SqlTables (one per statement).
+
+    Body shape: [{"schema": {"elements": [{"name": {"some": col}, "algebraic_type": {"F32": []}}, ...]},
+                  "rows": [[v1, v2, ...], ...], ...}]
+    Raises DbError on anything else."""
+    try:
+        data = json.loads(text)
+    except ValueError as e:
+        raise DbError("SQL response is not JSON: %s" % e)
+    if not isinstance(data, list):
+        raise DbError("SQL response is not a list")
+    tables = []
+    for stmt in data:
+        try:
+            elements = stmt["schema"]["elements"]
+            rows = stmt["rows"]
+        except (KeyError, TypeError):
+            raise DbError("SQL response statement has no schema/rows")
+        columns, types = [], []
+        for i, el in enumerate(elements):
+            name = (el.get("name") or {}).get("some")
+            columns.append(name if name else "col%d" % i)
+            types.append(_type_name(el.get("algebraic_type")))
+        tables.append(SqlTable(columns, types, [list(r) for r in rows]))
+    return tables
+
+
+def format_float(value: float) -> str:
+    text = "%.*f" % (FLOAT_DECIMALS, value)
+    text = text.rstrip("0")
+    return text + "0" if text.endswith(".") else text
+
+
+def format_timestamp(micros: int, tz=None) -> str:
+    """Microseconds since the Unix epoch -> 'YYYY-MM-DD HH:MM:SS' (local time unless tz is given)."""
+    from datetime import datetime, timezone
+    dt = datetime.fromtimestamp(micros / 1_000_000, tz=timezone.utc)
+    dt = dt.astimezone(tz) if tz is not None else dt.astimezone()
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def format_cell(value, type_name: str, tz=None) -> str:
+    """One SQL value as display text. Timestamps arrive as [micros]."""
+    if type_name in ("Timestamp", "TimeDuration") and isinstance(value, list) and len(value) == 1 \
+            and isinstance(value[0], int):
+        if type_name == "Timestamp":
+            return format_timestamp(value[0], tz)
+        return format_float(value[0] / 1_000_000) + " s"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, float):
+        return format_float(value)
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, str):
+        return value
+    if value is None:
+        return ""
+    return json.dumps(value, ensure_ascii=False)
+
+
+def format_table(table: SqlTable, tz=None) -> list:
+    """Rows of display strings, aligned with table.columns."""
+    return [[format_cell(v, table.types[i] if i < len(table.types) else "?", tz) for i, v in enumerate(row)]
+            for row in table.rows]
+
+
+def column_width(header: str, cells: list) -> int:
+    """Pixel width for a Treeview column: fits the longest text, clamped."""
+    longest = max([len(header)] + [len(c) for c in cells])
+    return min(max(longest * COLUMN_CHAR_PX + COLUMN_PAD_PX, COLUMN_MIN_PX), COLUMN_MAX_PX)
+
+
+def is_valid_table(name: str) -> bool:
+    return name in DB_TABLES
+
+
+def _default_urlopen(request, timeout):
+    import urllib.request
+    return urllib.request.urlopen(request, timeout=timeout)
+
+
+class DbClient:
+    """Plain HTTP client for the local SpacetimeDB server. The token from /v1/identity is cached;
+    on a 401 it is dropped and fetched again once."""
+
+    def __init__(self, base_url: str = DB_URL, database: str = DB_NAME,
+                 urlopen: Callable = _default_urlopen, timeout: float = DB_HTTP_TIMEOUT):
+        self.base_url, self.database = base_url.rstrip("/"), database
+        self._urlopen, self.timeout = urlopen, timeout
+        self.token: Optional[str] = None
+
+    def _request(self, method: str, path: str, body: Optional[bytes] = None,
+                 headers: Optional[dict] = None, timeout: Optional[float] = None) -> tuple:
+        """(status, text). HTTP error statuses are returned, not raised; connection failures raise DbError."""
+        import urllib.error
+        import urllib.request
+        req = urllib.request.Request(self.base_url + path, data=body, method=method, headers=headers or {})
+        try:
+            with self._urlopen(req, timeout if timeout is not None else self.timeout) as resp:
+                return resp.status, resp.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:
+            try:
+                return e.code, e.read().decode("utf-8", errors="replace")
+            finally:
+                e.close()
+        except (urllib.error.URLError, OSError) as e:
+            raise DbError("DB not reachable at %s: %s" % (self.base_url, getattr(e, "reason", e)))
+
+    def ping(self) -> bool:
+        try:
+            status, _ = self._request("GET", "/v1/ping", timeout=DB_PING_TIMEOUT)
+        except DbError:
+            return False
+        return status == 200
+
+    def get_token(self) -> str:
+        if self.token:
+            return self.token
+        status, text = self._request("POST", "/v1/identity")
+        if status != 200:
+            raise DbError("identity request failed (%d): %s" % (status, text.strip()))
+        try:
+            self.token = json.loads(text)["token"]
+        except (ValueError, KeyError, TypeError):
+            raise DbError("identity response has no token")
+        return self.token
+
+    def _authed(self, path: str, body: bytes, content_type: str) -> str:
+        for attempt in range(2):
+            headers = {"Authorization": "Bearer " + self.get_token(), "Content-Type": content_type}
+            status, text = self._request("POST", path, body, headers)
+            if status == 401 and attempt == 0:
+                self.token = None
+                continue
+            if status != 200:
+                raise DbError("HTTP %d: %s" % (status, text.strip()))
+            return text
+        raise DbError("unauthorized")
+
+    def sql(self, query: str) -> list:
+        text = self._authed("/v1/database/%s/sql" % self.database, query.encode("utf-8"), "text/plain")
+        return parse_sql_response(text)
+
+    def read_table(self, table: str) -> SqlTable:
+        if not is_valid_table(table):
+            raise DbError("unknown table: %s" % table)
+        result = self.sql("SELECT * FROM %s" % table)
+        if not result:
+            raise DbError("empty SQL response for %s" % table)
+        return result[0]
+
+    def call(self, reducer: str, args: Optional[list] = None) -> None:
+        self._authed("/v1/database/%s/call/%s" % (self.database, reducer),
+                     json.dumps(args or []).encode("utf-8"), "application/json")
+
+
+def find_spacetime(env: Optional[dict] = None, which: Callable[[str], Optional[str]] = shutil.which) -> Optional[str]:
+    """SPACETIME_BIN override, else `spacetime` on PATH."""
+    env = os.environ if env is None else env
+    return env.get("SPACETIME_BIN") or which("spacetime")
+
+
+def publish_args(spacetime: str) -> list:
+    return [spacetime, "publish", DB_NAME, "--server", DB_SERVER, "--yes"]
+
+
+def select_db_processes(procs: list) -> list:
+    """The SpacetimeDB processes: names starting with 'spacetime' (spacetime, spacetimedb-cli,
+    spacetimedb-standalone)."""
+    return [p for p in procs if p.name.lower().startswith(DB_PROCESS_PREFIX)]
+
+
+_PS_DB_QUERY = (
+    "Get-CimInstance Win32_Process | Where-Object { $_.Name -like 'spacetime*' } | "
+    "Select-Object ProcessId,Name,CommandLine | ConvertTo-Json -Compress"
+)
+
+
+def query_db_processes() -> list:
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    try:
+        out = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", _PS_DB_QUERY],
+            capture_output=True, text=True, timeout=20, creationflags=flags,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return []
+    if not out:
+        return []
+    try:
+        data = json.loads(out)
+    except ValueError:
+        return []
+    if isinstance(data, dict):
+        data = [data]
+    return select_db_processes(
+        [Proc(int(d["ProcessId"]), str(d.get("Name") or ""), str(d.get("CommandLine") or "")) for d in data])
+
+
+def db_log_path() -> Path:
+    import tempfile
+    return Path(tempfile.gettempdir()) / DB_LOG_NAME
+
+
+def spawn_db(spacetime: str, root: Path) -> int:
+    """`spacetime start` detached; output goes to %TEMP%/narrator_spacetimedb.log. Returns the PID."""
+    flags = (getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+             | getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    with open(db_log_path(), "ab") as log:
+        p = subprocess.Popen([spacetime, "start"], cwd=str(root), creationflags=flags,
+                             stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, close_fds=True)
+    return p.pid
+
+
+def pid_alive(pid: int) -> bool:
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    try:
+        out = subprocess.run(["tasklist", "/FI", "PID eq %d" % pid, "/NH", "/FO", "CSV"],
+                             capture_output=True, text=True, timeout=10, creationflags=flags).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return ('"%d"' % pid) in out
+
+
+class DbServer:
+    """Start/stop/publish the local SpacetimeDB server. Side effects are injectable for tests."""
+
+    def __init__(self, root: Path, spacetime: Optional[str], client: DbClient,
+                 spawn: Callable[[str, Path], int] = spawn_db,
+                 list_procs: Callable[[], list] = query_db_processes,
+                 kill: Callable[[int], None] = kill_pid,
+                 alive: Callable[[int], bool] = pid_alive,
+                 run: Callable = subprocess.run):
+        self.root, self.spacetime, self.client = root, spacetime, client
+        self._spawn, self._list, self._kill, self._alive, self._run = spawn, list_procs, kill, alive, run
+        self.own_pid: Optional[int] = None
+
+    def is_running(self) -> bool:
+        return self.client.ping()
+
+    def start(self) -> str:
+        """'already' or 'started'."""
+        if self.is_running():
+            return "already"
+        if not self.spacetime:
+            raise DbError("spacetime CLI not found: put it on PATH or set SPACETIME_BIN")
+        self.own_pid = self._spawn(self.spacetime, self.root)
+        return "started"
+
+    def owns_server(self) -> bool:
+        return self.own_pid is not None and self._alive(self.own_pid)
+
+    def stop_own(self) -> bool:
+        """Kill the process tree god started. False when there is none."""
+        if not self.owns_server():
+            self.own_pid = None
+            return False
+        self._kill(self.own_pid)
+        self.own_pid = None
+        return True
+
+    def external_processes(self) -> list:
+        return self._list()
+
+    def kill_processes(self, procs: list) -> None:
+        for p in procs:
+            self._kill(p.pid)
+
+    def publish(self) -> tuple:
+        """(ok, output) of `spacetime publish database-narrator --server local --yes` in database/."""
+        if not self.spacetime:
+            return False, "spacetime CLI not found: put it on PATH or set SPACETIME_BIN"
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        try:
+            r = self._run(publish_args(self.spacetime), cwd=str(self.root / DB_DIR), capture_output=True,
+                          text=True, timeout=DB_PUBLISH_TIMEOUT, creationflags=flags,
+                          encoding="utf-8", errors="replace")
+        except (OSError, subprocess.SubprocessError) as e:
+            return False, "Could not run spacetime: %s" % e
+        return r.returncode == 0, ((r.stdout or "") + (r.stderr or "")).strip()
+
+
+def db_status_text(running: bool, owned: bool, spacetime_found: bool = True) -> str:
+    if running:
+        text = "DB: running (%s)%s" % (DB_URL, ", started by god" if owned else "")
+    else:
+        text = "DB: stopped"
+    if not spacetime_found:
+        text += "  (spacetime CLI not found: set SPACETIME_BIN)"
+    return text

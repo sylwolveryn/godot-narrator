@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="GlyphAnimConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/glyph_anim_config.gd" id="1_vqiir"]
+
+[resource]
+script = ExtResource("1_vqiir")
+surface_ids = PackedStringArray("wall", "floor", "spikes", "corruption", "item")
+font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")

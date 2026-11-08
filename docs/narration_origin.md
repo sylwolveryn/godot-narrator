@@ -2,6 +2,8 @@
 
 **Status: approved by the user on 2026-11-02** (task-044). Change from draft: `claim_ai_one` triggers on the form switch (`entity_form_changed`), not `died_corruption`.
 
+> 2026-11-08 (task-049): event names are now the DB `event_def` ids (`CORRUPTION_ENTERED`, `TRANSFORMED`, `IDLE_FOR_SHORT`, ...); the lines below use them. Line texts also live in `narration/event/<EVENT>_EN_GB.json`.
+
 **Implementation status (task-042/044, 2026-11-02):** the 14 lines are in `data/narration/origin_beats.json` (text copied from the table below, checked by `tools/test_narrator.gd`); the narrator integration and the strict lint are in. The text here is unchanged and remains the source of truth.
 
 Content for the Origin Contradiction and Rule-Out System (`docs/game_design.md`, section "Origin Contradiction and Rule-Out System"). It follows the format and rules of `docs/narration_m1.md`: the same events, eligibility, ladder priority, display cap, tone curve and moods. All numbers are defaults that live in the narrator and origin config `.tres` files.
@@ -12,8 +14,8 @@ Content for the Origin Contradiction and Rule-Out System (`docs/game_design.md`,
 | Role | What it does | Eligible when |
 |---|---|---|
 | `CLAIM` | A taunt of the form "if you were X, you could never Y". Hearing it arms that nature's trial (`origin_claim_heard`). | Its trigger matches, the run gates pass, and its nature is alive and unarmed. |
-| `BROKEN` | Plays at once when a trial passes and the nature is struck. Unsettled, never triumphant. | EVENT `origin_struck` with matching `event_param`. |
-| `RECANT` | Plays when the floor rule restores a nature. The narrator takes it back, restates the claim obliquely and the trial re-arms at a scaled threshold. | EVENT `origin_recanted` with matching `event_param`. |
+| `BROKEN` | Plays at once when a trial passes and the nature is struck. Unsettled, never triumphant. | EVENT `ORIGIN_STRUCK` with matching `event_param`. |
+| `RECANT` | Plays when the floor rule restores a nature. The narrator takes it back, restates the claim obliquely and the trial re-arms at a scaled threshold. | EVENT `ORIGIN_RECANTED` with matching `event_param`. |
 | `STORY` | Normal beat (the two contradiction lines below). | As in `narration_m1.md`. |
 
 ### Gating
@@ -36,19 +38,19 @@ Broken and recant lines take the mood of their nature, as the design asks: `demo
 
 | id | text | role | trigger | event_param | min_run | max_run | min_deaths | once | mood | supports | contradicts |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| `claim_demonic_name` | Once the static reads your name, it never lets go. | CLAIM | EVENT `corruption_entered` | - | 4 | none | 3 | true | low_drone | demonic | - |
-| `claim_ai_one` | Built things never choose to be one. Not for long. | CLAIM | EVENT `entity_form_changed` | - | 4 | none | 3 | true | static | ai | - |
-| `claim_angelic_dark` | Fallen from the light, you could never rest in the dark. | CLAIM | EVENT `idle` | - | 4 | none | 3 | true | chime | angelic | - |
-| `claim_alien_weight` | If you came from the stars, nothing here would move for you. | CLAIM | EVENT `item_revealed` (dormant until task G) | - | 4 | none | 3 | true | pulse | alien | - |
-| `broken_demonic` | ...It let you go. Then that was not your name. | BROKEN | EVENT `origin_struck` | demonic | 4 | none | 3 | false | low_drone | - | demonic |
-| `broken_ai` | ...Still one. Then not built. Or built to lie. | BROKEN | EVENT `origin_struck` | ai | 4 | none | 3 | false | static | - | ai |
-| `broken_angelic` | ...You rested there. Then not the light. Not yet. | BROKEN | EVENT `origin_struck` | angelic | 4 | none | 3 | false | chime | - | angelic |
-| `broken_alien` | ...It moved for you. Then not the stars. | BROKEN | EVENT `origin_struck` | alien | 4 | none | 3 | false | pulse | - | alien |
-| `recant_demonic` | I was too sure. Some names hide longer in the static. | RECANT | EVENT `origin_recanted` | demonic | 4 | none | 3 | false | low_drone | demonic | - |
-| `recant_ai` | I was too sure. Machines can wait. Longer than that. | RECANT | EVENT `origin_recanted` | ai | 4 | none | 3 | false | static | ai | - |
-| `recant_angelic` | I spoke too soon. Light can rest. Just never for long. | RECANT | EVENT `origin_recanted` | angelic | 4 | none | 3 | false | chime | angelic | - |
-| `recant_alien` | No. I was too sure. The stars come back. | RECANT | EVENT `origin_recanted` | alien | 4 | none | 3 | false | pulse | alien | - |
-| `item_carried_down` | Not across stars. I watched something carry you down. | STORY | EVENT `item_revealed` | - | 6 | none | 5 | true | chime | angelic | alien |
+| `claim_demonic_name` | Once the static reads your name, it never lets go. | CLAIM | EVENT `CORRUPTION_ENTERED` | - | 4 | none | 3 | true | low_drone | demonic | - |
+| `claim_ai_one` | Built things never choose to be one. Not for long. | CLAIM | EVENT `TRANSFORMED` | - | 4 | none | 3 | true | static | ai | - |
+| `claim_angelic_dark` | Fallen from the light, you could never rest in the dark. | CLAIM | EVENT `IDLE_FOR_SHORT` | - | 4 | none | 3 | true | chime | angelic | - |
+| `claim_alien_weight` | If you came from the stars, nothing here would move for you. | CLAIM | EVENT `ITEM_REVEALED` (dormant until task G) | - | 4 | none | 3 | true | pulse | alien | - |
+| `broken_demonic` | ...It let you go. Then that was not your name. | BROKEN | EVENT `ORIGIN_STRUCK` | demonic | 4 | none | 3 | false | low_drone | - | demonic |
+| `broken_ai` | ...Still one. Then not built. Or built to lie. | BROKEN | EVENT `ORIGIN_STRUCK` | ai | 4 | none | 3 | false | static | - | ai |
+| `broken_angelic` | ...You rested there. Then not the light. Not yet. | BROKEN | EVENT `ORIGIN_STRUCK` | angelic | 4 | none | 3 | false | chime | - | angelic |
+| `broken_alien` | ...It moved for you. Then not the stars. | BROKEN | EVENT `ORIGIN_STRUCK` | alien | 4 | none | 3 | false | pulse | - | alien |
+| `recant_demonic` | I was too sure. Some names hide longer in the static. | RECANT | EVENT `ORIGIN_RECANTED` | demonic | 4 | none | 3 | false | low_drone | demonic | - |
+| `recant_ai` | I was too sure. Machines can wait. Longer than that. | RECANT | EVENT `ORIGIN_RECANTED` | ai | 4 | none | 3 | false | static | ai | - |
+| `recant_angelic` | I spoke too soon. Light can rest. Just never for long. | RECANT | EVENT `ORIGIN_RECANTED` | angelic | 4 | none | 3 | false | chime | angelic | - |
+| `recant_alien` | No. I was too sure. The stars come back. | RECANT | EVENT `ORIGIN_RECANTED` | alien | 4 | none | 3 | false | pulse | alien | - |
+| `item_carried_down` | Not across stars. I watched something carry you down. | STORY | EVENT `ITEM_REVEALED` | - | 6 | none | 5 | true | chime | angelic | alien |
 | `time_hull_burn` | There was no heaven. I saw the hull burn. | STORY | TIME 90 s | - | 5 | none | 4 | true | pulse | alien | angelic |
 
 14 lines: 4 claims, 4 broken, 4 recant, 2 contradiction lines.

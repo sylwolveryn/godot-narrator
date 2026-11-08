@@ -6,7 +6,7 @@
 script = ExtResource("1_81kfm")
 id = "recant_ai"
 text = "I was too sure. Machines can wait. Longer than that."
-event = &"origin_recanted"
+event = &"ORIGIN_RECANTED"
 min_run = 4
 min_deaths = 3
 once = false

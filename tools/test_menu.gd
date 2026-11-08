@@ -267,9 +267,12 @@ func _scene_unlocked(cfg: MenuConfig) -> void:
 	_check(glyph_view.call("form") == EntityForm.GROWN, "the player glyph view shows the grown form")
 	await _wait(0.2)
 
-	# --- reopen: the label now offers the way back; right click toggles; the glyphs are away while open, then return ---
+	# --- reopen: the label now offers the way back; the right mouse button is the camera drag (task-051) and never
+	# toggles the menu; Tab does; the glyphs are away while open, then return ---
 	await _mouse(MOUSE_BUTTON_RIGHT, Vector2(10, 10))
-	_check(controller.call("is_open"), "right click opens the menu")
+	_check(not controller.call("is_open"), "right click must not open the menu (it rotates the camera)")
+	await _tap(KEY_TAB)
+	_check(controller.call("is_open"), "Tab opens the menu")
 	labels = controller.call("current_labels")
 	_check(labels[0] == "become one", "while grown the switch reads become one: %s" % [labels])
 	await _wait(view.call("open_total") + 0.3)

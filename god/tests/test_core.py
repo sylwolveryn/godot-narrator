@@ -253,5 +253,226 @@ class Progress(unittest.TestCase):
         self.assertEqual(core.format_value(5), "5")
 
 
+# Real responses captured from the local SpacetimeDB 2.14.1 server (POST /v1/database/<db>/sql).
+GLYPH_SQL = (
+    '[{"schema":{"elements":[{"name":{"some":"surface"},"algebraic_type":{"String":[]}},'
+    '{"name":{"some":"enabled"},"algebraic_type":{"Bool":[]}},'
+    '{"name":{"some":"near_intensity"},"algebraic_type":{"F32":[]}},'
+    '{"name":{"some":"radius"},"algebraic_type":{"F32":[]}}]},'
+    '"rows":[["floor",true,0.55,6.0],["item",false,0.2,3.0]],'
+    '"total_duration_micros":295,"stats":{"rows_inserted":0,"rows_deleted":0,"rows_updated":0}}]'
+)
+VERSION_SQL = (
+    '[{"schema":{"elements":[{"name":{"some":"id"},"algebraic_type":{"U32":[]}},'
+    '{"name":{"some":"version"},"algebraic_type":{"U64":[]}}]},"rows":[[1,1]],'
+    '"total_duration_micros":110,"stats":{"rows_inserted":0,"rows_deleted":0,"rows_updated":0}}]'
+)
+MISSING_SQL = (
+    '[{"schema":{"elements":[{"name":{"some":"key"},"algebraic_type":{"String":[]}},'
+    '{"name":{"some":"first_seen"},"algebraic_type":{"Product":{"elements":[{"name":'
+    '{"some":"__timestamp_micros_since_unix_epoch__"},"algebraic_type":{"I64":[]}}]}}}]},'
+    '"rows":[["X",[1794144082128801]]],"total_duration_micros":168,'
+    '"stats":{"rows_inserted":0,"rows_deleted":0,"rows_updated":0}}]'
+)
+
+
+class SqlParsing(unittest.TestCase):
+    def test_columns_types_rows(self):
+        (t,) = core.parse_sql_response(GLYPH_SQL)
+        self.assertEqual(t.columns, ["surface", "enabled", "near_intensity", "radius"])
+        self.assertEqual(t.types, ["String", "Bool", "F32", "F32"])
+        self.assertEqual(t.rows[0], ["floor", True, 0.55, 6.0])
+
+    def test_u64_singleton(self):
+        (t,) = core.parse_sql_response(VERSION_SQL)
+        self.assertEqual(t.types, ["U32", "U64"])
+        self.assertEqual(t.rows, [[1, 1]])
+
+    def test_timestamp_type_detected(self):
+        (t,) = core.parse_sql_response(MISSING_SQL)
+        self.assertEqual(t.types, ["String", "Timestamp"])
+        self.assertEqual(t.rows[0][1], [1794144082128801])
+
+    def test_format_table(self):
+        from datetime import timezone
+        (t,) = core.parse_sql_response(MISSING_SQL)
+        self.assertEqual(core.format_table(t, timezone.utc), [["X", "2026-11-08 13:21:22"]])
+        (g,) = core.parse_sql_response(GLYPH_SQL)
+        self.assertEqual(core.format_table(g)[0], ["floor", "true", "0.55", "6.0"])
+        self.assertEqual(core.format_table(g)[1][1], "false")
+
+    def test_format_cell(self):
+        self.assertEqual(core.format_cell(0.123456, "F64"), "0.123")
+        self.assertEqual(core.format_cell(12.5, "F64"), "12.5")
+        self.assertEqual(core.format_cell(18446744073709551615, "U64"), "18446744073709551615")
+        self.assertEqual(core.format_cell("", "String"), "")
+        self.assertEqual(core.format_cell({"some": 1}, "Sum"), '{"some": 1}')
+        self.assertEqual(core.format_cell([1500000], "TimeDuration"), "1.5 s")
+
+    def test_unnamed_column_and_empty(self):
+        text = '[{"schema":{"elements":[{"name":{"none":[]},"algebraic_type":{"U64":[]}}]},"rows":[]}]'
+        (t,) = core.parse_sql_response(text)
+        self.assertEqual(t.columns, ["col0"])
+        self.assertEqual(t.rows, [])
+        self.assertEqual(core.parse_sql_response("[]"), [])
+
+    def test_malformed(self):
+        for bad in ("not json", "{}", '[{"rows": []}]', '[1]'):
+            with self.assertRaises(core.DbError):
+                core.parse_sql_response(bad)
+
+    def test_column_width_clamped(self):
+        self.assertEqual(core.column_width("id", ["1"]), core.COLUMN_MIN_PX)
+        self.assertEqual(core.column_width("x", ["y" * 500]), core.COLUMN_MAX_PX)
+
+
+class _Resp:
+    def __init__(self, status, text):
+        self.status, self._text = status, text
+
+    def read(self):
+        return self._text.encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+class FakeHttp:
+    """Scripted urlopen: maps 'METHOD path' to a list of (status, text) answers."""
+
+    def __init__(self, answers):
+        self.answers = {k: list(v) for k, v in answers.items()}
+        self.requests = []
+
+    def __call__(self, req, timeout):
+        import urllib.error
+        path = req.full_url.replace(core.DB_URL, "")
+        self.requests.append((req.get_method(), path, req.data, dict(req.header_items())))
+        status, text = self.answers["%s %s" % (req.get_method(), path)].pop(0)
+        if status >= 400:
+            import io
+            raise urllib.error.HTTPError(req.full_url, status, "err", {}, io.BytesIO(text.encode()))
+        return _Resp(status, text)
+
+
+IDENTITY = '{"identity":"c200","token":"TOK"}'
+SQL_PATH = "/v1/database/%s/sql" % core.DB_NAME
+
+
+class DbClientTests(unittest.TestCase):
+    def test_token_cached_and_sql(self):
+        http = FakeHttp({"POST /v1/identity": [(200, IDENTITY)], "POST " + SQL_PATH: [(200, VERSION_SQL)] * 2})
+        c = core.DbClient(urlopen=http)
+        self.assertEqual(c.read_table("config_version").rows, [[1, 1]])
+        c.read_table("config_version")
+        self.assertEqual([r[1] for r in http.requests].count("/v1/identity"), 1)
+        method, path, body, headers = http.requests[1]
+        self.assertEqual(body, b"SELECT * FROM config_version")
+        self.assertEqual(headers["Authorization"], "Bearer TOK")
+
+    def test_401_refreshes_token_once(self):
+        http = FakeHttp({"POST /v1/identity": [(200, IDENTITY), (200, IDENTITY)],
+                         "POST " + SQL_PATH: [(401, "expired"), (200, VERSION_SQL)]})
+        c = core.DbClient(urlopen=http)
+        self.assertEqual(len(c.sql("SELECT * FROM config_version")), 1)
+
+    def test_call_sends_json_args(self):
+        path = "/v1/database/%s/call/report_missing" % core.DB_NAME
+        http = FakeHttp({"POST /v1/identity": [(200, IDENTITY)], "POST " + path: [(200, "")]})
+        core.DbClient(urlopen=http).call("report_missing", ["X"])
+        self.assertEqual(http.requests[-1][2], b'["X"]')
+
+    def test_call_error_raises(self):
+        path = "/v1/database/%s/call/nope" % core.DB_NAME
+        http = FakeHttp({"POST /v1/identity": [(200, IDENTITY)], "POST " + path: [(404, "no such reducer")]})
+        with self.assertRaises(core.DbError):
+            core.DbClient(urlopen=http).call("nope")
+
+    def test_unknown_table_rejected(self):
+        with self.assertRaises(core.DbError):
+            core.DbClient(urlopen=FakeHttp({})).read_table("person; DROP")
+
+    def test_ping(self):
+        self.assertTrue(core.DbClient(urlopen=FakeHttp({"GET /v1/ping": [(200, "")]})).ping())
+
+        def down(req, timeout):
+            import urllib.error
+            raise urllib.error.URLError("refused")
+
+        self.assertFalse(core.DbClient(urlopen=down).ping())
+
+
+class FakeClient:
+    def __init__(self, up):
+        self.up = up
+
+    def ping(self):
+        return self.up
+
+
+class DbServerTests(unittest.TestCase):
+    def make(self, up=False, alive=True, procs=()):
+        self.spawned, self.killed = [], []
+        return core.DbServer(ROOT, "spacetime", FakeClient(up),
+                             spawn=lambda exe, root: self.spawned.append(exe) or 4242,
+                             list_procs=lambda: list(procs), kill=self.killed.append,
+                             alive=lambda pid: alive)
+
+    def test_start_when_stopped(self):
+        s = self.make(up=False)
+        self.assertEqual(s.start(), "started")
+        self.assertEqual(s.own_pid, 4242)
+
+    def test_start_when_running_elsewhere(self):
+        s = self.make(up=True)
+        self.assertEqual(s.start(), "already")
+        self.assertEqual(self.spawned, [])
+
+    def test_start_without_cli(self):
+        s = self.make()
+        s.spacetime = None
+        with self.assertRaises(core.DbError):
+            s.start()
+
+    def test_stop_own_kills_tracked_tree(self):
+        s = self.make()
+        s.start()
+        self.assertTrue(s.stop_own())
+        self.assertEqual(self.killed, [4242])
+        self.assertIsNone(s.own_pid)
+
+    def test_stop_own_false_when_not_started_or_dead(self):
+        self.assertFalse(self.make().stop_own())
+        s = self.make(alive=False)
+        s.start()
+        self.assertFalse(s.stop_own())
+        self.assertEqual(self.killed, [])
+
+    def test_select_db_processes(self):
+        procs = [Proc(1, "spacetimedb-standalone.exe", ""), Proc(2, "godot.exe", ""), Proc(3, "Spacetime.exe", "")]
+        self.assertEqual([p.pid for p in core.select_db_processes(procs)], [1, 3])
+
+    def test_publish_runs_in_database_dir(self):
+        calls = []
+
+        class R:
+            returncode, stdout, stderr = 0, "Updated database", ""
+
+        s = core.DbServer(ROOT, "spacetime", FakeClient(True),
+                          run=lambda args, **kw: calls.append((args, kw["cwd"])) or R())
+        self.assertEqual(s.publish(), (True, "Updated database"))
+        self.assertEqual(calls[0][0], ["spacetime", "publish", core.DB_NAME, "--server", "local", "--yes"])
+        self.assertEqual(Path(calls[0][1]), ROOT / "database")
+
+    def test_status_text(self):
+        self.assertTrue(core.db_status_text(True, False).startswith("DB: running"))
+        self.assertIn("started by god", core.db_status_text(True, True))
+        self.assertEqual(core.db_status_text(False, False), "DB: stopped")
+        self.assertIn("SPACETIME_BIN", core.db_status_text(False, False, spacetime_found=False))
+
+
 if __name__ == "__main__":
     unittest.main()

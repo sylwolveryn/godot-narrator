@@ -1,0 +1,13 @@
+{
+	"event": "RUN_STARTED",
+	"language": "EN_GB",
+	"lines": {
+		"wake_first": "...a shape. Waking.",
+		"start_came_back": "Again. You came back.",
+		"start_saviour": "Third waking. Some called you saviour.",
+		"start_invented_voice": "I remember your voice. Or I invented it.",
+		"start_hero_lied": "I told you you were a hero. Maybe I lied.",
+		"start_bright_or_crashed": "You fell from somewhere bright. Or you crashed.",
+		"start_chose_return": "Whatever you were, you chose to come back."
+	}
+}

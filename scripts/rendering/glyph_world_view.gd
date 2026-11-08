@@ -3,7 +3,8 @@ extends Node
 ## Feeds the glyph-surface material (shaders/glyph_surface.gdshader) of the built map: the static look
 ## from GlyphWorldConfig, the player light, the nearest static lights (items, spike and corruption
 ## patches whose cells have been seen; they fade in and out), the light occlusion textures
-## (GlyphVisibilityMap, filled from GlyphLightOcclusion) and the wall cut-away around the player.
+## (GlyphVisibilityMap, filled from GlyphLightOcclusion). There is no wall cut-away (task-052): the player rotates
+## and zooms the camera to find a hidden avatar.
 ## Read-only towards the game: it never writes data, it only sets shader uniforms.
 
 const MAX_LIGHTS: int = 8
@@ -65,7 +66,6 @@ func _process(delta: float) -> void:
 		_visibility.step(delta)
 	_light_pos[PLAYER_LIGHT_SLOT] = Vector4(pos.x, config.player_light_height, pos.z, config.player_light_radius)
 	material.set_shader_parameter(&"light_pos", _light_pos)
-	material.set_shader_parameter(&"cut_center", Vector4(pos.x, pos.y + config.cutaway_height, pos.z, config.cutaway_radius))
 
 
 ## Pushes the static look of the config into the material.
@@ -96,8 +96,6 @@ func apply_static() -> void:
 	material.set_shader_parameter(&"memory_emit", config.memory_emit)
 	material.set_shader_parameter(&"memory_floor", config.memory_floor)
 	material.set_shader_parameter(&"reveal_spread", config.reveal_spread)
-	material.set_shader_parameter(&"cut_params", Vector2(config.cutaway_soft, config.cutaway_margin))
-	material.set_shader_parameter(&"cut_edge_dim", config.cutaway_edge_dim)
 	material.set_shader_parameter(&"light_falloff_sharp", config.light_falloff_sharp)
 	material.set_shader_parameter(&"wall_block", config.wall_block_size)
 	material.set_shader_parameter(&"floor_tile", config.floor_tile_size)

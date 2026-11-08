@@ -103,6 +103,8 @@ func _run() -> void:
 	# Floor on (the shipped default), so every kind of cell takes part in the checks below.
 	var cfg: RevealConfig = (reveal.get("config") as RevealConfig).duplicate()
 	cfg.reveal_floor = true
+	# The M1 checks below are about the radius; line of sight has its own check on a custom map at the end.
+	cfg.line_of_sight = false
 	reveal.set("config", cfg)
 	var radius: float = cfg.reveal_radius * loader.world_config.cell_size
 
@@ -278,6 +280,30 @@ func _run() -> void:
 	reveal.call("begin_run")
 	reveal.call("reveal_around", loader.spawn_position)
 	_check((_reveal.call("mask_at", s) as Color).a == 1.0, "floor flag must be 1 when reveal_floor is on")
+
+	# --- Line of sight (task-053): walls and items hide what lies behind them; the blocker itself is seen. ---
+	var sight: RevealConfig = cfg.duplicate()
+	sight.reveal_radius = 6.0
+	sight.line_of_sight = true
+	reveal.set("config", sight)
+	loader.map_id = &"test_sight"
+	loader.build(loader.parse_text("#############
+#.....#.....#
+#..@..#.....#
+#.....*.....#
+#############
+"))
+	player.call("spawn")
+	for cell: Vector2i in [Vector2i(5, 1), Vector2i(1, 3), Vector2i(5, 3)]:
+		_check(reveal.call("state_of", cell) == CELL_SEEN, "open cell %s in sight should be seen" % cell)
+	_check(reveal.call("state_of", Vector2i(6, 2)) == CELL_SEEN, "the wall itself should be seen")
+	_check(reveal.call("state_of", Vector2i(6, 3)) == CELL_SEEN, "the item itself should be seen")
+	for cell: Vector2i in [Vector2i(7, 1), Vector2i(8, 2), Vector2i(7, 3), Vector2i(8, 3)]:
+		_check(reveal.call("state_of", cell) != CELL_SEEN, "cell %s behind the wall / item must stay hidden" % cell)
+	sight.line_of_sight = false
+	reveal.call("begin_run")
+	reveal.call("reveal_around", loader.spawn_position)
+	_check(reveal.call("state_of", Vector2i(8, 2)) == CELL_SEEN, "without line of sight the radius alone decides")
 
 	main.queue_free()
 	await process_frame

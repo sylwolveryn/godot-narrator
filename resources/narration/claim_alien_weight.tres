@@ -6,7 +6,7 @@
 script = ExtResource("1_7bsup")
 id = "claim_alien_weight"
 text = "If you came from the stars, nothing here would move for you."
-event = &"item_revealed"
+event = &"ITEM_REVEALED"
 min_run = 4
 min_deaths = 3
 mood = &"pulse"

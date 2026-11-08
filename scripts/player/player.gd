@@ -12,8 +12,8 @@ signal identity_changed(glyph: String)
 @export var save_service: SaveService
 ## Read-only source of the run phase and the discovered input scheme.
 @export var run_manager: RunManager
-## Source of the active camera view; keyboard and gamepad input is rotated by its yaw so
-## "up" means up on screen.
+## Source of the active camera view; keyboard and gamepad input is rotated by its current yaw so
+## "up" means up on screen, also after the player rotates the camera.
 @export var camera_rig: CameraRig
 
 var identity_glyph: String = ""
@@ -27,6 +27,11 @@ var _moved_this_run: bool = false
 var _menu_open: bool = false
 ## Ground offset from the player to the cursor while the pointer is held, else null.
 var _pointer_offset: Variant = null
+## Map cell the player stood in last physics step (steps are counted when it changes).
+var _cell: Vector2i = Vector2i(-1000000, -1000000)
+## True while the body pushes into an obstacle; seconds until another bump may be announced.
+var _touching: bool = false
+var _hit_cooldown: float = 0.0
 
 
 func _ready() -> void:
@@ -51,6 +56,8 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	global_position.y = 0.0
 	_announce_motion()
+	_announce_step()
+	_announce_contact(delta)
 
 
 func _on_run_started(_run_index: int) -> void:
@@ -86,6 +93,10 @@ func spawn() -> void:
 	if map_loader != null:
 		global_position = map_loader.spawn_position
 	velocity = Vector3.ZERO
+	_touching = false
+	_hit_cooldown = 0.0
+	if map_loader != null:
+		_cell = map_loader.world_to_cell(global_position)
 	if save_service != null:
 		identity_glyph = save_service.ensure_identity(config.identity_pool)
 	else:
@@ -111,11 +122,12 @@ func _wanted_velocity() -> Vector3:
 	return Vector3.ZERO
 
 
-## Rotates a screen-space input vector (x right, y down) onto the ground by the camera view's yaw.
+## Rotates a screen-space input vector (x right, y down) onto the ground by the camera's current yaw
+## (the view profile's yaw plus the player's own rotation, task-051).
 func _screen_to_world(screen: Vector2) -> Vector3:
 	var yaw: float = 0.0
 	if camera_rig != null and camera_rig.view_config != null:
-		yaw = deg_to_rad(camera_rig.view_config.yaw_degrees)
+		yaw = deg_to_rad(camera_rig.current_yaw_degrees())
 	return Vector3(screen.x, 0.0, screen.y).rotated(Vector3.UP, yaw)
 
 
@@ -151,3 +163,41 @@ func _announce_motion() -> void:
 	if moving and not _moved_this_run:
 		_moved_this_run = true
 		SignalBus.narration_event.emit(NarrationEvents.FIRST_MOVE)
+
+
+func _playing() -> bool:
+	return run_manager != null and run_manager.phase == RunManager.Phase.PLAYING
+
+
+## Announces every change of map cell during a run (the track record counts steps).
+func _announce_step() -> void:
+	if map_loader == null or not _playing():
+		return
+	var cell: Vector2i = map_loader.world_to_cell(global_position)
+	if cell == _cell:
+		return
+	_cell = cell
+	SignalBus.player_stepped.emit(cell)
+
+
+## Narration: the body started pushing into something. A wall gives HIT_WALL, anything else (map edge, object) HIT_UNKNOWN.
+func _announce_contact(delta: float) -> void:
+	_hit_cooldown = maxf(0.0, _hit_cooldown - delta)
+	if map_loader == null or not _playing() or move_intent.length_squared() <= 0.0:
+		_touching = false
+		return
+	var push: Vector3 = move_intent.normalized()
+	var touching: bool = false
+	var probe: Vector3 = Vector3.ZERO
+	for i in get_slide_collision_count():
+		var contact: KinematicCollision3D = get_slide_collision(i)
+		var normal: Vector3 = contact.get_normal()
+		if -normal.dot(push) >= config.hit_min_facing:
+			touching = true
+			probe = contact.get_position() - normal * config.hit_probe_depth
+			break
+	if touching and not _touching and _hit_cooldown <= 0.0:
+		_hit_cooldown = config.hit_cooldown_seconds
+		var type: StringName = map_loader.data.type_at(map_loader.world_to_cell(probe))
+		SignalBus.narration_event.emit(NarrationEvents.HIT_WALL if type == MapLegend.WALL else NarrationEvents.HIT_UNKNOWN)
+	_touching = touching

@@ -6,7 +6,7 @@
 script = ExtResource("1_gs47m")
 id = "broken_demonic"
 text = "...It let you go. Then that was not your name."
-event = &"origin_struck"
+event = &"ORIGIN_STRUCK"
 min_run = 4
 min_deaths = 3
 once = false

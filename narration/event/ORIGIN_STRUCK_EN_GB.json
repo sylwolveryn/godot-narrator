@@ -1,0 +1,10 @@
+{
+	"event": "ORIGIN_STRUCK",
+	"language": "EN_GB",
+	"lines": {
+		"broken_demonic": "...It let you go. Then that was not your name.",
+		"broken_ai": "...Still one. Then not built. Or built to lie.",
+		"broken_angelic": "...You rested there. Then not the light. Not yet.",
+		"broken_alien": "...It moved for you. Then not the stars."
+	}
+}

@@ -6,7 +6,7 @@
 script = ExtResource("1_igi0u")
 id = "recant_alien"
 text = "No. I was too sure. The stars come back."
-event = &"origin_recanted"
+event = &"ORIGIN_RECANTED"
 min_run = 4
 min_deaths = 3
 once = false

@@ -1,0 +1,10 @@
+{
+	"event": "ORIGIN_RECANTED",
+	"language": "EN_GB",
+	"lines": {
+		"recant_demonic": "I was too sure. Some names hide longer in the static.",
+		"recant_ai": "I was too sure. Machines can wait. Longer than that.",
+		"recant_angelic": "I spoke too soon. Light can rest. Just never for long.",
+		"recant_alien": "No. I was too sure. The stars come back."
+	}
+}

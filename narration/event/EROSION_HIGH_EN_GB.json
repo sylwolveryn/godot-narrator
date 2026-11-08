@@ -1,0 +1,8 @@
+{
+	"event": "EROSION_HIGH",
+	"language": "EN_GB",
+	"lines": {
+		"erosion_again": "Coming apart. Again.",
+		"erosion_true_name": "Hold on. Don't let it read your name."
+	}
+}

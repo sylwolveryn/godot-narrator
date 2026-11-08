@@ -53,6 +53,8 @@ func hazard_at(world_position: Vector3) -> HazardDefinition:
 
 func _kill(def: HazardDefinition) -> void:
 	_fired = true
+	if def.lethal_on_touch:
+		SignalBus.narration_event.emit(NarrationEvents.HIT_SPIKES)
 	SignalBus.hazard_lethal.emit(def.end_cause, def.tint)
 	SignalBus.run_end_requested.emit(def.end_cause)
 

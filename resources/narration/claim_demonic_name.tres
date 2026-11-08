@@ -6,7 +6,7 @@
 script = ExtResource("1_sse8c")
 id = "claim_demonic_name"
 text = "Once the static reads your name, it never lets go."
-event = &"corruption_entered"
+event = &"CORRUPTION_ENTERED"
 min_run = 4
 min_deaths = 3
 mood = &"low_drone"

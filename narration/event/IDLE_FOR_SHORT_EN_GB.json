@@ -1,0 +1,9 @@
+{
+	"event": "IDLE_FOR_SHORT",
+	"language": "EN_GB",
+	"lines": {
+		"idle_still": "Still. As it was kept.",
+		"idle_burned": "Rest, then. You burned so many.",
+		"claim_angelic_dark": "Fallen from the light, you could never rest in the dark."
+	}
+}

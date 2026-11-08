@@ -6,7 +6,11 @@ extends Node
 @export var narrator: Narrator
 @export var config: NarratorConfig
 
+## Volume of narration voice files (NarrationLibraryConfig.voice_volume_db, set by the main scene builder).
+@export var voice_volume_db: float = -4.0
+
 var _player: AudioStreamPlayer
+var _voice: AudioStreamPlayer
 var _streams: Dictionary[StringName, AudioStreamWAV] = {}
 var _volumes: Dictionary[StringName, float] = {}
 var _rng := RandomNumberGenerator.new()
@@ -20,6 +24,10 @@ func _ready() -> void:
 	_player.name = "Player"
 	_player.bus = config.sfx_bus
 	add_child(_player)
+	_voice = AudioStreamPlayer.new()
+	_voice.name = "Voice"
+	_voice.bus = config.sfx_bus
+	add_child(_voice)
 	for mood: NarrationMood in config.moods:
 		_streams[mood.id] = synthesize(mood)
 		_volumes[mood.id] = mood.volume_db
@@ -89,5 +97,10 @@ func _gate(t: float, mood: NarrationMood) -> float:
 	return sin(PI * into / mood.pulse_length)
 
 
+## The mood always plays; a narration voice file (Narrator.current_voice) plays on top of it.
 func _on_beat_started(beat: NarrationBeat) -> void:
 	play_mood(beat.mood)
+	if narrator.current_voice != null:
+		_voice.stream = narrator.current_voice
+		_voice.volume_db = voice_volume_db
+		_voice.play()

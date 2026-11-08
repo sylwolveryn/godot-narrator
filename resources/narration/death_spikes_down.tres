@@ -6,7 +6,7 @@
 script = ExtResource("1_opvv7")
 id = "death_spikes_down"
 text = "Down."
-event = &"died_spikes"
+event = &"DEATH_BY_SPIKES"
 mood = &"low_drone"
 supports = PackedStringArray()
 contradicts = PackedStringArray()

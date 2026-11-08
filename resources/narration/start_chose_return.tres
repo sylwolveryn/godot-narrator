@@ -6,7 +6,7 @@
 script = ExtResource("1_dg0y1")
 id = "start_chose_return"
 text = "Whatever you were, you chose to come back."
-event = &"run_started"
+event = &"RUN_STARTED"
 min_run = 7
 min_deaths = 6
 supports = PackedStringArray()

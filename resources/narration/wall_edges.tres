@@ -6,7 +6,7 @@
 script = ExtResource("1_0d1ii")
 id = "wall_edges"
 text = "Edges. Always edges."
-event = &"wall_revealed"
+event = &"WALL_REVEALED"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
 order = 3

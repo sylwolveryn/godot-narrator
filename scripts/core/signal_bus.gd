@@ -26,6 +26,8 @@ signal hazard_lethal(cause: StringName, tint: Color)
 signal narration_event(event: StringName)
 ## Emitted by the player when it starts or stops moving during a run.
 signal player_motion_changed(moving: bool)
+## Emitted by the player every time it enters another map cell during a run (the track record counts steps).
+signal player_stepped(cell: Vector2i)
 ## Emitted by the narrator when a beat starts displaying; SaveService records it as heard.
 signal beat_heard(beat_id: String)
 ## Emitted by EntityProgression the moment the multi-glyph entity unlocks (the run that ends at the unlock threshold).

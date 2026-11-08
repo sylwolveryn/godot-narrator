@@ -6,7 +6,7 @@
 script = ExtResource("1_lfm2u")
 id = "death_spikes_watch"
 text = "I'm sorry. I watch every time."
-event = &"died_spikes"
+event = &"DEATH_BY_SPIKES"
 min_run = 5
 min_deaths = 4
 supports = PackedStringArray()

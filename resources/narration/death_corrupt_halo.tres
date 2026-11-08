@@ -6,7 +6,7 @@
 script = ExtResource("1_ghyd0")
 id = "death_corrupt_halo"
 text = "The halo slips. It always slipped."
-event = &"died_corruption"
+event = &"DEATH_BY_CORRUPTION"
 min_run = 3
 min_deaths = 2
 mood = &"low_drone"
