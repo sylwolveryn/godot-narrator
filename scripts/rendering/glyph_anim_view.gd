@@ -4,6 +4,10 @@ extends Node
 ## characters that cycle, a colour palette they blend through, and how many glyphs animate near the player and far
 ## from it. Values come from the DB table `glyph_anim` (GameDatabase.tables_loaded, so a reload from the god tool
 ## applies at once). The characters are rasterised once per change into a small atlas (one SubViewport render).
+## Base glyph ramps (task-079): the glyph-surface atlas itself (glyph_atlas) is rasterised here too, from the DB table
+## glyph_ramp (GlyphRampAtlas), on start and on every DB reload: one SubViewport render, read back once, mipmapped into
+## an ImageTexture (the shader samples it with mipmaps). Rows without a DB ramp keep the baked fallback PNG's row. Not
+## in headless runs (no renderer): the baked PNG stays.
 ## Presentation only: it reads the DB copy and sets shader uniforms.
 
 ## Shader uniform names.
@@ -12,6 +16,7 @@ const U_PARAMS: StringName = &"anim_params"
 const U_SPEED: StringName = &"anim_speed"
 const U_PALETTE: StringName = &"anim_palette"
 const TABLE: String = "glyph_anim"
+const U_BASE_ATLAS: StringName = &"glyph_atlas"
 
 
 class Painter extends Node2D:
@@ -38,6 +43,13 @@ class Painter extends Node2D:
 var _viewport: SubViewport
 var _painter: Painter
 var _rows: Array = []
+## Base ramp atlas (task-079): its own viewport and painter; the fallback image (baked PNG); a counter so only the
+## newest render is applied; the texture last applied (tests).
+var _ramp_viewport: SubViewport
+var _ramp_painter: GlyphRampAtlas.Painter
+var _ramp_fallback: Image
+var _ramp_generation: int = 0
+var ramp_texture: ImageTexture
 
 
 func _ready() -> void:
@@ -58,6 +70,18 @@ func _ready() -> void:
 	if database != null:
 		database.tables_loaded.connect(_on_tables_loaded)
 		_rows = database.rows(TABLE)
+	if DisplayServer.get_name() != "headless":
+		_ramp_viewport = SubViewport.new()
+		_ramp_viewport.name = "RampAtlas"
+		_ramp_viewport.size = Vector2i(GlyphAtlasSpec.COLUMNS, GlyphAtlasSpec.ROWS) * GlyphAtlasSpec.CELL_PX
+		_ramp_viewport.transparent_bg = false
+		_ramp_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		add_child(_ramp_viewport)
+		_ramp_painter = GlyphRampAtlas.Painter.new()
+		_ramp_painter.font = GlyphRampAtlas.make_font()
+		_ramp_viewport.add_child(_ramp_painter)
+		if database != null:
+			rebuild_ramps(database.rows(GlyphRampAtlas.TABLE))
 	if map_loader != null:
 		map_loader.map_built.connect(func(_map: MapData) -> void: apply())
 	apply()
@@ -125,3 +149,53 @@ func _cell_size() -> float:
 func _on_tables_loaded(tables: Dictionary) -> void:
 	_rows = tables.get(TABLE, [])
 	apply()
+	rebuild_ramps(tables.get(GlyphRampAtlas.TABLE, []))
+
+
+## Rasterises the base glyph ramps (DB rows of glyph_ramp) and hands the atlas to the glyph-surface material once the
+## render is read back (a frame later). A newer call wins over a render still in flight.
+func rebuild_ramps(rows: Array) -> void:
+	if _ramp_viewport == null:
+		return
+	var by_row: Dictionary = GlyphRampAtlas.rows_from_table(rows)
+	if by_row.is_empty():
+		return
+	_ramp_generation += 1
+	var generation: int = _ramp_generation
+	_ramp_painter.rows = by_row
+	_ramp_painter.queue_redraw()
+	_ramp_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	await RenderingServer.frame_post_draw
+	if generation != _ramp_generation or not is_inside_tree():
+		return
+	var drawn: Image = _ramp_viewport.get_texture().get_image()
+	if drawn == null or drawn.is_empty():
+		return
+	drawn.convert(Image.FORMAT_RGB8)
+	var atlas: Image = _fallback_image(drawn.get_size())
+	var cell: int = GlyphAtlasSpec.CELL_PX
+	for row: int in by_row:
+		atlas.blit_rect(drawn, Rect2i(0, row * cell, GlyphAtlasSpec.COLUMNS * cell, cell), Vector2i(0, row * cell))
+	atlas.generate_mipmaps()
+	ramp_texture = ImageTexture.create_from_image(atlas)
+	var material: ShaderMaterial = _material()
+	if material != null:
+		material.set_shader_parameter(U_BASE_ATLAS, ramp_texture)
+
+
+## A copy of the baked atlas (rows the DB does not set keep it), black when it cannot be read.
+func _fallback_image(size: Vector2i) -> Image:
+	if _ramp_fallback == null:
+		var baked: Texture2D = load(GlyphAtlasSpec.ATLAS_PATH) as Texture2D
+		var img: Image = baked.get_image() if baked != null else null
+		if img != null and not img.is_empty():
+			if img.is_compressed():
+				img.decompress()
+			img.clear_mipmaps()
+			img.convert(Image.FORMAT_RGB8)
+		if img == null or img.is_empty() or img.get_size() != size:
+			img = Image.create_empty(size.x, size.y, false, Image.FORMAT_RGB8)
+		_ramp_fallback = img
+	var copy := Image.new()
+	copy.copy_from(_ramp_fallback)
+	return copy

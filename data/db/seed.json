@@ -2371,5 +2371,31 @@
 			"diamonds": 2,
 			"black_hole": false
 		}
+	],
+	"glyph_ramp": [
+		{
+			"surface": "wall",
+			"chars": ".:+xX#M"
+		},
+		{
+			"surface": "floor",
+			"chars": ".,:;+o0"
+		},
+		{
+			"surface": "spikes",
+			"chars": "'^!AVW#"
+		},
+		{
+			"surface": "corruption",
+			"chars": "`~?%&$#"
+		},
+		{
+			"surface": "item",
+			"chars": "1l0I|8B"
+		},
+		{
+			"surface": "dirt",
+			"chars": ".,:;o%&"
+		}
 	]
 }

@@ -1,27 +1,12 @@
 extends SceneTree
-## Bakes resources/glyphs/glyph_atlas.png (layout: scripts/rendering/glyph_atlas_spec.gd), the
-## glyph atlas of the glyph-surface material: white glyphs on black, one row per surface type.
+## Bakes resources/glyphs/glyph_atlas.png (layout: scripts/rendering/glyph_atlas_spec.gd), the FALLBACK glyph atlas of
+## the glyph-surface material: white glyphs on black, one row per surface. The glyphs are the `glyph_ramp` rows of the
+## bundled seed (data/db/seed.json, task-079), drawn by GlyphRampAtlas exactly as the game draws them at runtime.
 ## Needs a renderer (SubViewport raster), so it is the one tool that cannot run --headless:
 ##   godot --path . --max-fps 30 -s tools/build_glyph_atlas.gd
 ## Then re-import: godot --headless --path . --import --quit  (the .import file enables mipmaps).
 
-
-class Painter extends Node2D:
-	var font: Font
-
-	func _draw() -> void:
-		draw_rect(Rect2(Vector2.ZERO, Vector2(GlyphAtlasSpec.COLUMNS, GlyphAtlasSpec.ROWS) * GlyphAtlasSpec.CELL_PX), Color.BLACK)
-		var cell: float = float(GlyphAtlasSpec.CELL_PX)
-		for row in GlyphAtlasSpec.ROWS:
-			var glyphs: String = GlyphAtlasSpec.ROW_GLYPHS[row]
-			for col in GlyphAtlasSpec.COLUMNS:
-				var ch: String = glyphs[col]
-				if ch == " ":
-					continue
-				var adv: float = font.get_char_size(ch.unicode_at(0), GlyphAtlasSpec.FONT_PX).x
-				var pos := Vector2(col * cell + (cell - adv) * 0.5,
-						row * cell + cell * 0.5 + GlyphAtlasSpec.FONT_PX * GlyphAtlasSpec.BASELINE_DROP)
-				font.draw_char(get_canvas_item(), pos, ch.unicode_at(0), GlyphAtlasSpec.FONT_PX, Color.WHITE)
+const SEED_PATH := "res://data/db/seed.json"
 
 
 func _init() -> void:
@@ -29,14 +14,19 @@ func _init() -> void:
 
 
 func _run() -> void:
-	var font := SystemFont.new()
-	font.font_names = PackedStringArray(["Consolas", "Courier New", "monospace"])
+	var seed: Variant = JSON.parse_string(FileAccess.get_file_as_string(SEED_PATH))
+	var rows: Dictionary = GlyphRampAtlas.rows_from_table(seed.get(GlyphRampAtlas.TABLE, []) if seed is Dictionary else [])
+	if rows.size() < GlyphAtlasSpec.ROWS:
+		printerr("ATLAS seed has %d of %d glyph_ramp rows" % [rows.size(), GlyphAtlasSpec.ROWS])
+		quit(1)
+		return
 	var vp := SubViewport.new()
 	vp.size = Vector2i(GlyphAtlasSpec.COLUMNS, GlyphAtlasSpec.ROWS) * GlyphAtlasSpec.CELL_PX
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	root.add_child(vp)
-	var painter := Painter.new()
-	painter.font = font
+	var painter := GlyphRampAtlas.Painter.new()
+	painter.font = GlyphRampAtlas.make_font()
+	painter.rows = rows
 	vp.add_child(painter)
 	for i in 4:
 		await process_frame

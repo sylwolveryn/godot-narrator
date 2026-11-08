@@ -163,6 +163,25 @@ const SEED_MOVEMENT: &[(&str, f32, f32, f32, f32, f32, f32)] = &[
     ("grown", 5.3, 8.0, 10.0, 1.5, 2.0, 0.45),
 ];
 
+/// Base glyph ramp per surface (task-079): the characters the glyph-surface shader draws, from sparse to dense
+/// (the blank is implicit). Split into grapheme clusters by the game and spread over the atlas density columns.
+/// Surfaces: "wall", "floor", "spikes", "corruption", "item", "dirt".
+#[spacetimedb::table(accessor = glyph_ramp, public)]
+pub struct GlyphRamp {
+    #[primary_key]
+    pub surface: String,
+    pub chars: String,
+}
+
+const SEED_RAMPS: &[(&str, &str)] = &[
+    ("wall", ".:+xX#M"),
+    ("floor", ".,:;+o0"),
+    ("spikes", "'^!AVW#"),
+    ("corruption", "`~?%&$#"),
+    ("item", "1l0I|8B"),
+    ("dirt", ".,:;o%&"),
+];
+
 /// Proximity glyph animation tuning per surface
 /// ("wall", "floor", "spikes", "corruption", "item").
 #[spacetimedb::table(accessor = glyph_anim, public)]
@@ -441,6 +460,11 @@ fn seed(ctx: &ReducerContext) {
             if find_narration(ctx, event, language).is_none() {
                 insert_default_narration(ctx, event, language);
             }
+        }
+    }
+    for (surface, chars) in SEED_RAMPS {
+        if ctx.db.glyph_ramp().surface().find(surface.to_string()).is_none() {
+            ctx.db.glyph_ramp().insert(GlyphRamp { surface: surface.to_string(), chars: chars.to_string() });
         }
     }
     for g in SEED_GLYPHS {
