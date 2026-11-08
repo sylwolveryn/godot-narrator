@@ -1,9 +1,11 @@
 ---
 id: TASK-052
 title: Remove the wall cut-away around the player
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-08T13:18:00Z'
+updated_date: '2026-11-08T13:19:00Z'
 labels:
   - rendering
 dependencies:
