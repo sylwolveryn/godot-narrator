@@ -1,11 +1,11 @@
 ---
 id: TASK-075
 title: 'Three enemy types: wall crawler, hunter, wanderer'
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T17:10:00Z'
-updated_date: '2026-11-08T17:21:00Z'
+updated_date: '2026-11-08T18:32:00Z'
 labels:
   - gameplay
   - world
@@ -31,6 +31,17 @@ First enemies. Each type moves its own way: the crawler always follows a wall (l
 - [ ] #3 Touching the player ends the run (cause per enemy type, death narration event); cannon balls destroy enemies
 - [ ] #4 Enemy speeds and lethality per type in a DB table with defaults; tests cover each movement rule, contact death and destruction
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. MapLegend enemy_spawns (L R H W) + black_hole_char O; MapLoader records MapData.enemies / black_holes (floor)
+2. EnemyDef/EnemyConfig (+ from_tables over DB enemy_def), Rust table + seed + god + seed.json + DbConfig.tables
+3. EnemySystem (data layer): grid movement crawler/hunter/wanderer, occupancy, Destructibles kind enemy, contact -> run_end_requested(enemy_<type>), reset at run start
+4. EnemyView: one MultiMesh billboard glyph creatures, reveal-aware, idle anim
+5. DEATH_BY_ENEMY narration event + beats; main scene wiring
+6. tools/test_enemies.gd
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
