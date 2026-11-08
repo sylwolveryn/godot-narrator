@@ -1,9 +1,11 @@
 ---
 id: TASK-054
 title: DB-driven proximity glyph animation
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-08T13:18:00Z'
+updated_date: '2026-11-08T13:20:00Z'
 labels:
   - rendering
   - database
