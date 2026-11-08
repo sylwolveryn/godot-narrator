@@ -1,9 +1,11 @@
 ---
 id: TASK-050
 title: Skippable intro with random glowing colour
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-08T13:18:00Z'
+updated_date: '2026-11-08T13:19:00Z'
 labels:
   - ui
 dependencies: []
