@@ -1776,5 +1776,25 @@
 			"id": 1,
 			"version": 0
 		}
+	],
+	"movement_profile": [
+		{
+			"profile": "default",
+			"max_speed": 4.5,
+			"acceleration": 14.0,
+			"deceleration": 16.0
+		},
+		{
+			"profile": "single",
+			"max_speed": 4.8,
+			"acceleration": 22.0,
+			"deceleration": 24.0
+		},
+		{
+			"profile": "grown",
+			"max_speed": 5.3,
+			"acceleration": 8.0,
+			"deceleration": 10.0
+		}
 	]
 }

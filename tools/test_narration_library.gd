@@ -1,6 +1,7 @@
 extends SceneTree
 ## Tests the plugin-style narration lookup (task-048), the SpacetimeDB SQL parsing, the idle ladder and the
-## transformation fallback of the narrator (task-049), and the glyph-animation palette parsing (task-054).
+## transformation fallback of the narrator (task-049), the glyph-animation palette parsing (task-054) and the per-form
+## movement profiles of the player (task-055).
 ## Usage: godot --headless --path . -s tools/test_narration_library.gd --max-fps 30
 
 const CONFIG_PATH := "res://resources/narration/narrator_config.tres"
@@ -23,6 +24,7 @@ func _run() -> void:
 	_test_lookup()
 	_test_narrator_events()
 	_test_palette()
+	_test_movement_profiles()
 	if _failures.is_empty():
 		print("PASS test_narration_library")
 		quit(0)
@@ -141,3 +143,36 @@ func _remove_tree(path: String) -> void:
 	for f in DirAccess.get_files_at(path):
 		DirAccess.remove_absolute(path.path_join(f))
 	DirAccess.remove_absolute(path)
+
+
+## The player takes the movement of its form's DB row, falls back to the "default" row, then to PlayerConfig, and
+## follows a reload of the table.
+func _test_movement_profiles() -> void:
+	var db := GameDatabase.new()
+	var db_cfg := DbConfig.new()
+	db_cfg.enabled = false
+	db_cfg.seed_path = ""
+	db.config = db_cfg
+	root.add_child(db)
+	db.tables = {"movement_profile": [
+		{"profile": "default", "max_speed": 4.5, "acceleration": 14.0, "deceleration": 16.0},
+		{"profile": "single", "max_speed": 4.8, "acceleration": 22.0, "deceleration": 24.0},
+		{"profile": "grown", "max_speed": 5.3, "acceleration": 8.0, "deceleration": 10.0}]}
+	var player: Node = load("res://scripts/player/player.gd").new()
+	player.set("config", PlayerConfig.new())
+	player.set("database", db)
+	root.add_child(player)
+	_check(is_equal_approx(player.get("max_speed"), 4.5) and is_equal_approx(player.get("acceleration"), 14.0), "no form yet: default row")
+	root.get_node("SignalBus").emit_signal("entity_form_changed", EntityForm.SINGLE, false)
+	_check(is_equal_approx(player.get("acceleration"), 22.0) and is_equal_approx(player.get("deceleration"), 24.0), "single: quick to start and stop")
+	root.get_node("SignalBus").emit_signal("entity_form_changed", EntityForm.GROWN, true)
+	_check(is_equal_approx(player.get("max_speed"), 5.3) and player.get("acceleration") < 14.0, "grown: slower to accelerate, faster top speed than default")
+	db.tables["movement_profile"][2]["max_speed"] = 6.0
+	db.tables_loaded.emit(db.tables)
+	_check(is_equal_approx(player.get("max_speed"), 6.0), "a DB reload applies during play")
+	db.tables = {}
+	db.tables_loaded.emit(db.tables)
+	var cfg: PlayerConfig = player.get("config")
+	_check(is_equal_approx(player.get("max_speed"), cfg.max_speed) and is_equal_approx(player.get("deceleration"), cfg.friction), "no rows: PlayerConfig values")
+	player.queue_free()
+	db.queue_free()

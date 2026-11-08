@@ -400,8 +400,11 @@ DB_SERVER = "local"
 DB_DIR = "database"
 DB_TABLES = (
     "event_def", "language_def", "narration", "player_stats", "player_death",
-    "player_language", "missing_narration", "glyph_anim", "config_version",
+    "player_language", "missing_narration", "glyph_anim", "movement_profile", "config_version",
 )
+# Player movement profiles (DB table movement_profile): "default" is the fallback, the others are entity forms.
+MOVEMENT_PROFILES = ("default", "single", "grown")
+MOVEMENT_FIELDS = ("max_speed", "acceleration", "deceleration")
 DB_HTTP_TIMEOUT = 5.0
 DB_PING_TIMEOUT = 1.0
 DB_PUBLISH_TIMEOUT = 600
@@ -735,3 +738,28 @@ def db_status_text(running: bool, owned: bool, spacetime_found: bool = True) -> 
     if not spacetime_found:
         text += "  (spacetime CLI not found: set SPACETIME_BIN)"
     return text
+
+
+def movement_args(profile: str, values: dict) -> list:
+    """Arguments of the upsert_movement_profile reducer from the god form. Raises ValueError on bad input."""
+    if not profile.strip():
+        raise ValueError("profile is empty")
+    args: list = [profile.strip()]
+    for field in MOVEMENT_FIELDS:
+        try:
+            number = float(str(values.get(field, "")).strip())
+        except ValueError:
+            raise ValueError("%s must be a number" % field) from None
+        if number < 0.0:
+            raise ValueError("%s must not be negative" % field)
+        args.append(number)
+    return args
+
+
+def movement_row(table: "SqlTable", profile: str) -> Optional[dict]:
+    """The movement_profile row of `profile` as {column: value}, or None."""
+    for row in table.rows:
+        values = dict(zip(table.columns, row))
+        if values.get("profile") == profile:
+            return values
+    return None

@@ -113,6 +113,7 @@ func _build() -> void:
 	player.set("config", player_cfg)
 	player.set("map_loader", loader)
 	player.set("save_service", save)
+	player.set("database", database)
 	var body := CollisionShape3D.new()
 	body.name = "Collision"
 	var capsule := CapsuleShape3D.new()

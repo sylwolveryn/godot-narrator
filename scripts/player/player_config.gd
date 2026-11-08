@@ -8,14 +8,18 @@ extends Resource
 @export var body_height: float = 0.9
 
 @export_group("Movement")
+## Fallback movement, used until the DB table `movement_profile` is read and for a form without a row there. The DB rows
+## (task-055: "default", "single", "grown") replace these at run time; the active entity form picks its row.
 ## Top speed in world units per second.
 @export var max_speed: float = 4.5
 ## Speed (units per second) above which the player counts as moving (narration: first move, idle).
 @export var moving_speed_threshold: float = 0.3
-## Units per second squared while input is held.
-@export var acceleration: float = 30.0
+## Units per second squared while input is held (a hint of inertia: about 0.3 s to full speed).
+@export var acceleration: float = 14.0
 ## Units per second squared when input stops.
-@export var friction: float = 40.0
+@export var friction: float = 16.0
+## DB movement_profile row used when the active form has no row of its own.
+@export var default_movement_profile: String = "default"
 ## Mouse scheme: within this distance (world units) of the cursor the player stops.
 @export var pointer_stop_distance: float = 0.15
 ## Mouse scheme: distance at which the pointer pull reaches full strength (smaller = slower near the cursor).

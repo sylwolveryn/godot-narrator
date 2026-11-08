@@ -476,3 +476,22 @@ class DbServerTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MovementFormTest(unittest.TestCase):
+    def test_args_in_reducer_order(self):
+        args = core.movement_args(" grown ", {"max_speed": "5.3", "acceleration": "8", "deceleration": " 10 "})
+        self.assertEqual(args, ["grown", 5.3, 8.0, 10.0])
+
+    def test_rejects_bad_numbers(self):
+        with self.assertRaises(ValueError):
+            core.movement_args("single", {"max_speed": "fast", "acceleration": "1", "deceleration": "1"})
+        with self.assertRaises(ValueError):
+            core.movement_args("single", {"max_speed": "-1", "acceleration": "1", "deceleration": "1"})
+        with self.assertRaises(ValueError):
+            core.movement_args(" ", {"max_speed": "1", "acceleration": "1", "deceleration": "1"})
+
+    def test_movement_row(self):
+        table = core.SqlTable(columns=["profile", "max_speed"], types=["String", "F32"], rows=[["default", 4.5], ["grown", 5.3]])
+        self.assertEqual(core.movement_row(table, "grown"), {"profile": "grown", "max_speed": 5.3})
+        self.assertIsNone(core.movement_row(table, "single"))

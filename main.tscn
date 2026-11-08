@@ -75,45 +75,45 @@ shader_parameter/cell_px = null
 shader_parameter/glow_strength = null
 shader_parameter/glow_width = null
 
-[node name="Main" type="Node3D" unique_id=1340111286]
+[node name="Main" type="Node3D" unique_id=643183395]
 
-[node name="World" type="Node3D" parent="." unique_id=391660936]
+[node name="World" type="Node3D" parent="." unique_id=614997139]
 
-[node name="MapLoader" type="Node3D" parent="World" unique_id=848171442]
+[node name="MapLoader" type="Node3D" parent="World" unique_id=318957]
 script = ExtResource("1_hrvbo")
 legend = ExtResource("2_uypp3")
 world_config = ExtResource("3_blkrb")
 surface_material = ExtResource("4_abqjc")
 map_path = "res://data/maps/m1_awakening.txt"
 
-[node name="GameDatabase" type="Node" parent="." unique_id=1870742030]
+[node name="GameDatabase" type="Node" parent="." unique_id=240133682]
 script = ExtResource("5_6iyjs")
 config = ExtResource("6_4w656")
 
-[node name="NarrationLibrary" type="Node" parent="." unique_id=1833292151 node_paths=PackedStringArray("database")]
+[node name="NarrationLibrary" type="Node" parent="." unique_id=1362849595 node_paths=PackedStringArray("database")]
 script = ExtResource("7_e71vb")
 config = ExtResource("8_rnkwl")
 database = NodePath("../GameDatabase")
 
-[node name="PlayerRecord" type="Node" parent="." unique_id=885114125 node_paths=PackedStringArray("database")]
+[node name="PlayerRecord" type="Node" parent="." unique_id=1345364295 node_paths=PackedStringArray("database")]
 script = ExtResource("9_vke2r")
 database = NodePath("../GameDatabase")
 
-[node name="SaveService" type="Node" parent="." unique_id=587372650]
+[node name="SaveService" type="Node" parent="." unique_id=677346478]
 script = ExtResource("10_uit24")
 config = ExtResource("11_ruth0")
 
-[node name="OriginLedger" type="Node" parent="." unique_id=1924101651 node_paths=PackedStringArray("save_service")]
+[node name="OriginLedger" type="Node" parent="." unique_id=1177628920 node_paths=PackedStringArray("save_service")]
 script = ExtResource("12_rm4vd")
 config = ExtResource("13_pjyto")
 save_service = NodePath("../SaveService")
 
-[node name="EntityProgression" type="Node" parent="." unique_id=85654204 node_paths=PackedStringArray("save_service")]
+[node name="EntityProgression" type="Node" parent="." unique_id=1742965084 node_paths=PackedStringArray("save_service")]
 script = ExtResource("14_sm6fg")
 config = ExtResource("15_b17eg")
 save_service = NodePath("../SaveService")
 
-[node name="MenuController" type="Node" parent="." unique_id=1497391952 node_paths=PackedStringArray("save_service", "entity", "run_manager", "ledger")]
+[node name="MenuController" type="Node" parent="." unique_id=1317741726 node_paths=PackedStringArray("save_service", "entity", "run_manager", "ledger")]
 script = ExtResource("16_ntx8l")
 config = ExtResource("17_uatky")
 save_service = NodePath("../SaveService")
@@ -121,52 +121,53 @@ entity = NodePath("../EntityProgression")
 run_manager = NodePath("../RunManager")
 ledger = NodePath("../OriginLedger")
 
-[node name="Narrator" type="Node" parent="." unique_id=1315147205 node_paths=PackedStringArray("save_service", "ledger", "library")]
+[node name="Narrator" type="Node" parent="." unique_id=1004377427 node_paths=PackedStringArray("save_service", "ledger", "library")]
 script = ExtResource("18_rqtf5")
 config = ExtResource("19_1vm84")
 save_service = NodePath("../SaveService")
 ledger = NodePath("../OriginLedger")
 library = NodePath("../NarrationLibrary")
 
-[node name="CameraRig" type="Node3D" parent="." unique_id=202899360 node_paths=PackedStringArray("follow_target")]
+[node name="CameraRig" type="Node3D" parent="." unique_id=445245308 node_paths=PackedStringArray("follow_target")]
 script = ExtResource("20_wu3dr")
 view_config = ExtResource("21_cyx1q")
 follow_target = NodePath("../Player")
 
-[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=1352642657]
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=1989461144]
 environment = SubResource("Environment_yjja3")
 
-[node name="Player" type="CharacterBody3D" parent="." unique_id=1676745541 node_paths=PackedStringArray("map_loader", "save_service", "run_manager", "camera_rig")]
+[node name="Player" type="CharacterBody3D" parent="." unique_id=570133723 node_paths=PackedStringArray("map_loader", "save_service", "run_manager", "camera_rig", "database")]
 script = ExtResource("22_0dhbp")
 config = ExtResource("23_jx0wj")
 map_loader = NodePath("../World/MapLoader")
 save_service = NodePath("../SaveService")
 run_manager = NodePath("../RunManager")
 camera_rig = NodePath("../CameraRig")
+database = NodePath("../GameDatabase")
 
-[node name="Collision" type="CollisionShape3D" parent="Player" unique_id=828001885]
+[node name="Collision" type="CollisionShape3D" parent="Player" unique_id=1384740905]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
 shape = SubResource("CapsuleShape3D_l0gw7")
 
-[node name="MapReveal" type="Node" parent="." unique_id=1343909979 node_paths=PackedStringArray("map_loader", "player", "save_service")]
+[node name="MapReveal" type="Node" parent="." unique_id=1567543065 node_paths=PackedStringArray("map_loader", "player", "save_service")]
 script = ExtResource("24_kkkcx")
 config = ExtResource("25_34ol3")
 map_loader = NodePath("../World/MapLoader")
 player = NodePath("../Player")
 save_service = NodePath("../SaveService")
 
-[node name="InputDiscovery" type="Node" parent="." unique_id=653767810]
+[node name="InputDiscovery" type="Node" parent="." unique_id=174046968]
 script = ExtResource("26_c2n8d")
 config = ExtResource("23_jx0wj")
 
-[node name="GlyphWorldView" type="Node" parent="." unique_id=705059828 node_paths=PackedStringArray("map_loader", "player", "map_reveal")]
+[node name="GlyphWorldView" type="Node" parent="." unique_id=2130341277 node_paths=PackedStringArray("map_loader", "player", "map_reveal")]
 script = ExtResource("27_wy5fy")
 config = ExtResource("28_gx4rg")
 map_loader = NodePath("../World/MapLoader")
 player = NodePath("../Player")
 map_reveal = NodePath("../MapReveal")
 
-[node name="PlayerGlyphView" type="Node3D" parent="." unique_id=1295405949 node_paths=PackedStringArray("player")]
+[node name="PlayerGlyphView" type="Node3D" parent="." unique_id=2137185109 node_paths=PackedStringArray("player")]
 script = ExtResource("29_5dllo")
 player = NodePath("../Player")
 player_config = ExtResource("23_jx0wj")
@@ -175,7 +176,7 @@ world_config = ExtResource("28_gx4rg")
 world = ExtResource("3_blkrb")
 entity_config = ExtResource("15_b17eg")
 
-[node name="MenuGlyphView" type="Node3D" parent="." unique_id=1808451961 node_paths=PackedStringArray("player", "map_loader")]
+[node name="MenuGlyphView" type="Node3D" parent="." unique_id=749414058 node_paths=PackedStringArray("player", "map_loader")]
 script = ExtResource("31_birbe")
 config = ExtResource("17_uatky")
 fx_config = ExtResource("30_phcyf")
@@ -186,7 +187,7 @@ world = ExtResource("3_blkrb")
 origin_config = ExtResource("13_pjyto")
 surface_material = ExtResource("4_abqjc")
 
-[node name="GlyphStormView" type="Node3D" parent="." unique_id=789282480 node_paths=PackedStringArray("player", "map_loader")]
+[node name="GlyphStormView" type="Node3D" parent="." unique_id=258877084 node_paths=PackedStringArray("player", "map_loader")]
 script = ExtResource("32_f1p13")
 config = ExtResource("33_4obbf")
 fx_config = ExtResource("30_phcyf")
@@ -195,51 +196,51 @@ map_loader = NodePath("../World/MapLoader")
 world = ExtResource("3_blkrb")
 surface_material = ExtResource("4_abqjc")
 
-[node name="GlyphAnimView" type="Node" parent="." unique_id=1948701369 node_paths=PackedStringArray("database", "map_loader")]
+[node name="GlyphAnimView" type="Node" parent="." unique_id=1558921543 node_paths=PackedStringArray("database", "map_loader")]
 script = ExtResource("34_ovcoh")
 config = ExtResource("35_ppx11")
 database = NodePath("../GameDatabase")
 map_loader = NodePath("../World/MapLoader")
 
-[node name="GlyphHaloField" type="Node3D" parent="." unique_id=1516374082 node_paths=PackedStringArray("map_loader")]
+[node name="GlyphHaloField" type="Node3D" parent="." unique_id=212814396 node_paths=PackedStringArray("map_loader")]
 script = ExtResource("36_1yv1y")
 config = ExtResource("28_gx4rg")
 map_loader = NodePath("../World/MapLoader")
 
-[node name="NarrationOverlay" type="CanvasLayer" parent="." unique_id=1014652568 node_paths=PackedStringArray("narrator")]
+[node name="NarrationOverlay" type="CanvasLayer" parent="." unique_id=1807565076 node_paths=PackedStringArray("narrator")]
 layer = 25
 script = ExtResource("37_5yh34")
 narrator = NodePath("../Narrator")
 config = ExtResource("19_1vm84")
 display_config = ExtResource("38_pjuso")
 
-[node name="NarrationSfx" type="Node" parent="." unique_id=1893960997 node_paths=PackedStringArray("narrator")]
+[node name="NarrationSfx" type="Node" parent="." unique_id=979754322 node_paths=PackedStringArray("narrator")]
 script = ExtResource("39_23xmf")
 narrator = NodePath("../Narrator")
 config = ExtResource("19_1vm84")
 
-[node name="IntroSequence" type="CanvasLayer" parent="." unique_id=1165787145]
+[node name="IntroSequence" type="CanvasLayer" parent="." unique_id=180138765]
 layer = 20
 script = ExtResource("40_swlj1")
 config = ExtResource("41_yysqy")
 display_config = ExtResource("38_pjuso")
 
-[node name="Veil" type="ColorRect" parent="IntroSequence" unique_id=400800725]
+[node name="Veil" type="ColorRect" parent="IntroSequence" unique_id=724040877]
 material = SubResource("ShaderMaterial_inymm")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="FullscreenToggle" type="Node" parent="." unique_id=1269972948]
+[node name="FullscreenToggle" type="Node" parent="." unique_id=468488032]
 script = ExtResource("43_h6isl")
 config = ExtResource("38_pjuso")
 
-[node name="RunManager" type="Node" parent="." unique_id=953892277]
+[node name="RunManager" type="Node" parent="." unique_id=667317161]
 script = ExtResource("44_53bls")
 config = ExtResource("45_lwnsi")
 
-[node name="PushableObjects" type="Node3D" parent="." unique_id=108768709 node_paths=PackedStringArray("map_loader", "player", "entity", "run_manager")]
+[node name="PushableObjects" type="Node3D" parent="." unique_id=398618606 node_paths=PackedStringArray("map_loader", "player", "entity", "run_manager")]
 script = ExtResource("46_41lik")
 config = ExtResource("47_jbvwl")
 map_loader = NodePath("../World/MapLoader")
@@ -247,19 +248,19 @@ player = NodePath("../Player")
 entity = NodePath("../EntityProgression")
 run_manager = NodePath("../RunManager")
 
-[node name="ObjectGlyphView" type="Node3D" parent="." unique_id=570317857 node_paths=PackedStringArray("pushables", "map_loader")]
+[node name="ObjectGlyphView" type="Node3D" parent="." unique_id=688232046 node_paths=PackedStringArray("pushables", "map_loader")]
 script = ExtResource("48_sn1fb")
 pushables = NodePath("../PushableObjects")
 map_loader = NodePath("../World/MapLoader")
 config = ExtResource("47_jbvwl")
 
-[node name="HazardMonitor" type="Node" parent="." unique_id=2139576537 node_paths=PackedStringArray("map_loader", "player", "run_manager")]
+[node name="HazardMonitor" type="Node" parent="." unique_id=348703889 node_paths=PackedStringArray("map_loader", "player", "run_manager")]
 script = ExtResource("49_yvsr8")
 map_loader = NodePath("../World/MapLoader")
 player = NodePath("../Player")
 run_manager = NodePath("../RunManager")
 
-[node name="OriginTrialMonitor" type="Node" parent="." unique_id=407897878 node_paths=PackedStringArray("ledger", "run_manager", "player", "map_loader")]
+[node name="OriginTrialMonitor" type="Node" parent="." unique_id=1343619816 node_paths=PackedStringArray("ledger", "run_manager", "player", "map_loader")]
 script = ExtResource("50_vieuh")
 ledger = NodePath("../OriginLedger")
 run_manager = NodePath("../RunManager")

@@ -4,4 +4,4 @@
 
 [resource]
 script = ExtResource("1_dkh6s")
-tables = PackedStringArray("event_def", "language_def", "narration", "glyph_anim", "config_version")
+tables = PackedStringArray("event_def", "language_def", "narration", "glyph_anim", "movement_profile", "config_version")

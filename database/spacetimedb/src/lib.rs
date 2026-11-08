@@ -77,6 +77,28 @@ pub struct MissingNarration {
     pub first_seen: Timestamp,
 }
 
+/// Player movement tuning per profile: "default" (fallback), "single" (the small
+/// one-glyph form) and "grown" (the multi-glyph entity). The game picks the row of
+/// the active form and falls back to "default".
+#[spacetimedb::table(accessor = movement_profile, public)]
+pub struct MovementProfile {
+    #[primary_key]
+    pub profile: String,
+    /// Top speed, world units per second.
+    pub max_speed: f32,
+    /// Speed gained per second while input is held (units/s^2).
+    pub acceleration: f32,
+    /// Speed lost per second when input stops (units/s^2).
+    pub deceleration: f32,
+}
+
+/// (profile, max_speed, acceleration, deceleration)
+const SEED_MOVEMENT: &[(&str, f32, f32, f32)] = &[
+    ("default", 4.5, 14.0, 16.0),
+    ("single", 4.8, 22.0, 24.0),
+    ("grown", 5.3, 8.0, 10.0),
+];
+
 /// Proximity glyph animation tuning per surface
 /// ("wall", "floor", "spikes", "corruption", "item").
 #[spacetimedb::table(accessor = glyph_anim, public)]
@@ -300,6 +322,16 @@ fn seed(ctx: &ReducerContext) {
             });
         }
     }
+    for (profile, max_speed, acceleration, deceleration) in SEED_MOVEMENT {
+        if ctx.db.movement_profile().profile().find(profile.to_string()).is_none() {
+            ctx.db.movement_profile().insert(MovementProfile {
+                profile: profile.to_string(),
+                max_speed: *max_speed,
+                acceleration: *acceleration,
+                deceleration: *deceleration,
+            });
+        }
+    }
     if ctx.db.player_stats().id().find(SINGLETON_ID).is_none() {
         ctx.db.player_stats().insert(PlayerStats {
             id: SINGLETON_ID,
@@ -361,6 +393,10 @@ pub fn reset_defaults(ctx: &ReducerContext) {
     let ids: Vec<String> = ctx.db.glyph_anim().iter().map(|r| r.surface).collect();
     for id in ids {
         ctx.db.glyph_anim().surface().delete(id);
+    }
+    let ids: Vec<String> = ctx.db.movement_profile().iter().map(|r| r.profile).collect();
+    for id in ids {
+        ctx.db.movement_profile().profile().delete(id);
     }
     seed(ctx);
 }
@@ -472,4 +508,28 @@ pub fn upsert_glyph_anim(
     } else {
         ctx.db.glyph_anim().insert(row);
     }
+}
+
+/// Sets one movement profile; also bumps the config version so a running game
+/// picks the change up on its next poll.
+#[spacetimedb::reducer]
+pub fn upsert_movement_profile(
+    ctx: &ReducerContext,
+    profile: String,
+    max_speed: f32,
+    acceleration: f32,
+    deceleration: f32,
+) {
+    let row = MovementProfile {
+        profile,
+        max_speed: max_speed.max(0.0),
+        acceleration: acceleration.max(0.01),
+        deceleration: deceleration.max(0.01),
+    };
+    if ctx.db.movement_profile().profile().find(&row.profile).is_some() {
+        ctx.db.movement_profile().profile().update(row);
+    } else {
+        ctx.db.movement_profile().insert(row);
+    }
+    bump_config_version(ctx);
 }

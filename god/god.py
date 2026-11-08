@@ -94,6 +94,24 @@ class GodApp:
         for b in (self.btn_read, self.btn_read_all):
             b.pack(side="left", padx=(0, 6))
             self.db_buttons.append(b)
+        # Player movement (DB movement_profile): edit a profile; the running game picks it up on its next poll.
+        row3 = ttk.Frame(self.win)
+        row3.pack(fill="x", **pad)
+        ttk.Label(row3, text="Movement:").pack(side="left", padx=(0, 6))
+        self.move_pick = ttk.Combobox(row3, values=core.MOVEMENT_PROFILES, width=9)
+        self.move_pick.current(0)
+        self.move_pick.pack(side="left", padx=(0, 6))
+        self.move_vars = {}
+        for field in core.MOVEMENT_FIELDS:
+            ttk.Label(row3, text=field.replace("_", " ")).pack(side="left", padx=(4, 2))
+            var = tk.StringVar()
+            ttk.Entry(row3, textvariable=var, width=6).pack(side="left")
+            self.move_vars[field] = var
+        self.btn_move_load = ttk.Button(row3, text="Load", command=self._move_load)
+        self.btn_move_apply = ttk.Button(row3, text="Apply", command=self._move_apply)
+        for b in (self.btn_move_load, self.btn_move_apply):
+            b.pack(side="left", padx=(6, 0))
+            self.db_buttons.append(b)
         self.tabs = ttk.Notebook(self.win)
         self.tabs.pack(fill="both", expand=True, padx=10, pady=(4, 10))
         log_frame = ttk.Frame(self.tabs)
@@ -145,6 +163,9 @@ class GodApp:
                     self._log(*value)
                 elif kind == "db_table":
                     self._show_table(*value)
+                elif kind == "move_fill":
+                    for field, var in self.move_vars.items():
+                        var.set("%g" % float(value.get(field, 0.0)))
                 elif kind == "db_confirm":
                     self._confirm_kill(value)
                 elif kind == "db_done":
@@ -351,6 +372,33 @@ class GodApp:
             return done_text
 
         self._db_job("Call %s" % reducer, run)
+
+    def _move_load(self) -> None:
+        profile = self.move_pick.get()
+
+        def run() -> str:
+            table = self.db.client.read_table("movement_profile")
+            self.results.put(("db_table", ("movement_profile", table)))
+            row = core.movement_row(table, profile)
+            if row is None:
+                return "No movement profile %r yet; Apply creates it." % profile
+            self.results.put(("move_fill", row))
+            return "Loaded movement profile %r." % profile
+
+        self._db_job("Load movement " + profile, run)
+
+    def _move_apply(self) -> None:
+        try:
+            args = core.movement_args(self.move_pick.get(), {f: v.get() for f, v in self.move_vars.items()})
+        except ValueError as e:
+            self._log("Movement: %s" % e, True)
+            return
+
+        def run() -> str:
+            self.db.client.call("upsert_movement_profile", args)
+            return "Movement profile %r set to speed %.2f, accel %.2f, decel %.2f (game applies it within a few s)." % tuple(args)
+
+        self._db_job("Apply movement " + args[0], run)
 
     def _db_read(self, tables: list) -> None:
         def run() -> str:

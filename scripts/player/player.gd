@@ -15,8 +15,17 @@ signal identity_changed(glyph: String)
 ## Source of the active camera view; keyboard and gamepad input is rotated by its current yaw so
 ## "up" means up on screen, also after the player rotates the camera.
 @export var camera_rig: CameraRig
+## Optional (task-055): source of the movement profiles (DB table movement_profile, one row per entity form plus
+## "default"). Without it, or before it is read, PlayerConfig's movement values are used.
+@export var database: GameDatabase
 
 var identity_glyph: String = ""
+## Movement in effect (from the active form's profile). Read-only for others.
+var max_speed: float = 0.0
+var acceleration: float = 0.0
+var deceleration: float = 0.0
+## The active entity form (EntityForm id; empty until the first entity_form_changed).
+var form: StringName = &""
 ## Direction the input asks for this physics step on the ground (length 0..1, zero when idle). Differs from the
 ## velocity when the body is blocked; PushableObjects reads it to know what is being pushed.
 var move_intent: Vector3 = Vector3.ZERO
@@ -41,6 +50,11 @@ func _ready() -> void:
 		config.identity_pool = IdentityPool.new()
 	# Top-down: no floor or gravity, the body slides on the XZ plane.
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
+	apply_movement_profile()
+	SignalBus.entity_form_changed.connect(_on_entity_form_changed)
+	if database != null:
+		database.tables_loaded.connect(func(_tables: Dictionary) -> void: apply_movement_profile())
+		apply_movement_profile()
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.menu_opened.connect(_on_menu_opened)
 	SignalBus.menu_closed.connect(_on_menu_closed)
@@ -48,8 +62,8 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	var wanted: Vector3 = _wanted_velocity()
-	move_intent = wanted / config.max_speed
-	var rate: float = config.acceleration if wanted != Vector3.ZERO else config.friction
+	move_intent = wanted / maxf(max_speed, 0.001)
+	var rate: float = acceleration if wanted != Vector3.ZERO else deceleration
 	velocity = velocity.move_toward(wanted, rate * delta)
 	velocity.y = 0.0
 	_limit_to_cursor(delta)
@@ -115,10 +129,10 @@ func _wanted_velocity() -> Vector3:
 	match run_manager.state.input_scheme:
 		InputScheme.KEYBOARD, InputScheme.GAMEPAD:
 			var pad: Vector2 = Input.get_vector(config.action_left, config.action_right, config.action_up, config.action_down)
-			return _screen_to_world(pad) * config.max_speed
+			return _screen_to_world(pad) * max_speed
 		InputScheme.MOUSE:
 			var pull: Vector2 = _pointer_direction()
-			return Vector3(pull.x, 0.0, pull.y) * config.max_speed
+			return Vector3(pull.x, 0.0, pull.y) * max_speed
 	return Vector3.ZERO
 
 
@@ -201,3 +215,29 @@ func _announce_contact(delta: float) -> void:
 		var type: StringName = map_loader.data.type_at(map_loader.world_to_cell(probe))
 		SignalBus.narration_event.emit(NarrationEvents.HIT_WALL if type == MapLegend.WALL else NarrationEvents.HIT_UNKNOWN)
 	_touching = touching
+
+
+## Picks the movement of the active form: its DB movement_profile row, else the default row, else PlayerConfig.
+## Called on every form change and every DB (re)load, so tuning in the god window applies during play.
+func apply_movement_profile() -> void:
+	var row: Dictionary = movement_row(String(form))
+	if row.is_empty():
+		row = movement_row(config.default_movement_profile)
+	max_speed = float(row.get("max_speed", config.max_speed))
+	acceleration = float(row.get("acceleration", config.acceleration))
+	deceleration = float(row.get("deceleration", config.friction))
+
+
+## The DB movement_profile row of a profile id, or empty.
+func movement_row(profile: String) -> Dictionary:
+	if database == null or profile == "":
+		return {}
+	for row: Variant in database.rows("movement_profile"):
+		if row is Dictionary and str((row as Dictionary).get("profile", "")) == profile:
+			return row
+	return {}
+
+
+func _on_entity_form_changed(new_form: StringName, _animate: bool) -> void:
+	form = new_form
+	apply_movement_profile()
