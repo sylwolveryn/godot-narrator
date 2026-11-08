@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-08T17:10:00Z'
-updated_date: '2026-11-08T18:28:00Z'
+updated_date: '2026-11-08T18:55:00Z'
 labels:
   - world
   - tools
@@ -36,3 +36,9 @@ A copy of the 200x200 dirt field with mathematically generated floor routes carv
 2. data/maps/m5_shapes.txt, default map settings (fog)
 3. Load/perf check in tools/test_enemies.gd / capture
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+tools/generate_shapes_map.py (seed 5, params in header: plaza r5.5, golden spiral a=3 to r96 w2, rings 18/32/47/62/78/92 widths 1/2, rose r60 k3, Lissajous 86 3:2 phase pi/2, 8 spokes 18-92; diagonal steps carve the corner so routes are 4-connected; connectivity pass joins loose components). data/maps/m5_shapes.txt: 7749 walkable cells all connected to @ (100,100); 6 L, 6 R (on rings, >=25 from spawn), 6 H (>=55), 8 W (>=22), 2 O (>=40), 2 C at (97,98) and (103,102). No map_settings row: default fog look. Check: tools/test_shapes_map.gd (structure, connectivity, load ~3 s, per-frame cost).
+<!-- SECTION:NOTES:END -->
