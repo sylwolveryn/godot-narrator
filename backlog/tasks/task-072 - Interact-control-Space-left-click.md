@@ -1,11 +1,11 @@
 ---
 id: TASK-072
 title: Interact control (Space / left click)
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-08T16:54:00Z'
-updated_date: '2026-11-08T18:12:00Z'
+updated_date: '2026-11-08T18:22:00Z'
 labels:
   - input
   - gameplay
@@ -23,9 +23,9 @@ Objects like the cannon need a generic interact action. Space and left click alr
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 InputMap action interact: Space and left mouse button (and a gamepad button)
-- [ ] #2 When the player stands next to an interactable, press / hold go to that object and the click does not also walk the player; otherwise Space / click keep their old meaning
-- [ ] #3 Interactables register generically (press, hold duration, release) so later objects can reuse it
+- [x] #1 InputMap action interact: Space and left mouse button (and a gamepad button)
+- [x] #2 When the player stands next to an interactable, press / hold go to that object and the click does not also walk the player; otherwise Space / click keep their old meaning
+- [x] #3 Interactables register generically (press, hold duration, release) so later objects can reuse it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -39,3 +39,9 @@ Objects like the cannon need a generic interact action. Space and left click alr
 <!-- SECTION:NOTES:BEGIN -->
 Implemented: scripts/world/interactable.gd, interactables.gd, interact_config.gd, scripts/rendering/interact_hint_view.gd; player.gd pointer suppression; signals interact_focus_changed / interact_hold_changed. Test tools/test_interact.gd PASS.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+interact action (Space, LMB, pad X). Interactable (footprint, reach, press/held/release hooks) + Interactables registry; takes precedence only when something is in reach, the run plays, menu closed, no teleport; click then does not walk. Hint glyph over the player. Tests: test_interact.
+<!-- SECTION:FINAL_SUMMARY:END -->
