@@ -174,6 +174,35 @@ pub struct GlyphAnim {
     pub color_speed: f32,
 }
 
+/// Visibility rules per map (task-069). `map_id` = map file name without extension
+/// (e.g. "m3_dirt"). A map without a row plays with the game's config defaults
+/// (fog on, darkness on, limited reveal radius with line of sight). Negative
+/// numbers also mean "use the game's default".
+#[spacetimedb::table(accessor = map_settings, public)]
+pub struct MapSettings {
+    #[primary_key]
+    pub map_id: String,
+    /// Every drawn cell is seen from the start of each run (live look, no memory look).
+    pub reveal_all: bool,
+    /// Depth fog: the far side of the screen darkens, ambient fades with distance.
+    pub fog_enabled: bool,
+    /// Unlit surroundings; false = full light everywhere, no memory dimming.
+    pub darkness_enabled: bool,
+    /// Cells around the player that get revealed (< 0 = game default 5.5).
+    pub reveal_radius: f32,
+    /// Walls, items and dirt hide what lies behind them.
+    pub line_of_sight: bool,
+    /// Player light radius in world units (< 0 = game default 11).
+    pub player_light_radius: f32,
+    /// Light level of unlit surfaces 0..1.5 (< 0 = game default; wins over darkness_enabled).
+    pub ambient_level: f32,
+}
+
+/// (map_id, reveal_all, fog_enabled, darkness_enabled, reveal_radius, line_of_sight, player_light_radius, ambient_level)
+const SEED_MAP_SETTINGS: &[(&str, bool, bool, bool, f32, bool, f32, f32)] = &[
+    ("m3_dirt", true, false, false, -1.0, true, -1.0, -1.0),
+];
+
 /// Bumped to tell running games to reload their tables. Single row, id = 1.
 #[spacetimedb::table(accessor = config_version, public)]
 pub struct ConfigVersion {
@@ -215,6 +244,8 @@ const SEED_EVENTS: &[(&str, &str)] = &[
     ("ORIGIN_RECANTED", "The origin is recanted"),
     ("TIME", "Time passes"),
     ("SPRINT_UNLOCKED", "First move of a run once sprint is available"),
+    ("WALL_EATEN", "The player eats a dirt wall"),
+    ("WALLS_DEVOURED", "The eaten dirt walls reach the next random milestone"),
 ];
 
 const SEED_LANGUAGES: &[(&str, &str)] = &[
@@ -389,6 +420,20 @@ fn seed(ctx: &ReducerContext) {
             });
         }
     }
+    for (map_id, reveal_all, fog, dark, radius, sight, light, ambient) in SEED_MAP_SETTINGS {
+        if ctx.db.map_settings().map_id().find(map_id.to_string()).is_none() {
+            ctx.db.map_settings().insert(MapSettings {
+                map_id: map_id.to_string(),
+                reveal_all: *reveal_all,
+                fog_enabled: *fog,
+                darkness_enabled: *dark,
+                reveal_radius: *radius,
+                line_of_sight: *sight,
+                player_light_radius: *light,
+                ambient_level: *ambient,
+            });
+        }
+    }
     if ctx.db.avatar_fx().profile().find("default".to_string()).is_none() {
         ctx.db.avatar_fx().insert(default_avatar_fx());
     }
@@ -461,6 +506,10 @@ pub fn reset_defaults(ctx: &ReducerContext) {
     let ids: Vec<String> = ctx.db.avatar_fx().iter().map(|r| r.profile).collect();
     for id in ids {
         ctx.db.avatar_fx().profile().delete(id);
+    }
+    let ids: Vec<String> = ctx.db.map_settings().iter().map(|r| r.map_id).collect();
+    for id in ids {
+        ctx.db.map_settings().map_id().delete(id);
     }
     seed(ctx);
 }

@@ -15,6 +15,8 @@ extends Node
 ##       RevealConfig.memory_to_seen_duration), b = cyan glint at RevealConfig.reveal_glint_at,
 ##   a = 1 when the floor of the cell may be shown (RevealConfig.reveal_floor), else 0.
 ## The world is one merged mesh, so nothing is shown or hidden per node: a cell with r = 0 draws nothing.
+## Per-map rules (task-069, MapSettings from the DB table map_settings): the reveal radius and line of sight, and
+## `reveal_all` (every drawn cell is seen from the start of each run, no memory look). Without a row: RevealConfig.
 
 ## Emitted when cells were seen for the first time this run (the presentation re-picks its static lights).
 signal cells_seen
@@ -31,6 +33,11 @@ const MASK_PARAM := &"reveal_mask"
 @export var map_loader: MapLoader
 @export var player: Player
 @export var save_service: SaveService
+## Optional (task-069): the per-map visibility rules. Without it RevealConfig alone decides.
+@export var settings: MapSettingsResolver
+
+## Rules of the loaded map, resolved over `config` at every begin_run and DB reload.
+var map_settings: MapSettings = MapSettings.new()
 
 ## Cells seen during the current run.
 var seen_this_run: Dictionary[Vector2i, bool] = {}
@@ -64,6 +71,9 @@ func _ready() -> void:
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.player_spawned.connect(_on_player_spawned)
+	SignalBus.dirt_destroyed.connect(_on_dirt_destroyed)
+	if settings != null:
+		settings.settings_changed.connect(_on_settings_changed)
 	if map_loader != null:
 		map_loader.map_built.connect(_on_map_built)
 		if not map_loader.data.is_empty():
@@ -124,6 +134,7 @@ func begin_run() -> void:
 	_remembered.clear()
 	_animations.clear()
 	_last_position = Vector3.INF
+	_resolve_settings()
 	if map_loader == null:
 		return
 	_resize_mask(Vector2i(map_loader.data.width, map_loader.data.height))
@@ -139,15 +150,39 @@ func begin_run() -> void:
 	for cell: Vector2i in map_loader.drawn_cells:
 		var state: CellState = state_of(cell)
 		_set_look(cell, 1.0 if state == CellState.MEMORY else 0.0, 0.0, 0.0)
+	if map_settings.reveal_all:
+		reveal_all()
 	_flush()
+
+
+## Shows every drawn cell as seen at once (no animation, no memory look), announcing what it shows like a normal reveal.
+func reveal_all() -> void:
+	if map_loader == null:
+		return
+	var fresh := PackedVector2Array()
+	for cell: Vector2i in map_loader.drawn_cells:
+		if seen_this_run.has(cell):
+			continue
+		seen_this_run[cell] = true
+		_animations.erase(cell)
+		_set_look(cell, 1.0, 1.0, 0.0)
+		_announce_kind(cell)
+		if not _remembered.has(cell):
+			_remembered[cell] = true
+			fresh.append(Vector2(cell))
+	cells_seen.emit()
+	if not fresh.is_empty():
+		SignalBus.cells_revealed.emit(map_loader.map_id, fresh)
 
 
 ## Reveals every cell whose centre is within the reveal radius of a world position.
 func reveal_around(world_position: Vector3) -> void:
+	if map_settings.reveal_all:
+		return
 	var size: float = map_loader.world_config.cell_size
-	var reach: float = config.reveal_radius * size
+	var reach: float = map_settings.reveal_radius * size
 	var centre: Vector2i = map_loader.world_to_cell(world_position)
-	var span: int = ceili(config.reveal_radius) + 1
+	var span: int = ceili(map_settings.reveal_radius) + 1
 	var fresh := PackedVector2Array()
 	var any_seen: bool = false
 	for dy in range(-span, span + 1):
@@ -159,7 +194,7 @@ func reveal_around(world_position: Vector3) -> void:
 			var distance: float = Vector2(cell_centre.x - world_position.x, cell_centre.z - world_position.z).length()
 			if distance > reach:
 				continue
-			if config.line_of_sight and not SightLine.can_see(map_loader.data, centre, cell, _blockers if not _blockers.is_empty() else config.sight_blockers, config.sight_spread):
+			if map_settings.line_of_sight and not SightLine.can_see(map_loader.data, centre, cell, _blockers if not _blockers.is_empty() else config.sight_blockers, config.sight_spread):
 				continue
 			var from_memory: bool = _remembered.has(cell)
 			seen_this_run[cell] = true
@@ -194,6 +229,24 @@ func _on_run_ended(_cause: StringName) -> void:
 
 func _on_map_built(_data: MapData) -> void:
 	begin_run()
+
+
+func _resolve_settings() -> void:
+	map_settings = MapSettings.resolve(settings.current_row() if settings != null else {}, config, null)
+
+
+## The DB was reloaded: new radius / sight rules apply from the next move; a map that became reveal_all shows at once.
+func _on_settings_changed() -> void:
+	_resolve_settings()
+	if map_settings.reveal_all and map_loader != null and not map_loader.data.is_empty():
+		reveal_all()
+		_flush()
+	_last_position = Vector3.INF
+
+
+## A dirt cell opened (task-070): what lies behind it may be in sight now, so the next physics step reveals again.
+func _on_dirt_destroyed(_map_id: StringName, _cell: Vector2i, _cause: StringName) -> void:
+	_last_position = Vector3.INF
 
 
 ## Announces, once per run, the first revealed cell of each type that has a narration event.

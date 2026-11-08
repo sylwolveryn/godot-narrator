@@ -482,7 +482,7 @@ func _collect_cells() -> void:
 			if Vector2(at.x - _anchor.x, at.z - _anchor.z).length() > config.source_radius:
 				continue
 			var type: StringName = map_loader.data.type_at(cell)
-			if type == MapLegend.WALL:
+			if type == MapLegend.WALL or type == MapLegend.DIRT:
 				_cells_wall.append(Vector2(at.x, at.z))
 			elif type == MapLegend.FLOOR or type == MapLegend.SPAWN:
 				_cells_floor.append(Vector2(at.x, at.z))

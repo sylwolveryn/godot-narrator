@@ -41,3 +41,7 @@ extends Resource
 @export var discovered_types: PackedStringArray = PackedStringArray()
 ## Cells walked since the last step gain (0..LanguageConfig.tiles_per_percent - 1).
 @export var language_step_remainder: int = 0
+## Dirt walls (task-070). Written ONLY by DirtWalls. Dirt cells eaten ever, on every map.
+@export var walls_eaten: int = 0
+## walls_eaten value at which WALLS_DEVOURED fires next (0 = not rolled yet).
+@export var next_devour_at: int = 0

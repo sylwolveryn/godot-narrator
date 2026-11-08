@@ -6,7 +6,7 @@ extends Resource
 @export var reveal_radius: float = 5.5
 ## Only cells the player can see are revealed: cells of these types hide what lies behind them (they are seen themselves).
 @export var line_of_sight: bool = true
-@export var sight_blockers: Array[StringName] = [MapLegend.WALL, MapLegend.ITEM, MapLegend.VOID]
+@export var sight_blockers: Array[StringName] = [MapLegend.WALL, MapLegend.ITEM, MapLegend.VOID, MapLegend.DIRT]
 ## Sideways offset (cells) of the two extra sight rays; a cell is seen when any of the three rays gets through.
 @export_range(0.0, 0.49) var sight_spread: float = 0.35
 ## When false the floor surfaces are never drawn: only walls, items and hazards appear.

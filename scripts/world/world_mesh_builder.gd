@@ -9,6 +9,9 @@ extends RefCounted
 ## Per vertex (carved-stone look, task-036): COLOR.g = edge bits / EDGE_DIV for wall faces (top face: bit0 -x,
 ## bit1 +x, bit2 -z, bit3 +z side has no wall neighbour; side face: bit0 / bit1 = low / high end of the face is a
 ## free corner), COLOR.b = 1 on the floor quad under a wall (the shader samples wall-region light data there).
+## COLOR.a marks dirt (task-070): 1 = not dirt, DIRT_MARK = a dirt block of a chunk mesh (cell from UV), DIRT_LOOSE = a
+## crumbling dirt block drawn alone (cell from the instance origin). Dirt cells get only their floor quad in the world
+## mesh; their blocks live in chunk meshes (build_dirt_chunk) so destroying a cell rebuilds one chunk, not the world.
 
 ## Triangle vertex order of a quad (a, b, c, d).
 const QUAD_ORDER: Array[int] = [0, 1, 2, 0, 2, 3]
@@ -18,6 +21,10 @@ const SIDE_STEPS: Array[Vector2i] = [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0
 const EDGE_DIV: float = 16.0
 ## COLOR.b of the vertices of a small object (a wall cell's floor quad uses 1.0, everything else 0.0).
 const FREE_STANDING: float = 0.5
+## COLOR.a of dirt vertices (glyph_surface.gdshader DIRT_MARK_MAX / DIRT_LOOSE_MAX).
+const NOT_DIRT: float = 1.0
+const DIRT_MARK: float = 0.5
+const DIRT_LOOSE: float = 0.25
 const CORRUPT_SEED_A: float = 12.9898
 const CORRUPT_SEED_B: float = 78.233
 const CORRUPT_SEED_SALT: float = 37.719
@@ -33,6 +40,8 @@ var _edge_bits: int = 0
 var _under_wall: bool = false
 ## Vertex marker COLOR.b = FREE_STANDING for a small object (wall-type surface that is not part of a wall cell).
 var _free_standing: bool = false
+## Vertex COLOR.a (dirt marker).
+var _alpha: float = NOT_DIRT
 
 
 ## Mesh of the whole map; null for an empty map.
@@ -102,6 +111,83 @@ func build_object(config: WorldConfig) -> ArrayMesh:
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
+
+
+## Mesh of the dirt blocks inside `rect` (task-070): a wall-high block per DIRT cell with its top and the side faces that
+## look onto a cell that is neither wall nor dirt (faces between solid cells are never drawn). Top edge bits mark the
+## open sides (rims). Null when the rect holds no dirt. Cost ~ cells of the rect; a full 16 x 16 chunk is 256 tops.
+func build_dirt_chunk(map: MapData, rect: Rect2i, config: WorldConfig) -> ArrayMesh:
+	_begin(config)
+	_alpha = DIRT_MARK
+	for y in range(rect.position.y, rect.end.y):
+		for x in range(rect.position.x, rect.end.x):
+			_cell = Vector2i(x, y)
+			if map.type_at(_cell) != MapLegend.DIRT:
+				continue
+			var s: float = _config.cell_size
+			var o: Vector3 = _origin() + Vector3(s, 0, s) * 0.5
+			var top_bits: int = 0
+			for i in SIDE_STEPS.size():
+				if not _is_solid(map, _cell + SIDE_STEPS[i]):
+					top_bits |= 1 << i
+			_edge_bits = top_bits
+			_quad_top(o, s)
+			_edge_bits = 0
+			if top_bits & 2:
+				_box_side_x(o, s)
+			if top_bits & 8:
+				_box_side_z(o, s)
+			if top_bits & 1:
+				_box_side_nx(o, s)
+			if top_bits & 4:
+				_box_side_nz(o, s)
+	_alpha = NOT_DIRT
+	return _finish()
+
+
+## Mesh of ONE loose dirt block (the crumble of an eaten cell), centred on the origin, standing on y = 0, a hair smaller
+## than a cell so it never fights with the neighbouring faces. All four top edges are rims.
+func build_dirt_block(config: WorldConfig, shrink: float) -> ArrayMesh:
+	_begin(config)
+	_alpha = DIRT_LOOSE
+	_cell = Vector2i.ZERO
+	var half: float = config.cell_size * 0.5 * shrink
+	_edge_bits = 15
+	_quad(Vector3(-half, config.wall_height, -half), Vector3(half, config.wall_height, -half), Vector3(half, config.wall_height, half), Vector3(-half, config.wall_height, half), Vector3.UP, GlyphSurfaceType.WALL)
+	_edge_bits = 0
+	_box(0.0, 0.0, 0.0, config.wall_height, half, half, GlyphSurfaceType.WALL, true, true)
+	_alpha = NOT_DIRT
+	return _finish()
+
+
+func _begin(config: WorldConfig) -> void:
+	_config = config
+	_positions.clear()
+	_normals.clear()
+	_colors.clear()
+	_uvs.clear()
+	_edge_bits = 0
+	_under_wall = false
+	_free_standing = false
+
+
+func _finish() -> ArrayMesh:
+	if _positions.is_empty():
+		return null
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = _positions
+	arrays[Mesh.ARRAY_NORMAL] = _normals
+	arrays[Mesh.ARRAY_COLOR] = _colors
+	arrays[Mesh.ARRAY_TEX_UV] = _uvs
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+func _is_solid(map: MapData, cell: Vector2i) -> bool:
+	var type: StringName = map.type_at(cell)
+	return type == MapLegend.WALL or type == MapLegend.DIRT
 
 
 ## Number of triangles of the last build.
@@ -263,7 +349,7 @@ func _box(cx: float, cz: float, y0: float, y1: float, hx: float, hz: float, type
 func _vertex(p: Vector3, n: Vector3, type: int) -> void:
 	_positions.append(p)
 	_normals.append(n)
-	_colors.append(Color(float(type) / GlyphSurfaceType.TYPE_DIV, float(_edge_bits) / EDGE_DIV, 1.0 if _under_wall else (FREE_STANDING if _free_standing else 0.0), 1.0))
+	_colors.append(Color(float(type) / GlyphSurfaceType.TYPE_DIV, float(_edge_bits) / EDGE_DIV, 1.0 if _under_wall else (FREE_STANDING if _free_standing else 0.0), _alpha))
 	_uvs.append(Vector2(_cell))
 
 

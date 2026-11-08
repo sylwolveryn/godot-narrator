@@ -11,13 +11,16 @@ const CELL_PX: int = 32
 const FONT_PX: int = 28
 ## Share of the font size the baseline sits below the cell centre.
 const BASELINE_DROP: float = 0.34
+## Atlas row of the dirt glyphs (glyph_surface.gdshader DIRT_ROW).
+const DIRT_ROW: int = 5
 const ATLAS_PATH: String = "res://resources/glyphs/glyph_atlas.png"
-## Row strings, COLUMNS chars each (space = blank). Rows 0-4 follow GlyphSurfaceType; row 5 is special.
+## Row strings, COLUMNS chars each (space = blank). Rows 0-4 follow GlyphSurfaceType; row 5 is the dirt ramp (task-070,
+## dirt blocks are wall-type surfaces drawn from this row; it replaced an unused "special" row).
 const ROW_GLYPHS: Array[String] = [
 	" .:+xX#M",   # wall
 	" .,:;+o0",   # floor
 	" '^!AVW#",   # spikes
 	" `~?%&$#",   # corruption
 	" 1l0I|8B",   # item
-	"@*o+xO^&",   # special
+	" .,:;o%&",   # dirt
 ]

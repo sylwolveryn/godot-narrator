@@ -28,6 +28,10 @@
 // lit at the hit point, so no glyph is ever split between two surfaces. clarity 0 skips all of it (the old look).
 // Cost when on: 1 layer_map fetch per floor/hazard cell, plus <= LAYER_SAMPLES_MAX fetches and ~20 ALU each only on
 // cells within layer reach of a layered object (layer_map.a); walls are never layered.
+//
+// Dirt walls (task-070): wall-type blocks marked by COLOR.a (< DIRT_MARK_MAX; < DIRT_LOOSE_MAX = a loose crumbling block
+// whose cell comes from its origin). They draw the dirt glyph row of the atlas with the earthy dirt palette and lumpy
+// per-glyph variation instead of masonry, and never take part in the glyph animation. Cost on non-dirt: one compare.
 shader_type spatial;
 render_mode unshaded, cull_back, depth_draw_opaque, fog_disabled;
 
@@ -51,6 +55,9 @@ const int LAYER_TYPES = 8;
 const vec2 LAYER_SALT = vec2(41.7, 13.3); // hash salt of the per-cell layered pick
 const float FLOOR_HASH_N = 2.9;          // dot(up, (1.7, 2.9, 3.3)): the old floor glyph hash, kept for layered cells
 const float RAY_EPS = 0.0001;
+const float DIRT_MARK_MAX = 0.75;       // COLOR.a below this = dirt (WorldMeshBuilder.DIRT_MARK)
+const float DIRT_LOOSE_MAX = 0.375;      // below this = a loose dirt block (WorldMeshBuilder.DIRT_LOOSE)
+const float DIRT_ROW = 5.0;              // atlas row of the dirt glyphs (GlyphAtlasSpec.DIRT_ROW)
 const int MAX_WAVES = 8;                 // TeleportView.MAX_WAVES
 const float WAVE_REACH = 2.5;            // a wave band is skipped beyond this many band widths
 
@@ -74,6 +81,7 @@ uniform vec4 light_pos[MAX_LIGHTS];      // xyz position, w radius
 uniform vec4 light_col[MAX_LIGHTS];      // rgb colour * intensity
 uniform int light_count = 1;
 uniform float ambient_level = 0.30;
+uniform vec3 ambient_color = vec3(0.55, 0.65, 1.0);   // colour of the ambient light (warmer on maps without darkness)
 uniform float tint_mix = 0.75;
 uniform float memory_dim = 0.35;
 uniform float memory_saturation = 0.25;
@@ -114,6 +122,9 @@ uniform vec4 anim_speed[TYPE_COUNT];     // x character changes / s, y palette c
 uniform vec4 anim_palette[30];           // TYPE_COUNT * ANIM_PAL colours
 uniform vec2 anim_brightness = vec2(0.55, 1.25);   // brightness of an animated glyph unlit / fully lit
 // Layered clarity (task-066, GlyphWorldView): see the header.
+uniform vec3 dirt_dark = vec3(0.20, 0.12, 0.06);     // dirt palette (DirtConfig), unlit
+uniform vec3 dirt_bright = vec3(0.66, 0.42, 0.20);   // lit
+uniform float dirt_variation = 0.38;                 // per-glyph brightness variation of dirt
 uniform float clarity = 0.0;
 uniform sampler2D layer_map : filter_nearest, repeat_disable;   // r order/type code, g height / layer_params.x, b half extent * 2 (cell fraction), a 1 = near a layered box
 uniform vec2 layer_params = vec2(1.0, 4.0);   // x ray height (world units, also the g scale), y ray samples
@@ -133,7 +144,8 @@ varying flat vec2 v_cell;
 varying flat vec3 v_axu;
 varying flat vec3 v_axv;
 varying flat vec3 v_origin;              // model origin (the centre of a small object)
-varying flat vec2 v_cellsize;            // glyph cell width / height in world units along v_axu / v_axv
+varying flat vec2 v_cellsize;
+varying flat float v_dirt;               // 1 on dirt blocks            // glyph cell width / height in world units along v_axu / v_axv
 varying vec3 w_pos;
 
 float hash12(vec2 p) {
@@ -151,8 +163,9 @@ void vertex() {
 	v_under = COLOR.b;
 	v_origin = MODEL_MATRIX[3].xyz;
 	v_cell = UV;
-	if (COLOR.b > 0.25 && COLOR.b < 0.75) {
-		v_cell = floor(v_origin.xz / vis_params.z);   // small object: the cell its centre is in
+	v_dirt = COLOR.a < DIRT_MARK_MAX ? 1.0 : 0.0;
+	if ((COLOR.b > 0.25 && COLOR.b < 0.75) || COLOR.a < DIRT_LOOSE_MAX) {
+		v_cell = floor(v_origin.xz / vis_params.z);   // small object / loose dirt block: the cell its centre is in
 	}
 	vec3 cam_right = INV_VIEW_MATRIX[0].xyz;
 	vec3 to_cam = INV_VIEW_MATRIX[2].xyz;
@@ -172,6 +185,7 @@ void vertex() {
 
 void fragment() {
 	int t = int(v_type * TYPE_DIV + 0.5);
+	bool dirt = v_dirt > 0.5;
 	float cs = vis_params.z;
 	vec3 n = w_nrm;
 	bool top = abs(n.y) > TOP_NORMAL_Y;
@@ -308,7 +322,7 @@ void fragment() {
 	// light at the cell centre
 	float face_amb = top ? (t == T_WALL ? wall_top_ambient : 1.0) : (n.z > 0.5 ? 0.7 : 0.45);
 	float depth_k = smoothstep(depth_near, depth_far, length(pc.xz - light_pos[0].xz));
-	vec3 lit = vec3(0.55, 0.65, 1.0) * ambient_level * face_amb * mix(1.0, depth_ambient_min, depth_k);
+	vec3 lit = ambient_color * ambient_level * face_amb * mix(1.0, depth_ambient_min, depth_k);
 	vec3 lights = vec3(0.0);
 	for (int i = 0; i < MAX_LIGHTS; i++) {
 		if (i >= light_count) {
@@ -343,6 +357,9 @@ void fragment() {
 		float seam = (bf.x < seam_width || bf.y < seam_width) ? 1.0 : 0.0;
 		float bvar = hash12(vec2(floor(su), course) + vec2(float(t) * 3.7, dot(abs(n), vec3(1.3, 2.1, 4.7))));
 		stone = (1.0 + (bvar - 0.5) * 2.0 * block_variation) * mix(1.0, seam_dim, seam);
+		if (dirt) {
+			stone = 1.0 + (h - 0.5) * 2.0 * dirt_variation;   // lumpy earth, no masonry
+		}
 		if (t == T_WALL && !cl) {
 			int fl = int(v_flags * EDGE_DIV + 0.5);
 			bool free_stand = v_under > 0.25;
@@ -403,7 +420,8 @@ void fragment() {
 	float s = clamp(b, 0.0, 0.999);
 	float idx = min(1.0 + floor(pow(s, 0.65) * (ATLAS_COLS - 1.0)), ATLAS_COLS - 1.0);
 
-	vec2 auv = vec2((idx + 0.5 + (loc.x - 0.5) * glyph_crop) / ATLAS_COLS, (float(t) + 0.03 + loc.y * 0.94) / ATLAS_ROWS);
+	float row = dirt ? DIRT_ROW : float(t);
+	vec2 auv = vec2((idx + 0.5 + (loc.x - 0.5) * glyph_crop) / ATLAS_COLS, (row + 0.03 + loc.y * 0.94) / ATLAS_ROWS);
 	vec2 sc = vec2(glyph_crop / ATLAS_COLS, 0.94 / ATLAS_ROWS);
 	float cov = textureGrad(glyph_atlas, auv, dFdx(uv) * sc, dFdy(uv) * sc).r;
 	cov = clamp((cov - 0.08) * 1.5, 0.0, 1.0);
@@ -412,6 +430,10 @@ void fragment() {
 	cov *= grow * step(memory_dropout * mem, hg);
 
 	vec3 pal = mix(pal_dark[t].rgb, pal_bright[t].rgb, smoothstep(0.08, 0.85, s));
+	vec3 pal_lo = dirt ? dirt_dark : pal_dark[t].rgb;
+	if (dirt) {
+		pal = mix(dirt_dark, dirt_bright, smoothstep(0.08, 0.85, s));
+	}
 	if (t == T_CORRUPT) {
 		float k = 0.5 + 0.5 * sin(TIME * 0.35 + (hp.x + hp.z) * 0.8 + h * 3.0);
 		pal = mix(corrupt_hue_a, corrupt_hue_b, k);
@@ -422,7 +444,7 @@ void fragment() {
 	// DB-driven glyph animation: near the player more (or fewer, per the table) glyphs of a live cell swap to cycling
 	// characters whose colour blends through the surface's palette. Decided per glyph cell and per tick.
 	vec4 ap = anim_params[t];
-	if (ap.w > 0.5 && seen > 0.5) {
+	if (ap.w > 0.5 && seen > 0.5 && !dirt) {
 		float prox = 1.0 - smoothstep(0.0, max(ap.z, 0.001), length(pc.xz - light_pos[0].xz));
 		vec4 sp = anim_speed[t];
 		float tick = floor(TIME * sp.x + h * 17.0);
@@ -438,7 +460,7 @@ void fragment() {
 			cov = acov;
 		}
 	}
-	vec3 fill = pal_dark[t].rgb * (0.05 + 0.10 * s) * (top ? 1.0 : 0.8) * grow;
+	vec3 fill = pal_lo * (0.05 + 0.10 * s) * (top ? 1.0 : 0.8) * grow;
 	vec3 c = col + fill;
 
 	// Memory: remembered cells (g = 0) are dim and desaturated, they turn live as g grows.

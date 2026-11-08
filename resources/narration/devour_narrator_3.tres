@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_xhi0t"]
+
+[resource]
+script = ExtResource("1_xhi0t")
+id = "devour_narrator_3"
+text = "Feed your hunger, one more time"
+event = &"WALLS_DEVOURED"
+once = false
+mood = &"pulse"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 32

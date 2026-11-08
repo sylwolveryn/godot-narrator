@@ -78,6 +78,7 @@ func _init() -> void:
 	ok = _save(LanguageConfig.new(), "language_config.tres") and ok
 	# Teleports (task-068): trip timeline, camera drive, colour waves, pad look.
 	ok = _save(TeleportConfig.new(), "teleport_config.tres") and ok
+	ok = _save(DirtConfig.new(), "dirt_config.tres") and ok
 
 	quit(0 if ok else 1)
 

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_4p62w"]
+
+[resource]
+script = ExtResource("1_4p62w")
+id = "devour_narrator_1"
+text = "Still hungry, still feeding yourself, still on the hunt to find the truth.. but are you sure this is the answer?"
+event = &"WALLS_DEVOURED"
+once = false
+mood = &"low_drone"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 30

@@ -92,6 +92,14 @@
 		{
 			"id": "SPRINT_UNLOCKED",
 			"description": "First move of a run once sprint is available"
+		},
+		{
+			"id": "WALL_EATEN",
+			"description": "The player eats a dirt wall"
+		},
+		{
+			"id": "WALLS_DEVOURED",
+			"description": "The eaten dirt walls reach the next random milestone"
 		}
 	],
 	"language_def": [
@@ -1788,6 +1796,150 @@
 			"triggered": 0,
 			"text_path": "narration/event/SPRINT_UNLOCKED_JP_KANA.json",
 			"sound_path": "narration/event/SPRINT_UNLOCKED_JP_KANA.mp3"
+		},
+		{
+			"id": 208,
+			"event": "WALL_EATEN",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_EN_GB.json",
+			"sound_path": "narration/event/WALL_EATEN_EN_GB.mp3"
+		},
+		{
+			"id": 209,
+			"event": "WALL_EATEN",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_HU_HU.json",
+			"sound_path": "narration/event/WALL_EATEN_HU_HU.mp3"
+		},
+		{
+			"id": 210,
+			"event": "WALL_EATEN",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_ALIEN.json",
+			"sound_path": "narration/event/WALL_EATEN_ALIEN.mp3"
+		},
+		{
+			"id": 211,
+			"event": "WALL_EATEN",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_MATRIX.json",
+			"sound_path": "narration/event/WALL_EATEN_MATRIX.mp3"
+		},
+		{
+			"id": 212,
+			"event": "WALL_EATEN",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_DREAM.json",
+			"sound_path": "narration/event/WALL_EATEN_DREAM.mp3"
+		},
+		{
+			"id": 213,
+			"event": "WALL_EATEN",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_DE_DE.json",
+			"sound_path": "narration/event/WALL_EATEN_DE_DE.mp3"
+		},
+		{
+			"id": 214,
+			"event": "WALL_EATEN",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_RU_RU.json",
+			"sound_path": "narration/event/WALL_EATEN_RU_RU.mp3"
+		},
+		{
+			"id": 215,
+			"event": "WALL_EATEN",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_JP_HAN.json",
+			"sound_path": "narration/event/WALL_EATEN_JP_HAN.mp3"
+		},
+		{
+			"id": 216,
+			"event": "WALL_EATEN",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_JP_KANA.json",
+			"sound_path": "narration/event/WALL_EATEN_JP_KANA.mp3"
+		},
+		{
+			"id": 217,
+			"event": "WALLS_DEVOURED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_EN_GB.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_EN_GB.mp3"
+		},
+		{
+			"id": 218,
+			"event": "WALLS_DEVOURED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_HU_HU.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_HU_HU.mp3"
+		},
+		{
+			"id": 219,
+			"event": "WALLS_DEVOURED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_ALIEN.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_ALIEN.mp3"
+		},
+		{
+			"id": 220,
+			"event": "WALLS_DEVOURED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_MATRIX.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_MATRIX.mp3"
+		},
+		{
+			"id": 221,
+			"event": "WALLS_DEVOURED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_DREAM.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_DREAM.mp3"
+		},
+		{
+			"id": 222,
+			"event": "WALLS_DEVOURED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_DE_DE.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_DE_DE.mp3"
+		},
+		{
+			"id": 223,
+			"event": "WALLS_DEVOURED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_RU_RU.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_RU_RU.mp3"
+		},
+		{
+			"id": 224,
+			"event": "WALLS_DEVOURED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_JP_HAN.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_JP_HAN.mp3"
+		},
+		{
+			"id": 225,
+			"event": "WALLS_DEVOURED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_JP_KANA.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_JP_KANA.mp3"
 		}
 	],
 	"glyph_anim": [
@@ -1940,6 +2092,18 @@
 		{
 			"language": "JP_KANA",
 			"understanding": 0.0
+		}
+	],
+	"map_settings": [
+		{
+			"map_id": "m3_dirt",
+			"reveal_all": true,
+			"fog_enabled": false,
+			"darkness_enabled": false,
+			"reveal_radius": -1.0,
+			"line_of_sight": true,
+			"player_light_radius": -1.0,
+			"ambient_level": -1.0
 		}
 	]
 }

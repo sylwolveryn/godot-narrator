@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_mxcia"]
+
+[resource]
+script = ExtResource("1_mxcia")
+id = "dirt_world_crumble"
+text = "Crumble, dust, destroyed"
+event = &"WALL_EATEN"
+mood = &"static"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 29
+layer = 0

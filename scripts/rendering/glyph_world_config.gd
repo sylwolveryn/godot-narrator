@@ -14,6 +14,12 @@ extends Resource
 @export_group("Light and colour")
 ## Light level of unlit surfaces.
 @export_range(0.0, 1.0) var ambient_level: float = 0.58
+## Colour of the ambient light (cool blue: the dark around the player light).
+@export var ambient_color: Color = Color(0.55, 0.65, 1.0)
+## Maps without darkness (task-069, DB map_settings.darkness_enabled = false): the ambient level and colour used
+## instead, so everything reads as fully lit.
+@export_range(0.0, 1.5) var full_light_ambient: float = 0.62
+@export var full_light_color: Color = Color(0.95, 0.92, 0.86)
 ## How strongly the light colour tints floor and wall glyphs (0 = palette only).
 @export_range(0.0, 1.0) var tint_mix: float = 0.75
 ## Per surface type (GlyphSurfaceType order: wall, floor, spikes, corruption, item).

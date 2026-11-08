@@ -19,6 +19,9 @@ const JUMP_CELLS: int = 2
 ## Layer map encoding (glyph_surface.gdshader LAYER_TYPES / LAYER_CODE): r = (order * LAYER_TYPES + type) / LAYER_CODE.
 const LAYER_TYPES: int = 8
 const LAYER_CODE: float = 255.0
+## Neutral values of the fog / memory uniforms on maps without fog or darkness (task-069): factor 1, amount 0.
+const FULL: float = 1.0
+const NONE: float = 0.0
 
 @export var config: GlyphWorldConfig
 @export var map_loader: MapLoader
@@ -27,9 +30,13 @@ const LAYER_CODE: float = 255.0
 @export var map_reveal: MapReveal
 ## Optional. Pushable objects take part in the layered clarity as items / objects do.
 @export var pushables: PushableObjects
+## Optional (task-069): the per-map visibility rules (fog, darkness, player light radius). Without it the config values apply.
+@export var settings: MapSettingsResolver
 
 ## The material being fed (the loader's surface material).
 var material: ShaderMaterial
+## Visibility rules of the loaded map (task-069), resolved over `config` on every map build and DB reload.
+var map_settings: MapSettings = MapSettings.new()
 
 var _map: MapData
 var _sources: Array[GlyphLightSource] = []
@@ -64,6 +71,10 @@ func _ready() -> void:
 		pushables.objects_reset.connect(_rebuild_layer_map)
 	if map_reveal != null:
 		map_reveal.cells_seen.connect(_on_cells_seen)
+	if settings != null:
+		settings.settings_changed.connect(apply_static)
+	SignalBus.dirt_destroyed.connect(_on_dirt_destroyed)
+	SignalBus.dirt_restored.connect(_on_dirt_restored)
 	if map_loader != null:
 		map_loader.map_built.connect(_on_map_built)
 		if not map_loader.data.is_empty():
@@ -83,14 +94,19 @@ func _process(delta: float) -> void:
 	_step_fades(delta)
 	if _visibility != null:
 		_visibility.step(delta)
-	_light_pos[PLAYER_LIGHT_SLOT] = Vector4(pos.x, config.player_light_height, pos.z, config.player_light_radius)
+	_light_pos[PLAYER_LIGHT_SLOT] = Vector4(pos.x, config.player_light_height, pos.z, map_settings.player_light_radius)
 	material.set_shader_parameter(&"light_pos", _light_pos)
 
 
-## Pushes the static look of the config into the material.
+## Pushes the static look of the config into the material, with the visibility rules of the loaded map (task-069):
+## no fog = no screen-top darkening and no ambient fade with distance; no darkness = full ambient light and remembered
+## cells drawn like seen ones. A map without a map_settings row gets exactly the config values.
 func apply_static() -> void:
+	map_settings = MapSettings.resolve(settings.current_row() if settings != null else {}, null, config)
 	if material == null:
 		return
+	var fog: bool = map_settings.fog_enabled
+	var gloom: bool = map_settings.darkness_enabled
 	var dark := PackedVector4Array()
 	var bright := PackedVector4Array()
 	for i in GlyphSurfaceType.COUNT:
@@ -105,15 +121,16 @@ func apply_static() -> void:
 	material.set_shader_parameter(&"cell_screen", config.cell_screen)
 	material.set_shader_parameter(&"cell_aspect", config.cell_aspect)
 	material.set_shader_parameter(&"glyph_crop", config.glyph_crop)
-	material.set_shader_parameter(&"ambient_level", config.ambient_level)
+	material.set_shader_parameter(&"ambient_level", map_settings.ambient_level)
+	material.set_shader_parameter(&"ambient_color", _rgb(map_settings.ambient_color))
 	material.set_shader_parameter(&"tint_mix", config.tint_mix)
-	material.set_shader_parameter(&"memory_dim", config.memory_dim)
-	material.set_shader_parameter(&"memory_saturation", config.memory_saturation)
-	material.set_shader_parameter(&"memory_tint", _rgb(config.memory_tint))
-	material.set_shader_parameter(&"memory_density", config.memory_density)
-	material.set_shader_parameter(&"memory_dropout", config.memory_dropout)
-	material.set_shader_parameter(&"memory_emit", config.memory_emit)
-	material.set_shader_parameter(&"memory_floor", config.memory_floor)
+	material.set_shader_parameter(&"memory_dim", config.memory_dim if gloom else FULL)
+	material.set_shader_parameter(&"memory_saturation", config.memory_saturation if gloom else FULL)
+	material.set_shader_parameter(&"memory_tint", _rgb(config.memory_tint) if gloom else Vector3.ONE)
+	material.set_shader_parameter(&"memory_density", config.memory_density if gloom else FULL)
+	material.set_shader_parameter(&"memory_dropout", config.memory_dropout if gloom else NONE)
+	material.set_shader_parameter(&"memory_emit", config.memory_emit if gloom else FULL)
+	material.set_shader_parameter(&"memory_floor", config.memory_floor if gloom else NONE)
 	material.set_shader_parameter(&"reveal_spread", config.reveal_spread)
 	material.set_shader_parameter(&"light_falloff_sharp", config.light_falloff_sharp)
 	material.set_shader_parameter(&"wall_block", config.wall_block_size)
@@ -129,8 +146,8 @@ func apply_static() -> void:
 	material.set_shader_parameter(&"wall_top_ambient", config.wall_top_ambient)
 	material.set_shader_parameter(&"depth_near", config.depth_near)
 	material.set_shader_parameter(&"depth_far", config.depth_far)
-	material.set_shader_parameter(&"depth_ambient_min", config.depth_ambient_min)
-	material.set_shader_parameter(&"fog_strength", config.fog_strength)
+	material.set_shader_parameter(&"depth_ambient_min", config.depth_ambient_min if fog else FULL)
+	material.set_shader_parameter(&"fog_strength", config.fog_strength if fog else NONE)
 	material.set_shader_parameter(&"fog_start", config.fog_start)
 	if map_loader != null and map_loader.world_config != null:
 		material.set_shader_parameter(&"wall_height", map_loader.world_config.wall_height)
@@ -220,6 +237,32 @@ func _apply_clarity() -> void:
 	material.set_shader_parameter(&"layer_params", Vector2(_layer_height, float(config.layer_ray_samples)))
 	if _layer_texture != null:
 		material.set_shader_parameter(&"layer_map", _layer_texture)
+
+
+## A dirt cell was destroyed (task-070): light now passes it. Re-bakes the static lights that reach it and lets the player
+## light recompute its shadows (blended, as on a cell change).
+func _on_dirt_destroyed(_map_id: StringName, cell: Vector2i, _cause: StringName) -> void:
+	_refresh_occlusion(cell, false)
+
+
+## Destroyed dirt cells are solid again (run start): the static lights that reach them are re-baked.
+func _on_dirt_restored(cells: Array[Vector2i]) -> void:
+	for cell in cells:
+		_refresh_occlusion(cell, false)
+
+
+func _refresh_occlusion(cell: Vector2i, everywhere: bool) -> void:
+	if _map == null or map_loader == null or map_loader.world_config == null:
+		return
+	var world: WorldConfig = map_loader.world_config
+	for src in _sources:
+		if not everywhere and Vector2(src.origin_cell - cell).length() > src.radius / world.cell_size + 1.0:
+			continue
+		src.bake_visibility(_map, world, config.occlusion_penumbra)
+		var slot: int = _slots.find(src)
+		if slot >= 0 and config.occlusion_enabled and _visibility != null:
+			_visibility.assign(PLAYER_LIGHT_SLOT + 1 + slot, src.visibility)
+	_dirty = true
 
 
 func _on_object_moved(_object_id: int, _from_cell: Vector2i, _to_cell: Vector2i, _form: StringName) -> void:
@@ -365,7 +408,7 @@ func _update_player_visibility(cell: Vector2i) -> void:
 		return
 	var world: WorldConfig = map_loader.world_config
 	var values: Dictionary[Vector2i, float] = GlyphLightOcclusion.compute(
-			_map, cell, config.player_light_radius / world.cell_size, config.occlusion_penumbra)
+			_map, cell, map_settings.player_light_radius / world.cell_size, config.occlusion_penumbra)
 	var moved: int = maxi(absi(cell.x - _player_vis_cell.x), absi(cell.y - _player_vis_cell.y))
 	_player_vis_cell = cell
 	if moved > JUMP_CELLS:

@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="DirtConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/dirt_config.gd" id="1_65xdf"]
+
+[resource]
+script = ExtResource("1_65xdf")
+fragment_font_names = PackedStringArray("Consolas", "Courier New", "monospace")

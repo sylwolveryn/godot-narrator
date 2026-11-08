@@ -13,4 +13,4 @@ mood = &"chime"
 supports = PackedStringArray("angelic")
 contradicts = PackedStringArray()
 role = 1
-order = 31
+order = 37

@@ -201,7 +201,7 @@ func _build_source_map() -> void:
 		for x in data.width:
 			var type: StringName = data.type_at(Vector2i(x, y))
 			var value: int = 0
-			if type == MapLegend.WALL:
+			if type == MapLegend.WALL or type == MapLegend.DIRT:
 				value = SOURCE_WALL
 			elif type != MapLegend.VOID:
 				value = SOURCE_FLOOR

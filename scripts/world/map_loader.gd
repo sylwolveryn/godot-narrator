@@ -129,6 +129,8 @@ func parse_text(text: String) -> MapData:
 
 	# Multi-cell props (task-058): adjacent cells of one large type merge into rectangles; their cells keep the type.
 	map.large_objects = LargeObjectMerger.merge(map, legend.large_objects)
+	# Dirt (task-070) blocks light like a wall until DirtWalls destroys it (its cell turns into floor).
+	map.light_blocking_types[MapLegend.DIRT] = true
 	for type: StringName in legend.large_objects:
 		var def: LargeObjectDef = legend.large_objects[type]
 		if def != null and def.blocks_light:

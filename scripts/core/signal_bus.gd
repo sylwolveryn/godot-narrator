@@ -97,3 +97,13 @@ signal teleport_started(from_centre: Vector3, candidates: Array[Vector3], chosen
 signal teleport_arrived(centre: Vector3, candidate_count: int)
 ## Emitted by TeleportSystem when the trip is over (or was cut short by the run ending); movement is free again.
 signal teleport_finished
+
+## Dirt walls (task-070). The ONE way to remove a dirt cell: anyone (the player eating it, later a cannon ball) asks
+## with the cell and a cause (DirtWalls.CAUSE_EATEN, ...); DirtWalls (the only writer of the dirt state) destroys it
+## when it is still dirt.
+signal dirt_destroy_requested(cell: Vector2i, cause: StringName)
+## Emitted by DirtWalls when a dirt cell was destroyed and is floor now (collision, sight and light already updated in
+## the map data). Presentation and the light / reveal follow it.
+signal dirt_destroyed(map_id: StringName, cell: Vector2i, cause: StringName)
+## Emitted by DirtWalls when every destroyed dirt cell of the map became dirt again (run start); `cells` = those cells.
+signal dirt_restored(cells: Array[Vector2i])

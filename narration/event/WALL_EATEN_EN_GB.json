@@ -1,0 +1,7 @@
+{
+	"event": "WALL_EATEN",
+	"language": "EN_GB",
+	"lines": {
+		"dirt_world_crumble": "Crumble, dust, destroyed"
+	}
+}

@@ -51,6 +51,8 @@ var _hit_cooldown: float = 0.0
 var _sprint_available: bool = false
 var _sprinting: bool = false
 var _sprint_glide: bool = false
+## Velocity before this step's slide (a dirt cell eaten on contact gives the speed back, task-070).
+var _pre_slide_velocity: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
@@ -87,6 +89,7 @@ func _physics_process(delta: float) -> void:
 	velocity = velocity.move_toward(wanted, rate * delta)
 	velocity.y = 0.0
 	_limit_to_cursor(delta)
+	_pre_slide_velocity = velocity
 	move_and_slide()
 	global_position.y = 0.0
 	_announce_motion()
@@ -271,6 +274,8 @@ func _announce_step() -> void:
 
 
 ## Narration: the body started pushing into something. A wall gives HIT_WALL, anything else (map edge, object) HIT_UNKNOWN.
+## Dirt (task-070) is no hit: pushing into a dirt cell asks for it to be eaten (SignalBus.dirt_destroy_requested); when
+## it was, the body keeps dig_speed_keep of its speed and digs on.
 func _announce_contact(delta: float) -> void:
 	_hit_cooldown = maxf(0.0, _hit_cooldown - delta)
 	if map_loader == null or not _playing() or move_intent.length_squared() <= 0.0:
@@ -279,13 +284,23 @@ func _announce_contact(delta: float) -> void:
 	var push: Vector3 = move_intent.normalized()
 	var touching: bool = false
 	var probe: Vector3 = Vector3.ZERO
+	var dug: bool = false
 	for i in get_slide_collision_count():
 		var contact: KinematicCollision3D = get_slide_collision(i)
 		var normal: Vector3 = contact.get_normal()
-		if -normal.dot(push) >= config.hit_min_facing:
+		if -normal.dot(push) < config.hit_min_facing:
+			continue
+		var point: Vector3 = contact.get_position() - normal * config.hit_probe_depth
+		var cell: Vector2i = map_loader.world_to_cell(point)
+		if map_loader.data.type_at(cell) == MapLegend.DIRT:
+			SignalBus.dirt_destroy_requested.emit(cell, DirtWalls.CAUSE_EATEN)
+			dug = dug or map_loader.data.type_at(cell) != MapLegend.DIRT
+			continue
+		if not touching:
 			touching = true
-			probe = contact.get_position() - normal * config.hit_probe_depth
-			break
+			probe = point
+	if dug:
+		velocity = _pre_slide_velocity * config.dig_speed_keep
 	if touching and not _touching and _hit_cooldown <= 0.0:
 		_hit_cooldown = config.hit_cooldown_seconds
 		var type: StringName = map_loader.data.type_at(map_loader.world_to_cell(probe))

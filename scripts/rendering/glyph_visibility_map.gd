@@ -2,8 +2,8 @@ class_name GlyphVisibilityMap
 extends RefCounted
 ## The per-cell light visibility the glyph-surface shader reads (task-036): two RGBA8 textures
 ## (`texture_a` = light slots 0..3 in r,g,b,a; `texture_b` = slots 4..7), each (2 * map width + 1) x map height.
-##  - Floor region (x < width): visibility of the cell itself, 0 for wall cells (sampled bilinear).
-##  - Wall region (x >= width + 1): for a wall cell, the best visibility among its open 4-neighbours
+##  - Floor region (x < width): visibility of the cell itself, 0 for solid cells (walls, uneaten dirt; sampled bilinear).
+##  - Wall region (x >= width + 1): for a solid cell, the best visibility among its open 4-neighbours
 ##    (read nearest; wall tops and the floor quad under a wall). Column `width` stays 0 as a seam.
 ## Slot values come from GlyphLightOcclusion. A slot is either replaced at once (`assign`, static lights;
 ## they fade through their intensity instead) or blended over time (`blend`, the player light, so the
@@ -140,11 +140,10 @@ func _in_bounds(cell: Vector2i) -> bool:
 func _write(slot: int, cell: Vector2i) -> void:
 	var image: Image = _image_a if slot < SLOTS_PER_TEXTURE else _image_b
 	var channel: int = slot % SLOTS_PER_TEXTURE
-	if _map.type_at(cell) != MapLegend.WALL:
-		_set_channel(image, cell.x, cell.y, channel, _values[slot][cell.y * size.x + cell.x])
+	_set_channel(image, cell.x, cell.y, channel, 0.0 if is_solid(_map.type_at(cell)) else _values[slot][cell.y * size.x + cell.x])
 	for step_cell in NEIGHBOURS:
 		var wall: Vector2i = cell + step_cell
-		if _in_bounds(wall) and _map.type_at(wall) == MapLegend.WALL:
+		if _in_bounds(wall) and is_solid(_map.type_at(wall)):
 			_set_channel(image, wall.x + size.x + 1, wall.y, channel, _wall_value(slot, wall))
 
 
@@ -152,9 +151,14 @@ func _wall_value(slot: int, wall: Vector2i) -> float:
 	var best: float = 0.0
 	for step_cell in NEIGHBOURS:
 		var n: Vector2i = wall + step_cell
-		if _in_bounds(n) and _map.type_at(n) != MapLegend.WALL:
+		if _in_bounds(n) and not is_solid(_map.type_at(n)):
 			best = maxf(best, _values[slot][n.y * size.x + n.x])
 	return best
+
+
+## Cell types drawn as solid blocks whose tops read the wall region: walls and dirt (task-070; eaten dirt is floor).
+static func is_solid(type: StringName) -> bool:
+	return type == MapLegend.WALL or type == MapLegend.DIRT
 
 
 func _set_channel(image: Image, x: int, y: int, channel: int, value: float) -> void:

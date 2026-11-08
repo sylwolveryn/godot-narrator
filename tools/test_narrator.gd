@@ -129,7 +129,8 @@ func _run() -> void:
 
 func _test_data() -> void:
 	var config: NarratorConfig = load(CONFIG_PATH)
-	_check(config.beats.size() == 43, "expected 43 beats (26 M1 + 3 sprint layers + 14 origin), got %d" % config.beats.size())
+	# 49 = 26 M1 + 3 sprint layers + 6 dirt (task-070: 1 WALL_EATEN world line + 5 WALLS_DEVOURED variants) + 14 origin.
+	_check(config.beats.size() == 49, "expected 49 beats (26 M1 + 3 sprint layers + 6 dirt + 14 origin), got %d" % config.beats.size())
 	var supports: Dictionary = {}
 	var contradicts: Dictionary = {}
 	var neutral: int = 0

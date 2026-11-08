@@ -52,6 +52,8 @@ var current_understanding: float = 1.0
 var _understanding: float = 1.0
 var _has_understanding: bool = false
 var queued: NarrationBeat
+## Picks among equally ranked beats of NarratorConfig.random_pick_events (seed it in tests).
+var rng := RandomNumberGenerator.new()
 ## Run bookkeeping; refreshed on every run_started.
 var run_count: int = 1
 var death_count: int = 0
@@ -83,6 +85,7 @@ var _time_fired: Dictionary[String, bool] = {}
 func _ready() -> void:
 	if config == null:
 		config = NarratorConfig.new()
+	rng.randomize()
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.narration_event.connect(trigger_event)
@@ -179,7 +182,22 @@ func _pick_exact(event: StringName, param: StringName, layer: int = -1) -> Narra
 			continue
 		if best == null or _ranks_before(beat, best, survivors):
 			best = beat
+	if best != null and config.random_pick_events.has(event):
+		return _random_tie(best, event, param)
 	return best
+
+
+## A random beat among the eligible beats of the event that rank like `best` (same layer and min_run).
+func _random_tie(best: NarrationBeat, event: StringName, param: StringName) -> NarrationBeat:
+	var ties: Array[NarrationBeat] = []
+	for beat: NarrationBeat in config.beats:
+		if beat.trigger != NarrationBeat.Trigger.EVENT or beat.event != event or beat.layer != best.layer:
+			continue
+		if beat.min_run != best.min_run or (beat.event_param != &"" and beat.event_param != param):
+			continue
+		if is_eligible(beat, run_count, death_count) and not _is_pending(beat):
+			ties.append(beat)
+	return ties[rng.randi_range(0, ties.size() - 1)] if not ties.is_empty() else best
 
 
 ## The two surviving natures when the ledger is at its floor and the tie-break is on, else empty.

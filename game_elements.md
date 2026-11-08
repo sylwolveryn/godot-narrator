@@ -4,6 +4,7 @@
 - Files: `data/maps/*.txt`. Map id = file name.
 - `m1_awakening.txt`: original maze, start map.
 - `m2_arena.txt`: open arena, test map for merged props.
+- `m3_dirt.txt`: dirt map (40x30). `#` ring, lots of `D`, tunnels, pockets. Fully revealed, no fog, no darkness.
 - Pick map:
   - god window "Map" dropdown
   - run arg: `-- --map=m2_arena`
@@ -23,6 +24,7 @@
 | `%` | corruption | glyph_anim (`corruption`) | erodes player inside | events CORRUPTION_ENTERED, EROSION_HIGH, DEATH_BY_CORRUPTION; kills at threshold |
 | `o` | pushable object | - | small block | only grown form pushes; one cell per push; cell under it is floor |
 | `T` | teleport ring | none (not in DB) | 3x3 ring of T around a channel char = working pad | walkable floor; centre char (0-9 a-z A-Z) is the channel, even `o`; any other T group = broken (dim cracks, no trip); see Teleports |
+| `D` | dirt wall | none | eatable wall | blocks move, sight, light like `#`; walk into it = eaten (crumble, dust, crunch) -> floor; back each run; events WALL_EATEN, WALLS_DEVOURED |
 | `G` | gargoyle fountain | none (not in DB) | ASCII gargoyle over animated water basin | blocks movement, sight, light; def: `resources/config/large_objects/gargoyle_fountain.tres` |
 
 - `-` = no DB row listed.
@@ -52,6 +54,26 @@ TTT     anything else made of T = broken
 - Arena: 0 x2, 1 x1, 7 x3, one broken ring. 0 -> 1, 1 -> 7 (3), 7 -> 0 (2).
 - Code: TeleportPad (parse, route), TeleportSystem (trip), TeleportView (look, waves, camera). Numbers: `resources/config/teleport_config.tres`.
 - Signals: teleport_started / teleport_arrived / teleport_finished.
+
+### Map settings (DB `map_settings`)
+- One row per map id. No row = old look (fog, darkness, radius 5.5 + line of sight).
+- Columns:
+  - `reveal_all`: whole map seen from run start (live look)
+  - `fog_enabled`: far-side darkening + ambient fade by distance
+  - `darkness_enabled`: off = full light, no memory dimming
+  - `reveal_radius`, `player_light_radius`, `ambient_level`: < 0 = game default
+  - `line_of_sight`: walls / items / dirt hide what is behind
+- Applied on map load and DB reload. Code: MapSettingsResolver (picks row), MapSettings (resolve over configs).
+- Seed: `m3_dirt` = reveal_all, no fog, no darkness.
+
+### Dirt `D`
+- One entry: `SignalBus.dirt_destroy_requested(cell, cause)` -> DirtWalls.destroy. Eating = cause `eaten`. Later: cannon.
+- Chunks 16x16 (DirtConfig.chunk_size): one collision body + one mesh per chunk; destroy rebuilds 1-2 chunks only.
+- Player digs on through dirt, keeps 75% speed per cell (PlayerConfig.dig_speed_keep). No HIT_WALL for dirt.
+- Save: `walls_eaten`, `next_devour_at`. Every random 100-200 eaten -> WALLS_DEVOURED (narrator, 1 of 5 lines at random).
+- WALL_EATEN world line "Crumble, dust, destroyed" once ever.
+- Crunch: `<override>/sfx/dirt_crunch.mp3` > `<game>/sfx/...` > `res://sfx/...` > synthesized noise. Random pitch, rate-limited.
+- Numbers: `resources/config/dirt_config.tres`.
 
 ## Controls
 
@@ -108,6 +130,8 @@ camera:   Q / E rotate
   - HIT_WALL, HIT_UNKNOWN, HIT_SPIKES
   - DEATH, DEATH_BY_SPIKES, DEATH_BY_CORRUPTION
   - TRANSFORMED(_TO_ONE/_TO_MANY), ORIGIN_STRUCK, ORIGIN_RECANTED, TIME, SPRINT_UNLOCKED
+  - WALL_EATEN, WALLS_DEVOURED (dirt)
+- NarratorConfig.random_pick_events: equal-rank beats picked at random (WALLS_DEVOURED).
 - Layers (beat `layer` in `data/narration/*.json`), one event plays them in this order:
 
 | layer | look | notes |
@@ -147,7 +171,7 @@ camera:   Q / E rotate
 ## Database (SpacetimeDB, local)
 - Module: `database/spacetimedb/src/lib.rs`. DB name `database-narrator`. Server `http://127.0.0.1:3000`.
 - Game talks plain HTTP. Offline -> bundled `data/db/seed.json`.
-- Tables: `event_def`, `language_def`, `narration`, `player_stats`, `player_death`, `player_language`, `missing_narration`, `glyph_anim`, `movement_profile`, `avatar_fx`, `config_version`.
+- Tables: `event_def`, `language_def`, `narration`, `player_stats`, `player_death`, `player_language`, `missing_narration`, `glyph_anim`, `movement_profile`, `avatar_fx`, `map_settings`, `config_version`.
 - Live reload: game polls `config_version` every 5 s. Bump it (god "Reload game data", or auto after god cell edit) -> game re-reads tables.
 
 ## God window
@@ -168,4 +192,4 @@ Run: `python god/god.py`
 - Tests:
   - `godot --headless --max-fps 30 --path . -s tools/test_x.gd`
   - god: `python -m unittest discover -s god/tests`
-- Tasks: backlog CLI (latest TASK-068).
+- Tasks: backlog CLI (latest TASK-070).

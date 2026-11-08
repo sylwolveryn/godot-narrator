@@ -21,7 +21,7 @@ extends Resource
 ## A queued beat is dropped after waiting this long.
 @export var queue_ttl_seconds: float = 5.0
 ## Events whose queued beats never expire by TTL (they can only be replaced by a higher class, then they re-queue).
-@export var ttl_exempt_events: Array[StringName] = [NarrationEvents.RUN_STARTED, NarrationEvents.SPRINT_UNLOCKED]
+@export var ttl_exempt_events: Array[StringName] = [NarrationEvents.RUN_STARTED, NarrationEvents.SPRINT_UNLOCKED, NarrationEvents.WALLS_DEVOURED]
 @export var morph_in_seconds: float = 1.1
 @export var morph_out_seconds: float = 0.9
 ## How long the current beat dissolves when a death beat preempts it.
@@ -47,6 +47,8 @@ extends Resource
 	NarrationEvents.SPRINT_UNLOCKED: 2,
 	NarrationEvents.HIT_WALL: 1,
 	NarrationEvents.HIT_UNKNOWN: 1,
+	NarrationEvents.WALL_EATEN: 1,
+	NarrationEvents.WALLS_DEVOURED: 2,
 	NarrationEvents.IDLE_FOR_SHORT: 0,
 	NarrationEvents.IDLE_FOR_MID: 0,
 	NarrationEvents.IDLE_FOR_LONG: 0,
@@ -57,6 +59,9 @@ extends Resource
 ## nothing replaces them; they wait in a FIFO and start as soon as no beat is showing (the silence gap does not
 ## hold them back). They start before any queued ordinary beat and are accepted outside a run too.
 @export var reactive_events: Array[StringName] = [NarrationEvents.ORIGIN_STRUCK, NarrationEvents.ORIGIN_RECANTED]
+## Events whose equally ranked eligible beats (same layer and min_run) are picked at random (Narrator.rng) instead of by
+## table order, e.g. the WALLS_DEVOURED variants.
+@export var random_pick_events: Array[StringName] = [NarrationEvents.WALLS_DEVOURED]
 ## Priority at or above which a beat preempts whatever is on screen.
 @export var preempt_priority: int = 5
 ## Run end cause -> death event.

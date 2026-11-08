@@ -65,3 +65,6 @@ extends Resource
 @export_range(0.0, 1.0) var hit_min_facing: float = 0.6
 ## Distance behind the contact point (world units) used to find the cell that was hit.
 @export var hit_probe_depth: float = 0.1
+## Dirt (task-070): share of its speed the body keeps when it eats a dirt cell it pushes into (Boulder Dash: it keeps
+## digging on with a small slowdown per cell; 1 = no slowdown).
+@export_range(0.0, 1.0) var dig_speed_keep: float = 0.75

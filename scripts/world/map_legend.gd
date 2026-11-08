@@ -11,6 +11,8 @@ const SPIKES: StringName = &"spikes"
 const CORRUPT: StringName = &"corrupt"
 ## A small pushable object (task-019). The cell under it is floor; MapData.objects records where it starts.
 const OBJECT: StringName = &"object"
+## Dirt wall (task-070): solid like a wall until the player moves into it, then eaten (DirtWalls) and floor.
+const DIRT: StringName = &"dirt"
 
 ## Character -> cell type.
 @export var entries: Dictionary[String, StringName] = {
@@ -22,6 +24,7 @@ const OBJECT: StringName = &"object"
 	"^": SPIKES,
 	"%": CORRUPT,
 	"o": OBJECT,
+	"D": DIRT,
 }
 ## Hazard cell type -> its data-driven definition (see HazardDefinition). Types missing here are harmless.
 @export var hazards: Dictionary[StringName, HazardDefinition] = {}

@@ -45,6 +45,12 @@ func _build() -> void:
 	library.set("config", library_cfg)
 	library.set("database", database)
 	_add(root, library)
+	# Per-map visibility rules (task-069): picks the map_settings row of the loaded map; MapReveal and GlyphWorldView read it.
+	var map_settings: Node = load("res://scripts/data/map_settings_resolver.gd").new()
+	map_settings.name = "MapSettingsResolver"
+	map_settings.set("database", database)
+	map_settings.set("map_loader", loader)
+	_add(root, map_settings)
 	var record: Node = load("res://scripts/core/player_record.gd").new()
 	record.name = "PlayerRecord"
 	record.set("database", database)
@@ -105,6 +111,16 @@ func _build() -> void:
 	narrator.set("library", library)
 	_add(root, narrator)
 
+	# Dirt walls (task-070): the only writer of the dirt state (the one destroy entry point, chunked collision, the eaten
+	# counter). Before Player and MapReveal so destroyed cells are dirt again before the run-start spawn reveals.
+	var dirt_cfg: DirtConfig = load(CFG + "dirt_config.tres")
+	var dirt: Node3D = load("res://scripts/world/dirt_walls.gd").new()
+	dirt.name = "DirtWalls"
+	dirt.set("config", dirt_cfg)
+	dirt.set("map_loader", loader)
+	dirt.set("save_service", save)
+	_add(root, dirt)
+
 	var rig: Node3D = load("res://scripts/rendering/camera_rig.gd").new()
 	rig.name = "CameraRig"
 	rig.set("view_config", load(CFG + "camera_isometric.tres"))
@@ -145,6 +161,7 @@ func _build() -> void:
 	reveal.set("map_loader", loader)
 	reveal.set("player", player)
 	reveal.set("save_service", save)
+	reveal.set("settings", map_settings)
 	_add(root, reveal)
 
 	var discovery: Node = load("res://scripts/player/input_discovery.gd").new()
@@ -159,6 +176,7 @@ func _build() -> void:
 	glyph_view.set("map_loader", loader)
 	glyph_view.set("player", player)
 	glyph_view.set("map_reveal", reveal)
+	glyph_view.set("settings", map_settings)
 	_add(root, glyph_view)
 
 	# The player's glyph stands in the world: one MultiMesh of billboards (glyph + halo + fragments).
@@ -292,6 +310,18 @@ func _build() -> void:
 	object_view.set("map_loader", loader)
 	object_view.set("config", push_cfg)
 	_add(root, object_view)
+	# Dirt presentation (task-070): chunk meshes, crumble and dust, and the crunch.
+	var dirt_view: Node3D = load("res://scripts/rendering/dirt_view.gd").new()
+	dirt_view.name = "DirtView"
+	dirt_view.set("config", dirt_cfg)
+	dirt_view.set("map_loader", loader)
+	dirt_view.set("dirt_walls", dirt)
+	_add(root, dirt_view)
+	var crunch: Node = load("res://scripts/world/dirt_crunch_sfx.gd").new()
+	crunch.name = "DirtCrunchSfx"
+	crunch.set("config", dirt_cfg)
+	crunch.set("library", library)
+	_add(root, crunch)
 	# Layered clarity (task-066): pushable objects are layered boxes of the world view.
 	glyph_view.set("pushables", pushables)
 

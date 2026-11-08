@@ -39,5 +39,8 @@ const ORIGIN_STRUCK: StringName = &"ORIGIN_STRUCK"
 const ORIGIN_RECANTED: StringName = &"ORIGIN_RECANTED"
 ## The first move of a run in which sprint (Left Shift) is available (task-063).
 const SPRINT_UNLOCKED: StringName = &"SPRINT_UNLOCKED"
+## Dirt walls (task-070): every eaten dirt cell, and the eaten counter reaching its next random milestone.
+const WALL_EATEN: StringName = &"WALL_EATEN"
+const WALLS_DEVOURED: StringName = &"WALLS_DEVOURED"
 ## Priority key used for TIME beats (they have no event name).
 const TIME: StringName = &"TIME"

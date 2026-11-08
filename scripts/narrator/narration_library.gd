@@ -115,6 +115,25 @@ func resolve(rel: String) -> String:
 	return ""
 
 
+## Like `resolve`, for files that are not narration (e.g. sound effects, task-070): the override folder, then the game
+## folder, then the bundled asset. "" when none exists.
+func resolve_file(rel: String) -> String:
+	if rel == "":
+		return ""
+	for path in [override_root().path_join(rel), game_root().path_join(rel)]:
+		if FileAccess.file_exists(path):
+			return path
+	var asset: String = config.asset_root.path_join(rel)
+	if FileAccess.file_exists(asset) or ResourceLoader.exists(asset):
+		return asset
+	return ""
+
+
+## Loads an MP3 found by `resolve` / `resolve_file` (null for an empty or unreadable file).
+func load_audio(path: String) -> AudioStream:
+	return _load_audio(path)
+
+
 ## The missing-file set, sorted.
 func missing() -> PackedStringArray:
 	var out := PackedStringArray(_missing.keys())
