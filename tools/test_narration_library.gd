@@ -8,6 +8,8 @@ extends SceneTree
 const CONFIG_PATH := "res://resources/narration/narrator_config.tres"
 const ROOT := "user://test_override_library"
 
+## A real m4a for the sound fallback test (its own copy, independent of the game's recordings).
+const FIXTURE_M4A := "res://tools/fixtures/sound_fallback.m4a"
 var _failures: PackedStringArray = []
 
 
@@ -101,8 +103,9 @@ func _test_lookup() -> void:
 	_remove_tree(root_abs)
 
 
-## Sound files are tried as mp3, m4a, wav; an empty file is skipped. The bundled RUN_STARTED has an empty mp3 and a
-## real m4a, so the m4a (converted to WAV) plays.
+## Sound files are tried as mp3, m4a, wav; an empty file is skipped. The test writes its own SOUND_FALLBACK event into
+## the override folder: an empty mp3 and a real m4a (tools/fixtures/sound_fallback.m4a), so the m4a (converted to WAV)
+## plays. It never reads the game's narration files, which change as recordings are added.
 func _test_sound_formats() -> void:
 	var root_abs: String = ProjectSettings.globalize_path(ROOT + "_formats")
 	_remove_tree(root_abs)
@@ -113,10 +116,15 @@ func _test_sound_formats() -> void:
 	var library = load("res://scripts/narrator/narration_library.gd").new()
 	library.config = cfg
 	root.add_child(library)
-	var run_started: AudioStream = library.audio_for(&"RUN_STARTED")
-	_check(run_started is AudioStreamWAV, "RUN_STARTED: empty mp3 skipped, m4a played as WAV, got %s" % [run_started])
-	if run_started != null:
-		_check(run_started.get_length() > 1.0, "RUN_STARTED m4a decodes to real audio (%.2fs)" % run_started.get_length())
+	var event_dir: String = root_abs.path_join("narration/event")
+	FileAccess.open(event_dir.path_join("SOUND_FALLBACK_EN_GB.mp3"), FileAccess.WRITE).close()
+	var m4a := FileAccess.open(event_dir.path_join("SOUND_FALLBACK_EN_GB.m4a"), FileAccess.WRITE)
+	m4a.store_buffer(FileAccess.get_file_as_bytes(FIXTURE_M4A))
+	m4a.close()
+	var fallback: AudioStream = library.audio_for(&"SOUND_FALLBACK")
+	_check(fallback is AudioStreamWAV, "empty mp3 skipped, m4a played as WAV, got %s" % [fallback])
+	if fallback != null:
+		_check(fallback.get_length() > 1.0, "the m4a decodes to real audio (%.2fs)" % fallback.get_length())
 	# A WAV in the override folder is found when no mp3 / m4a exists; an empty WAV alone counts as missing.
 	var wav := AudioStreamWAV.new()
 	wav.format = AudioStreamWAV.FORMAT_16_BITS
