@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-09T09:41:00Z'
+updated_date: '2026-11-09T09:48:00Z'
 labels:
   - tools
   - narration
@@ -23,9 +24,15 @@ The narration queue (text beats, chained layers, reactive FIFO, waiting FIFO, TT
 <!-- AC:BEGIN -->
 - [ ] #1 god has a Queue on/off button that shows the current state
 - [ ] #2 Toggling it shows/hides a left-side overlay in a running game within about a second
-- [ ] #3 Overlay shows the narrator state with phase timeline (morph in, hold, morph out, gap) and time left
-- [ ] #4 Overlay shows the queued beat with its TTL, chained layers, reactive and waiting FIFOs
-- [ ] #5 Overlay shows mood and voice playback progress and flags a voice cut off by the next beat
-- [ ] #6 Overlay shows a recent event log and a history strip of text and voice activity
-- [ ] #7 When never switched on, nothing is instanced
+- [x] #3 Overlay shows the narrator state with phase timeline (morph in, hold, morph out, gap) and time left
+- [x] #4 Overlay shows the queued beat with its TTL, chained layers, reactive and waiting FIFOs
+- [x] #5 Overlay shows mood and voice playback progress and flags a voice cut off by the next beat
+- [x] #6 Overlay shows a recent event log and a history strip of text and voice activity
+- [x] #7 When never switched on, nothing is instanced
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Narrator.debug_note signal traces every queue decision; read-only accessors added. NarrationDebugOverlay (scripts/ui) draws one Control at 10 Hz. DevBridge [overlay] narration=true instances it lazily; god Queue button writes the flag. Verified: 115 god unittests, test_narrator/triggers/library PASS, headless boot clean, windowed capture via tools/capture_narration_debug.gd. Not yet verified: clicking god's Queue button against a live game (AC 1-2).
+<!-- SECTION:NOTES:END -->
