@@ -13,38 +13,25 @@ const EXTRA_STEPS: int = 2
 static func can_see(map: MapData, from: Vector2i, to: Vector2i, blockers: Array[StringName], spread: float) -> bool:
 	if from == to:
 		return true
+	var span: int = maxi(absi(to.x - from.x), absi(to.y - from.y))
+	return can_see_in(GridMask.around(map, from, span, blocker_set(blockers)), from, to, spread)
+
+
+## The same test on a prebuilt GridMask around `from` (MapReveal builds one per sweep for all cells in reach).
+static func can_see_in(mask: GridMask, from: Vector2i, to: Vector2i, spread: float) -> bool:
+	if from == to:
+		return true
 	var a := Vector2(from) + Vector2(0.5, 0.5)
 	var b := Vector2(to) + Vector2(0.5, 0.5)
+	if mask.sight_clear(a, b, to):
+		return true
 	var side: Vector2 = (b - a).orthogonal().normalized() * spread
-	return _ray_clear(map, a, b, to, blockers) or _ray_clear(map, a, b + side, to, blockers) \
-			or _ray_clear(map, a, b - side, to, blockers)
+	return mask.sight_clear(a, b + side, to) or mask.sight_clear(a, b - side, to)
 
 
-## True when the line a -> b (cell units) crosses no blocking cell other than `target` itself.
-static func _ray_clear(map: MapData, a: Vector2, b: Vector2, target: Vector2i, blockers: Array[StringName]) -> bool:
-	var cell := Vector2i(floori(a.x), floori(a.y))
-	var end := Vector2i(floori(b.x), floori(b.y))
-	var dir: Vector2 = b - a
-	var step := Vector2i(int(signf(dir.x)), int(signf(dir.y)))
-	var t_delta := Vector2(INF, INF)
-	var t_max := Vector2(INF, INF)
-	if step.x != 0:
-		t_delta.x = absf(1.0 / dir.x)
-		t_max.x = ((cell.x + (1 if step.x > 0 else 0)) - a.x) / dir.x
-	if step.y != 0:
-		t_delta.y = absf(1.0 / dir.y)
-		t_max.y = ((cell.y + (1 if step.y > 0 else 0)) - a.y) / dir.y
-	var guard: int = absi(end.x - cell.x) + absi(end.y - cell.y) + EXTRA_STEPS
-	while cell != end and guard > 0:
-		guard -= 1
-		if t_max.x < t_max.y:
-			cell.x += step.x
-			t_max.x += t_delta.x
-		else:
-			cell.y += step.y
-			t_max.y += t_delta.y
-		if cell == target:
-			return true
-		if blockers.has(map.type_at(cell)):
-			return false
-	return true
+## Blocker list -> set for GridMask.around.
+static func blocker_set(blockers: Array[StringName]) -> Dictionary:
+	var out: Dictionary = {}
+	for t in blockers:
+		out[t] = true
+	return out

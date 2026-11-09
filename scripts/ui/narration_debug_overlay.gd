@@ -18,7 +18,7 @@ extends CanvasLayer
 @export var font_size: int = 12
 @export var padding: float = 8.0
 ## Redraws (and history samples) per second; the panel is not redrawn every frame.
-@export var redraw_hz: float = 10.0
+@export var redraw_hz: float = 5.0
 @export var history_seconds: float = 30.0
 @export var log_lines: int = 16
 @export var canvas_layer_index: int = 120
@@ -53,6 +53,8 @@ const KIND_COLORS: Dictionary[StringName, Color] = {
 	&"warn": Color(1.0, 0.45, 0.35),
 }
 const LAYER_NAMES: PackedStringArray = ["WORLD", "OWN", "NARR"]
+## Shaped lines kept for reuse (static labels and repeated log lines are shaped once); cleared when it grows past this.
+@export var text_cache_size: int = 300
 ## History sample value for "nothing".
 const NONE: int = 255
 
@@ -77,6 +79,10 @@ var _voice_len: float = 0.0
 ## The beat whose voice is playing (to mark where its line leaves the screen).
 var _voice_beat: NarrationBeat
 var _mood_name: String = ""
+## Text -> shaped line (TextServer shaping is the costly part of drawing text).
+var _shaped: Dictionary[String, TextLine] = {}
+## Microseconds the last panel draw took (shown in the header).
+var _draw_usec: int = 0
 
 
 func _ready() -> void:
@@ -208,13 +214,19 @@ func _sample() -> void:
 # ------------------------------------------------------------------ drawing
 
 func _draw_panel() -> void:
+	var t0: int = Time.get_ticks_usec()
+	_draw_sections()
+	_draw_usec = Time.get_ticks_usec() - t0
+
+
+func _draw_sections() -> void:
 	var p: Control = _panel
 	p.draw_rect(Rect2(Vector2.ZERO, p.size), background)
 	var x: float = padding
 	var w: float = p.size.x - padding * 2.0
 	var y: float = padding
 	var lh: float = _font.get_height(font_size) + 2.0
-	y = _text(x, y, "NARRATION QUEUE  (debug, god: Queue)", HEAD_COLOR)
+	y = _text(x, y, "NARRATION QUEUE  (debug, god: Queue)   draw %.1f ms @ %.0f Hz" % [_draw_usec / 1000.0, redraw_hz], HEAD_COLOR)
 	if _narrator == null:
 		_text(x, y, "no Narrator in this scene", WARN_COLOR)
 		return
@@ -413,4 +425,11 @@ func _text(x: float, y: float, s: String, color: Color) -> float:
 
 
 func _text_at(x: float, y: float, s: String, color: Color) -> void:
-	_panel.draw_string(_font, Vector2(x, y + _font.get_ascent(font_size)), s, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+	var line: TextLine = _shaped.get(s)
+	if line == null:
+		if _shaped.size() >= text_cache_size:
+			_shaped.clear()
+		line = TextLine.new()
+		line.add_string(s, _font, font_size)
+		_shaped[s] = line
+	line.draw(_panel.get_canvas_item(), Vector2(x, y), color)

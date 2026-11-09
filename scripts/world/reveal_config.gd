@@ -15,6 +15,11 @@ extends Resource
 @export var sight_blockers: Array[StringName] = [MapLegend.WALL, MapLegend.ITEM, MapLegend.VOID, MapLegend.DIRT]
 ## Sideways offset (cells) of the two extra sight rays; a cell is seen when any of the three rays gets through.
 @export_range(0.0, 0.49) var sight_spread: float = 0.35
+## Milliseconds per physics step the reveal sweep may take; a bigger sweep (large sight scale) goes on over the next
+## steps, nearest cells first. 0 = no limit.
+@export_range(0.0, 20.0) var sweep_budget_ms: float = 2.0
+## A new sweep starts once the player moved this far (cells) from where the last one started.
+@export_range(0.0, 1.0) var resweep_distance_cells: float = 0.25
 ## When false the floor surfaces are never drawn: only walls, items and hazards appear.
 @export var reveal_floor: bool = true
 ## Cell type -> narration event announced the first time a cell of that type is revealed in a run.

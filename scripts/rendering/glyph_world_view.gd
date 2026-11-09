@@ -51,6 +51,13 @@ var _fade: Dictionary[GlyphLightSource, float] = {}
 var _desired: Dictionary[GlyphLightSource, bool] = {}
 var _visibility: GlyphVisibilityMap
 var _player_vis_cell: Vector2i = Vector2i(-1000000, -1000000)
+## The player-light shadows need recomputing (cell change, light radius, map or wall changes, view grew).
+var _occlusion_dirty: bool = true
+## The shadow field being computed over frames, and the cell / radius it is for.
+var _occ_job: GlyphLightOcclusion.Job
+var _occ_job_cell: Vector2i
+## Radius (cells) of the last started shadow field.
+var _occ_radius: float = 0.0
 var _light_pos: PackedVector4Array = PackedVector4Array()
 var _light_col: PackedVector4Array = PackedVector4Array()
 var _light_count: int = 1
@@ -83,7 +90,8 @@ func _ready() -> void:
 	SignalBus.menu_new_items_changed.connect(_on_new_items_changed)
 	SignalBus.entity_form_changed.connect(func(form: StringName, _animate: bool) -> void:
 		_set_aura(form == EntityForm.BRAIN)
-		_dirty = true)
+		_dirty = true
+		_occlusion_dirty = true)
 	SignalBus.run_ended.connect(func(_cause: StringName) -> void: _set_aura(false))
 	if pushables != null:
 		pushables.objects_reset.connect(_rebuild_layer_map)
@@ -107,11 +115,19 @@ func _process(delta: float) -> void:
 		return
 	var pos: Vector3 = player.global_position
 	var cell: Vector2i = map_loader.world_to_cell(pos)
+	if cell != _last_cell:
+		_occlusion_dirty = true
 	if _dirty or cell != _last_cell:
 		_last_cell = cell
 		_dirty = false
 		_retarget(pos)
+	if not _occlusion_dirty and _occ_job == null and _view_grew(pos):
+		_occlusion_dirty = true
+	if _occlusion_dirty and _occ_job == null:
+		_occlusion_dirty = false
 		_update_player_visibility(cell)
+	elif _occ_job != null:
+		_step_occlusion()
 	_step_fades(delta)
 	if _visibility != null:
 		_visibility.step(delta)
@@ -303,12 +319,15 @@ func _on_map_built(map: MapData) -> void:
 	_visibility = GlyphVisibilityMap.new()
 	_visibility.setup(map, config.occlusion_blend_time)
 	_player_vis_cell = Vector2i(-1000000, -1000000)
+	_occ_job = null
+	_occlusion_dirty = true
 	_rebuild_layer_map()
 	apply_static()
 
 
 func _on_player_spawned(_world_position: Vector3) -> void:
 	_dirty = true
+	_occlusion_dirty = true
 
 
 ## Cells were seen: the set of known static lights may have changed.
@@ -362,6 +381,7 @@ func _refresh_occlusion(cell: Vector2i, everywhere: bool) -> void:
 		if slot >= 0 and config.occlusion_enabled and _visibility != null:
 			_visibility.assign(PLAYER_LIGHT_SLOT + 1 + slot, src.visibility)
 	_dirty = true
+	_occlusion_dirty = true
 
 
 func _on_object_moved(_object_id: int, _from_cell: Vector2i, _to_cell: Vector2i, _form: StringName) -> void:
@@ -501,19 +521,62 @@ func _step_fades(delta: float) -> void:
 	material.set_shader_parameter(&"light_count", _light_count)
 
 
-## Recomputes the occlusion of the player light when the player changed cell (blended, unless it jumped).
+## Starts the occlusion field of the player light for `cell` (performance pass: limited to the camera's view, and
+## spread over frames by GlyphWorldConfig.occlusion_budget_ms). A small field finishes in this call.
 func _update_player_visibility(cell: Vector2i) -> void:
 	if _visibility == null or not config.occlusion_enabled:
 		return
 	var world: WorldConfig = map_loader.world_config
-	var values: Dictionary[Vector2i, float] = GlyphLightOcclusion.compute(
-			_map, cell, player_light_radius() / world.cell_size, config.occlusion_penumbra)
+	_occ_radius = minf(player_light_radius() / world.cell_size, _view_reach_cells(player.global_position))
+	_occ_job = GlyphLightOcclusion.start(_map, cell, _occ_radius, config.occlusion_penumbra)
+	_occ_job_cell = cell
+	_step_occlusion()
+
+
+## Runs the shadow job within the frame budget; when done its field is blended in (or assigned after a jump).
+func _step_occlusion() -> void:
+	if not _occ_job.run(roundi(config.occlusion_budget_ms * 1000.0)):
+		return
+	var values: Dictionary[Vector2i, float] = _occ_job.result
+	var cell: Vector2i = _occ_job_cell
+	_occ_job = null
 	var moved: int = maxi(absi(cell.x - _player_vis_cell.x), absi(cell.y - _player_vis_cell.y))
 	_player_vis_cell = cell
 	if moved > JUMP_CELLS:
 		_visibility.assign(PLAYER_LIGHT_SLOT, values)
 	else:
 		_visibility.blend(PLAYER_LIGHT_SLOT, values)
+
+
+## How far (cells) the camera's view reaches on the floor from `pos`: the farthest viewport corner projected onto
+## the floor plane, plus the margin. INF without a camera, with a negative margin, or when a corner misses the floor.
+func _view_reach_cells(pos: Vector3) -> float:
+	var cam: Camera3D = get_viewport().get_camera_3d() if is_inside_tree() else null
+	if cam == null or config.occlusion_view_margin_cells < 0.0:
+		return INF
+	var rect: Rect2 = get_viewport().get_visible_rect()
+	var far: float = 0.0
+	for corner: Vector2 in [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]:
+		var origin: Vector3 = cam.project_ray_origin(corner)
+		var dir: Vector3 = cam.project_ray_normal(corner)
+		if absf(dir.y) < 0.0001:
+			return INF
+		var t: float = (pos.y - origin.y) / dir.y
+		if t < 0.0:
+			return INF
+		var hit: Vector3 = origin + dir * t
+		far = maxf(far, Vector2(hit.x - pos.x, hit.z - pos.z).length())
+	return far / map_loader.world_config.cell_size + config.occlusion_view_margin_cells
+
+
+## True when the view now reaches past the last shadow field while the light reaches further (the player zoomed out).
+func _view_grew(pos: Vector3) -> bool:
+	if _visibility == null or not config.occlusion_enabled:
+		return false
+	var light: float = player_light_radius() / map_loader.world_config.cell_size
+	if _occ_radius >= light:
+		return false
+	return _view_reach_cells(pos) > _occ_radius + 1.0
 
 
 func _apply_visibility_params() -> void:

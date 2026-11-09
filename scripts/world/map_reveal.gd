@@ -51,6 +51,8 @@ var _remembered: Dictionary[Vector2i, bool] = {}
 ## Becomes true when the player is placed for a run; false again when the run ends.
 var _tracking: bool = false
 var _last_position: Vector3 = Vector3.INF
+## The sweep in progress (spread over physics steps by RevealConfig.sweep_budget_ms); null when none.
+var _sweep: Sweep
 ## Reveal events already announced this run.
 var _announced: Dictionary[StringName, bool] = {}
 
@@ -66,6 +68,8 @@ var _clock: float = 0.0
 var _animations: Dictionary[Vector2i, Array] = {}
 ## Sight blockers of the loaded map: RevealConfig.sight_blockers plus the large prop types that block sight (task-058).
 var _blockers: Array[StringName] = []
+## _blockers as a set (GridMask.around).
+var _blocker_set: Dictionary = SightLine.blocker_set(RevealConfig.new().sight_blockers)
 ## Scratch list of the animations that finished in this step (reused, no per-frame allocation).
 var _finished: Array[Vector2i] = []
 ## The active entity form (task-096), from SignalBus.entity_form_changed; picks the area scale.
@@ -104,10 +108,17 @@ func _process(delta: float) -> void:
 func _physics_process(_delta: float) -> void:
 	if not _tracking or player == null or map_loader == null:
 		return
-	if player.global_position == _last_position:
+	if _sweep != null:
+		_run_sweep(roundi(config.sweep_budget_ms * 1000.0))
 		return
-	_last_position = player.global_position
-	reveal_around(_last_position)
+	var pos: Vector3 = player.global_position
+	if _last_position != Vector3.INF:
+		var moved: float = Vector2(pos.x - _last_position.x, pos.z - _last_position.z).length()
+		if moved < config.resweep_distance_cells * map_loader.world_config.cell_size and pos.y == _last_position.y:
+			return
+	_last_position = pos
+	_begin_sweep(pos)
+	_run_sweep(roundi(config.sweep_budget_ms * 1000.0))
 
 
 ## State of a cell right now.
@@ -156,6 +167,7 @@ func begin_run() -> void:
 		for type in map_loader.legend.sight_blocking_types():
 			if not _blockers.has(type):
 				_blockers.append(type)
+	_blocker_set = SightLine.blocker_set(_blockers)
 	if save_service != null:
 		var stored: PackedVector2Array = save_service.get_revealed_cells(map_loader.map_id)
 		for v in stored:
@@ -210,40 +222,80 @@ func time_scale() -> float:
 	return 1.0 / maxf(player.sprint_speed_mult, 1.0)
 
 
-## Reveals every cell whose centre is within the reveal radius of a world position.
+## Reveals every cell whose centre is within the reveal radius of a world position (all at once).
 func reveal_around(world_position: Vector3) -> void:
+	_begin_sweep(world_position)
+	_run_sweep(0)
+
+
+## A reveal sweep around one position, nearest cells first.
+class Sweep:
+	extends RefCounted
+	var world_position: Vector3
+	var centre: Vector2i
+	var reach: float
+	var span: int
+	var mask: GridMask
+	var offsets: Array
+	var index: int = 0
+	var fresh := PackedVector2Array()
+
+
+func _begin_sweep(world_position: Vector3) -> void:
+	_sweep = null
 	if map_settings.reveal_all:
 		return
-	var size: float = map_loader.world_config.cell_size
+	var sweep := Sweep.new()
 	var radius: float = effective_reveal_radius()
-	var reach: float = radius * size
-	var centre: Vector2i = map_loader.world_to_cell(world_position)
-	var span: int = ceili(radius) + 1
-	var fresh := PackedVector2Array()
+	sweep.world_position = world_position
+	sweep.reach = radius * map_loader.world_config.cell_size
+	sweep.centre = map_loader.world_to_cell(world_position)
+	sweep.span = ceili(radius) + 1
+	if map_settings.line_of_sight:
+		sweep.mask = GridMask.around(map_loader.data, sweep.centre, sweep.span, _blocker_set)
+	sweep.offsets = GridMask.offsets(sweep.span)
+	_sweep = sweep
+
+
+## Works on the sweep until it is done or `budget_usec` microseconds passed (0 = no limit).
+func _run_sweep(budget_usec: int) -> void:
+	if _sweep == null:
+		return
+	var sweep: Sweep = _sweep
+	var size: float = map_loader.world_config.cell_size
+	var t0: int = Time.get_ticks_usec()
+	var n: int = sweep.offsets.size()
 	var any_seen: bool = false
-	for dy in range(-span, span + 1):
-		for dx in range(-span, span + 1):
-			var cell := centre + Vector2i(dx, dy)
-			if seen_this_run.has(cell) or not map_loader.is_drawn(cell):
-				continue
-			var cell_centre: Vector3 = map_loader.cell_to_world(cell)
-			var distance: float = Vector2(cell_centre.x - world_position.x, cell_centre.z - world_position.z).length()
-			if distance > reach:
-				continue
-			if map_settings.line_of_sight and not SightLine.can_see(map_loader.data, centre, cell, _blockers if not _blockers.is_empty() else config.sight_blockers, config.sight_spread):
-				continue
-			var from_memory: bool = _remembered.has(cell)
-			seen_this_run[cell] = true
-			any_seen = true
-			_start_animation(cell, from_memory, distance / size)
-			_announce_kind(cell)
-			if not from_memory:
-				_remembered[cell] = true
-				fresh.append(Vector2(cell))
+	var pos: Vector3 = sweep.world_position
+	while sweep.index < n:
+		if budget_usec > 0 and sweep.index % GridMask.CLOCK_EVERY == 0 and Time.get_ticks_usec() - t0 >= budget_usec:
+			break
+		var off: Vector2i = sweep.offsets[sweep.index]
+		sweep.index += 1
+		var cell: Vector2i = sweep.centre + off
+		if seen_this_run.has(cell) or not map_loader.is_drawn(cell):
+			continue
+		var cell_centre: Vector3 = map_loader.cell_to_world(cell)
+		var distance: float = Vector2(cell_centre.x - pos.x, cell_centre.z - pos.z).length()
+		if distance > sweep.reach:
+			continue
+		if sweep.mask != null and not SightLine.can_see_in(sweep.mask, sweep.centre, cell, config.sight_spread):
+			continue
+		var from_memory: bool = _remembered.has(cell)
+		seen_this_run[cell] = true
+		any_seen = true
+		_start_animation(cell, from_memory, distance / size)
+		_announce_kind(cell)
+		if not from_memory:
+			_remembered[cell] = true
+			sweep.fresh.append(Vector2(cell))
 	if any_seen:
 		cells_seen.emit()
-	if not fresh.is_empty():
-		SignalBus.cells_revealed.emit(map_loader.map_id, fresh)
+	if sweep.index < n:
+		return
+	_sweep = null
+	if not sweep.fresh.is_empty():
+		SignalBus.cells_revealed.emit(map_loader.map_id, sweep.fresh)
 		_check_complete()
 
 

@@ -155,6 +155,12 @@ extends Resource
 @export_range(0.0, 0.5) var occlusion_penumbra: float = 0.35
 ## Seconds the player light takes to adapt its shadows after the player changes cell.
 @export var occlusion_blend_time: float = 0.18
+## Milliseconds per frame the player-light shadows may take; a bigger field is finished over the next frames (the
+## shadows trail the player by those frames). 0 = no limit.
+@export_range(0.0, 20.0) var occlusion_budget_ms: float = 2.0
+## Shadows are only computed within the camera's view on the floor plus this many cells (off-screen culling): a light
+## bigger than the screen (large sight scale) costs no more than the screen. Negative = no view limit.
+@export var occlusion_view_margin_cells: float = 2.0
 
 @export_group("Layered clarity")
 ## Task-066: the language understanding (0..1) becomes the share of glyph cells drawn "layered" (one clean glyph per
