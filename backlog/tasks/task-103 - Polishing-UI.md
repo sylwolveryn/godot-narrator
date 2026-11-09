@@ -4,6 +4,7 @@ title: Polishing UI
 status: To Do
 assignee: []
 created_date: '2026-11-09T10:25:00Z'
+updated_date: '2026-11-09T10:25:00Z'
 labels:
   - rendering
   - art
@@ -16,7 +17,7 @@ ordinal: 109000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Leftovers from the gargoyle fountain rebuild (TASK-101, 8 polish rounds with two independent art critiques: match to the concept rose from 3/10 to about 6/10, readability from 4/10 to about 7/10). The fountain now stays on its cells and reads as a glowing basin with a red-eyed winged statue, but these would bring it closer to the concept art (docs/art) and remove remaining rough edges. All must stay potato-friendly (pre-baked data, no post-processing).
+Leftovers from the gargoyle fountain rebuild (TASK-101: 8 polish rounds, two independent art critiques; the critic scored match-to-concept 3/10 -> 4.5/10 and readability 4/10 -> 5.5/10 at round 7, and round 8 then fixed both blockers it named: the backing cutting into the pool and the stream not reading as water). The fountain now stays on its cells and reads as a glowing basin with a red-eyed winged statue; these items would bring it closer to the concept art (docs/art) and remove remaining rough edges. All must stay potato-friendly (pre-baked data, no post-processing).
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
