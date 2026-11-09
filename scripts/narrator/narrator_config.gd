@@ -27,6 +27,14 @@ extends Resource
 ## How long the current beat dissolves when a death beat preempts it.
 @export var preempt_dissolve_seconds: float = 0.3
 
+@export_group("Repeats (task-087)")
+## Story lines of events repeat: a line never heard always plays (it waits for its turn, it is never dropped); a heard
+## line plays again only when a roll passes: repeat_chances[n - 1] after n hearings, repeat_chance_min after the list.
+## Origin lines (claim / broken / recant) and timed lines keep their once-only rules.
+@export var repeat_chances: PackedFloat32Array = PackedFloat32Array([0.8, 0.6, 0.5, 0.35, 0.2, 0.12, 0.06, 0.03, 0.03,
+		0.03, 0.03, 0.03, 0.02, 0.02, 0.02, 0.02, 0.02])
+@export_range(0.0, 1.0) var repeat_chance_min: float = 0.01
+
 @export_group("Priority")
 ## Event -> class priority (higher wins when triggers are simultaneous or compete for the queue).
 @export var event_priority: Dictionary[StringName, int] = {
@@ -87,6 +95,15 @@ extends Resource
 	NarrationEvents.DEATH_BY_CORRUPTION: NarrationEvents.DEATH,
 	NarrationEvents.DEATH_BY_ENEMY: NarrationEvents.DEATH,
 }
+
+## Chance that a line heard `hearings` times plays again (1 for a line never heard).
+func repeat_chance(hearings: int) -> float:
+	if hearings <= 0:
+		return 1.0
+	if hearings - 1 < repeat_chances.size():
+		return maxf(repeat_chances[hearings - 1], repeat_chance_min)
+	return repeat_chance_min
+
 
 @export_group("Presentation")
 ## Canvas layer of the narration text (above the ASCII shader, and above the intro veil).

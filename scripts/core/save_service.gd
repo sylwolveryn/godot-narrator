@@ -205,9 +205,10 @@ func _on_cells_revealed(map_id: StringName, cells: PackedVector2Array) -> void:
 
 
 func _on_beat_heard(beat_id: String) -> void:
-	if progress.heard_beats.has(beat_id):
-		return
-	progress.heard_beats.append(beat_id)
+	var before: int = int(progress.beat_counts.get(beat_id, 1 if progress.heard_beats.has(beat_id) else 0))
+	progress.beat_counts[beat_id] = before + 1
+	if not progress.heard_beats.has(beat_id):
+		progress.heard_beats.append(beat_id)
 	_dirty = true
 	progress_changed.emit()
 

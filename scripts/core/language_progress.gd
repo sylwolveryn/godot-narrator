@@ -28,6 +28,8 @@ const REDUCER: String = "set_language_understanding"
 const LANGUAGE_TABLE: String = "player_language"
 const MAX_COLUMN: String = "max"
 
+## Repeat gains (task-087); tests seed it.
+var rng := RandomNumberGenerator.new()
 ## Language id -> whole percent last sent to the DB.
 var _pushed: Dictionary = {}
 ## Language id (String) -> top limit in percent from the DB (only languages with a limit set).
@@ -50,6 +52,7 @@ func _ready() -> void:
 	SignalBus.cells_revealed.connect(_on_cells_revealed)
 	SignalBus.language_list_requested.connect(_on_list_requested)
 	SignalBus.language_select_requested.connect(select)
+	SignalBus.beat_repeated.connect(_on_beat_repeated)
 	if database != null:
 		database.tables_loaded.connect(_on_tables_loaded)
 		_read_limits(database.tables)
@@ -345,6 +348,11 @@ func _on_cells_revealed(_map_id: StringName, cells: PackedVector2Array) -> void:
 		p.discovered_types.append(String(type))
 		if not add_percent(config.percent_per_new_type):
 			save_service.commit_progress()
+
+
+## A narration line heard again (task-087): a random repeat_percent_min..max percent for the selected language.
+func _on_beat_repeated(_beat_id: String) -> void:
+	add_percent(float(rng.randi_range(config.repeat_percent_min, maxi(config.repeat_percent_max, config.repeat_percent_min))))
 
 
 func _on_list_requested() -> void:

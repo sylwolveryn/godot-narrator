@@ -20,6 +20,9 @@ extends Resource
 @export var percent_per_steps: float = 1.0
 @export var percent_per_death: float = 1.0
 @export var percent_per_new_type: float = 3.0
+## Hearing a narration line again (task-087) adds a random whole percent in this range to the selected language.
+@export var repeat_percent_min: int = 1
+@export var repeat_percent_max: int = 3
 ## Cell types that never count as a discovery.
 @export var ignored_types: PackedStringArray = PackedStringArray(["void"])
 

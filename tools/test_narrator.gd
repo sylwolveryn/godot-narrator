@@ -254,7 +254,9 @@ func _test_eligibility() -> void:
 	_check(not n.call("is_eligible", chose, 6, 5), "run 6 is below min_run 7")
 	var svc: Node = rig["svc"]
 	(svc.get("progress") as PersistentProgress).heard_beats.append("start_came_back")
-	_check(not n.call("is_eligible", came_back, 2, 1), "a heard beat is not eligible again")
+	# Task-087: a heard story line stays eligible; the repeat roll in _offer decides whether it plays again.
+	_check(n.call("is_eligible", came_back, 2, 1), "a heard story line stays eligible (repeat ladder)")
+	_check(n.call("hearings", "start_came_back") == 1, "an older save's heard line counts as heard once")
 	_teardown(rig)
 
 
@@ -270,7 +272,9 @@ func _test_ladder() -> void:
 		if pick != null:
 			(n.get("_heard") as Dictionary)[pick.id] = true
 	_check(order == PackedStringArray(["death_spikes_down", "death_spikes_willing", "death_spikes_watch"]), "ladder out of order: %s" % [order])
-	_check(n.call("pick_for_event", &"DEATH_BY_SPIKES") == null, "ladder exhausted should give nothing")
+	# Task-087: with every rung heard once, the least heard rung repeats (table order breaks the tie).
+	var again: NarrationBeat = n.call("pick_for_event", &"DEATH_BY_SPIKES")
+	_check(again != null and again.id == "death_spikes_down", "all rungs heard: the least heard repeats, got %s" % [again.id if again != null else "none"])
 	# A late first encounter still gets the lowest rung first.
 	var cleared: Dictionary[String, bool] = {}
 	n.set("_heard", cleared)
@@ -299,7 +303,11 @@ func _test_class_priority() -> void:
 	_wait(n, STEP)
 	_check(_started == PackedStringArray(["spikes_teeth"]), "highest class should win simultaneous triggers, got %s" % [_started])
 	_check(not (rig["svc"].get("progress") as PersistentProgress).heard_beats.has("wake_first"), "a beat that lost the frame must stay unheard")
-	_check(n.call("pick_for_event", &"RUN_STARTED") != null, "dropped run_started beat should stay eligible")
+	var waiting: Array = n.call("waiting")
+	var queued_now: NarrationBeat = n.get("queued")
+	_check(waiting.any(func(b: NarrationBeat) -> bool: return b.id == "wake_first") or (queued_now != null and queued_now.id == "wake_first"), "a never-heard line that lost the frame waits for its turn")
+	_wait(n, 30.0)
+	_check(_started.has("wake_first"), "the waiting first-time line plays later, got %s" % [_started])
 	_teardown(rig)
 
 
@@ -320,12 +328,12 @@ func _test_display_cap_and_queue() -> void:
 	_bus.emit_signal("narration_event", &"CORRUPTION_ENTERED")
 	_wait(n, STEP)
 	_check((n.get("queued") as NarrationBeat).id == "corrupt_knows", "higher class should replace the queued beat")
-	# TTL: the beat waits longer than queue_ttl_seconds behind the current one, so it is dropped.
+	# Task-087: a never-heard line is not dropped by the TTL; it (and the displaced wall_edges) wait their turn.
 	_wait(n, config.queue_ttl_seconds + 0.5)
-	_check(n.get("queued") == null, "queued beat should be dropped after the TTL")
-	_check(_started == PackedStringArray(["wake_first"]), "dropped beat must not play, got %s" % [_started])
-	_check(not (rig["svc"].get("progress") as PersistentProgress).heard_beats.has("corrupt_knows"), "dropped beat stays unheard")
-	_check(n.call("pick_for_event", &"CORRUPTION_ENTERED") != null, "dropped beat stays eligible")
+	_check(n.get("queued") == null or (n.get("queued") as NarrationBeat).id in ["corrupt_knows", "wall_edges"], "the TTL moves a first-time line to the waiting list")
+	_wait(n, 40.0)
+	_check(_started.has("corrupt_knows") and _started.has("wall_edges"), "first-time lines all play in the end, got %s" % [_started])
+	_check((rig["svc"].get("progress") as PersistentProgress).heard_beats.has("corrupt_knows"), "and are recorded as heard")
 	_teardown(rig)
 
 	# Queued beat plays after the gap when the TTL allows it; never two on screen.
@@ -670,7 +678,13 @@ func _test_origin_data() -> void:
 ## A rig with ledger where every ordinary beat (except `keep`) is already heard, at run 5 / 4 deaths, a moving player
 ## (no automatic idle event) and the run started. Only origin beats and the kept ones can play.
 func _origin_rig(keep: PackedStringArray = PackedStringArray(), tweak: Callable = Callable()) -> Dictionary:
-	var rig := _rig(tweak, true, true)
+	# Heard story lines never repeat here (task-087 repeat chance 0), so only origin lines and kept ones can play.
+	var no_repeats := func(config: NarratorConfig) -> void:
+		config.repeat_chances = PackedFloat32Array()
+		config.repeat_chance_min = 0.0
+		if tweak.is_valid():
+			tweak.call(config)
+	var rig := _rig(no_repeats, true, true)
 	var progress: PersistentProgress = rig["svc"].get("progress")
 	progress.run_count = ORIGIN_RUN
 	progress.death_count = ORIGIN_DEATHS
@@ -756,13 +770,14 @@ func _test_origin_reactions() -> void:
 	_bus.emit_signal("narration_event", &"WALL_REVEALED")
 	ledger.call("strike", &"ai", ORIGIN_RUN)
 	_wait(n, 20.0)
-	_check(_started == PackedStringArray(["broken_demonic", "broken_ai"]), "the reactive broken_ai is not dropped by the queue TTL, got %s" % [_started])
+	# wall_edges is kept unheard by this rig, so (task-087) it is guaranteed and plays after the reactive line.
+	_check(_started == PackedStringArray(["broken_demonic", "broken_ai", "wall_edges"]), "the reactive broken_ai is not dropped by the queue TTL, got %s" % [_started])
 
 	# At the floor the next strike recants the oldest strike (demonic): recant line first, then the broken line.
 	_bus.emit_signal("narration_event", &"WALL_REVEALED")
 	ledger.call("strike", &"angelic", ORIGIN_RUN)
 	_wait(n, 30.0)
-	var tail: PackedStringArray = _started.slice(2)
+	var tail: PackedStringArray = _started.slice(3)
 	_check(tail == PackedStringArray(["recant_demonic", "broken_angelic"]), "floor strike plays the recant then the broken line with matching params, got %s" % [tail])
 	_check(ledger.call("is_armed", &"demonic"), "the recant line restates the claim and re-arms the trial")
 	_check(Array(ledger.call("struck_natures")) == ["ai", "angelic"], "ledger struck list after the floor strike")

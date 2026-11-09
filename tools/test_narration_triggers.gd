@@ -78,6 +78,47 @@ func _run() -> void:
 		lang.select(&"DREAM")
 		_check(whisper.check(near) == &"FOUNTAIN_SECRET", "DREAM near the fountain: the secret")
 
+	# --- Repeat ladder (task-087). ---
+	var n = main.get_node("Narrator")
+	var cfg: NarratorConfig = n.config
+	var expect := {0: 1.0, 1: 0.8, 2: 0.6, 5: 0.2, 8: 0.03, 13: 0.02, 17: 0.02, 18: 0.01, 500: 0.01}
+	for k: int in expect:
+		_check(is_equal_approx(cfg.repeat_chance(k), expect[k]), "repeat chance after %d hearings = %s, got %s" % [k, expect[k], cfg.repeat_chance(k)])
+	var line: NarrationBeat = n.pick_for_event(&"ENEMY_DESTROYED")
+	_check(line != null and n.is_guaranteed(line), "an unheard story line is guaranteed")
+	n._counts[line.id] = 5
+	n.rng.seed = 7
+	var passed: int = 0
+	for i in 1000:
+		n._candidates.clear()
+		n._offer(&"ENEMY_DESTROYED")
+		if not n._candidates.is_empty():
+			passed += 1
+	n._candidates.clear()
+	_check(passed > 0 and passed < 1000, "a heard line plays only sometimes (%d of 1000)" % passed)
+	# Every line of the event heard 5 times: the roll alone decides, at the 20 % rung.
+	for b: NarrationBeat in cfg.beats:
+		if b.event == &"ENEMY_DESTROYED":
+			n._counts[b.id] = 5
+	passed = 0
+	for i in 1000:
+		n._candidates.clear()
+		n._offer(&"ENEMY_DESTROYED")
+		if not n._candidates.is_empty():
+			passed += 1
+	n._candidates.clear()
+	_check(passed > 150 and passed < 250, "after 5 hearings about 20 %% play again (%d of 1000)" % passed)
+	var lang = main.get_node("LanguageProgress")
+	var sel: StringName = lang.selected_language()
+	var gains: Dictionary = {}
+	for i in 30:
+		var before: float = lang.percent(sel)
+		root.get_node("SignalBus").emit_signal(&"beat_repeated", "x")
+		gains[int(round(lang.percent(sel) - before))] = true
+	_check(not gains.has(0) or lang.percent(sel) >= lang.cap(sel), "a repeat always teaches something below the cap")
+	for g: int in gains:
+		_check(g >= 0 and g <= 3, "a repeat teaches 1 to 3 %% (got %d)" % g)
+
 	main.queue_free()
 	await process_frame
 	Support.remove_file(save_path)

@@ -19,6 +19,11 @@ extends Node
 ## same event are chained and start one after the other as soon as the previous one has dissolved (no silence gap).
 ## A death preempt drops the chain. Voice files (NarrationLibrary) play with narrator lines only.
 ##
+## Repeats (task-087): story lines of events repeat. A line never heard is guaranteed: when it cannot play at once it
+## waits in a FIFO (it is never dropped by the queue's time to live or by a higher class). A heard line plays again only
+## when a roll passes (NarratorConfig.repeat_chance by its hearing count); unheard lines are picked first, then the
+## least heard. A repeat emits SignalBus.beat_repeated. Origin lines and TIME lines keep their once-only rules.
+##
 ## Must sit after SaveService and OriginLedger and before Player/MapReveal in the tree: signal handlers run in
 ## tree order, and run_count must be updated and run_started seen before the first reveals.
 
@@ -62,8 +67,11 @@ var _clock: float = 0.0
 var _timer: float = 0.0
 var _queued_at: float = 0.0
 var _queued_priority: int = -1
-## A TTL-exempt beat displaced from the queue by a higher class; it re-queues when the slot frees.
-var _parked: NarrationBeat
+## Beats that must still play: TTL-exempt beats displaced from the queue and never-heard lines (task-087). They move
+## into the queue, oldest first, whenever it is empty during a run.
+var _waiting: Array[NarrationBeat] = []
+## Hearing counts this session (beat id -> count), over the saved counts.
+var _counts: Dictionary[String, int] = {}
 var _next_after_preempt: NarrationBeat
 ## Beats of reactive events, in the order they were offered.
 var _reactive: Array[NarrationBeat] = []
@@ -113,6 +121,8 @@ func advance(delta: float) -> void:
 		_check_time_beats()
 	_tick_state(delta)
 	if queued != null and _clock - _queued_at > config.queue_ttl_seconds and not config.ttl_exempt_events.has(queued.event):
+		if is_guaranteed(queued):
+			_wait(queued)
 		queued = null
 	# The next layer of the event on screen follows as soon as the previous line has dissolved.
 	if not _chain.is_empty() and (state == State.FREE or state == State.GAP):
@@ -125,9 +135,9 @@ func advance(delta: float) -> void:
 		var next: NarrationBeat = queued
 		queued = null
 		_start(next)
-	if queued == null and _parked != null:
-		queued = _parked
-		_parked = null
+	if queued == null and not _waiting.is_empty() and _run_active:
+		queued = _waiting.pop_front()
+		_queued_priority = priority_of(queued.event)
 		_queued_at = _clock
 
 
@@ -139,12 +149,35 @@ func is_eligible(beat: NarrationBeat, runs: int, deaths: int) -> bool:
 		return false
 	if deaths < beat.min_deaths:
 		return false
-	if beat.once and is_heard(beat.id):
+	if beat.once and is_heard(beat.id) and not is_repeatable(beat):
 		return false
 	if beat.role == NarrationBeat.Role.CLAIM and ledger != null:
 		# Alive, unarmed and not dormant; a nature without a claimable trial never gets its claim played.
 		return not beat.supports.is_empty() and ledger.is_claimable(StringName(beat.supports[0]))
 	return true
+
+
+## Story lines of events repeat with a shrinking chance (task-087); origin and timed lines do not.
+func is_repeatable(beat: NarrationBeat) -> bool:
+	return beat.trigger == NarrationBeat.Trigger.EVENT and beat.role == NarrationBeat.Role.STORY
+
+
+## A repeatable line never heard: it must play once, however long it waits.
+func is_guaranteed(beat: NarrationBeat) -> bool:
+	return is_repeatable(beat) and hearings(beat.id) == 0
+
+
+## How many times a line was heard (saved counts, an older save's heard list as 1, and this session).
+func hearings(beat_id: String) -> int:
+	if _counts.has(beat_id):
+		return _counts[beat_id]
+	if save_service != null:
+		var p: PersistentProgress = save_service.progress
+		if p.beat_counts.has(beat_id):
+			return int(p.beat_counts[beat_id])
+		if p.heard_beats.has(beat_id):
+			return 1
+	return 1 if _heard.has(beat_id) else 0
 
 
 func is_heard(beat_id: String) -> bool:
@@ -223,6 +256,11 @@ func supports_all(beat: NarrationBeat, natures: PackedStringArray) -> bool:
 func _ranks_before(a: NarrationBeat, b: NarrationBeat, survivors: PackedStringArray) -> bool:
 	if a.layer != b.layer:
 		return a.layer < b.layer
+	# Fresh lines (origin lines, and story lines never heard) before repeats; among repeats the least heard first.
+	var ha: int = hearings(a.id) if is_repeatable(a) else 0
+	var hb: int = hearings(b.id) if is_repeatable(b) else 0
+	if ha != hb:
+		return ha < hb
 	if a.min_run != b.min_run:
 		return a.min_run < b.min_run
 	var dual_a: bool = supports_all(a, survivors)
@@ -266,6 +304,9 @@ func _offer(event: StringName, param: StringName = &"") -> void:
 	var beat: NarrationBeat = pick_for_event(event, param)
 	if beat == null:
 		return
+	# A heard line plays again only when the repeat roll passes (task-087).
+	if is_repeatable(beat) and rng.randf() >= config.repeat_chance(hearings(beat.id)):
+		return
 	if reactive:
 		_reactive.append(beat)
 	else:
@@ -287,7 +328,7 @@ func _is_pending(beat: NarrationBeat) -> bool:
 	for candidate: Array in _candidates:
 		if candidate[0] == beat:
 			return true
-	if beat == queued or _reactive.has(beat) or _chain.has(beat):
+	if beat == queued or _reactive.has(beat) or _chain.has(beat) or _waiting.has(beat):
 		return true
 	return beat == current and (state == State.SHOWING or state == State.DISSOLVING or state == State.PREEMPTING)
 
@@ -300,16 +341,20 @@ func _resolve_candidates() -> void:
 	for candidate: Array in _candidates:
 		if candidate[1] > best[1]:
 			best = candidate
-	_candidates.clear()
 	var beat: NarrationBeat = best[0]
 	var priority: int = best[1]
+	# Never-heard lines that lost this frame still play later.
+	for candidate: Array in _candidates_lost(best):
+		if is_guaranteed(candidate[0]):
+			_wait(candidate[0])
+	_candidates.clear()
 	if priority >= config.preempt_priority:
 		_preempt(beat)
 	elif state == State.FREE and queued == null:
 		_start(beat)
 	elif queued == null or priority > _queued_priority:
-		if queued != null and config.ttl_exempt_events.has(queued.event):
-			_parked = queued
+		if queued != null and (config.ttl_exempt_events.has(queued.event) or is_guaranteed(queued)):
+			_wait(queued)
 		queued = beat
 		_queued_priority = priority
 		_queued_at = _clock
@@ -346,13 +391,35 @@ func _start(beat: NarrationBeat, chained: bool = false) -> void:
 		current_voice = library.audio_for(NarrationLibrary.event_of(beat))
 	if not chained:
 		_chain = layer_followers(beat)
-	if beat.once:
+	if is_repeatable(beat):
+		var before: int = hearings(beat.id)
+		_counts[beat.id] = before + 1
+		_heard[beat.id] = true
+		SignalBus.beat_heard.emit(beat.id)
+		if before > 0:
+			SignalBus.beat_repeated.emit(beat.id)
+	elif beat.once:
 		_heard[beat.id] = true
 		SignalBus.beat_heard.emit(beat.id)
 	var claimed: StringName = claimed_nature(beat)
 	if claimed != &"":
 		SignalBus.origin_claim_heard.emit(claimed)
 	beat_started.emit(beat)
+
+
+## The beats waiting for a free slot (tests).
+func waiting() -> Array[NarrationBeat]:
+	return _waiting
+
+
+func _wait(beat: NarrationBeat) -> void:
+	if beat != null and not _waiting.has(beat):
+		_waiting.append(beat)
+
+
+## The candidates of this frame other than `best`.
+func _candidates_lost(best: Array) -> Array:
+	return _candidates.filter(func(c: Array) -> bool: return c != best)
 
 
 ## The eligible lines of the later layers of a beat's event, in layer order (empty for TIME beats).
@@ -411,7 +478,6 @@ func _on_run_started(run_index: int) -> void:
 		death_count = save_service.progress.death_count
 	else:
 		run_count = run_index + 1
-	_parked = null
 	# A new run cuts the silence after the previous beat (a beat still on screen finishes normally).
 	if state == State.GAP:
 		state = State.FREE
@@ -429,8 +495,11 @@ func _on_run_started(run_index: int) -> void:
 
 func _on_run_ended(cause: StringName) -> void:
 	_run_active = false
+	if queued != null and is_guaranteed(queued):
+		_wait(queued)
 	queued = null
-	_parked = null
+	# Displaced lines of the run that ended only wait on when they were never heard.
+	_waiting = _waiting.filter(func(b: NarrationBeat) -> bool: return is_guaranteed(b))
 	_candidates = _candidates.filter(func(c: Array) -> bool: return c[1] >= config.preempt_priority)
 	if save_service != null:
 		death_count = save_service.progress.death_count

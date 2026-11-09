@@ -32,6 +32,9 @@ signal player_motion_changed(moving: bool)
 signal player_stepped(cell: Vector2i)
 ## Emitted by the narrator when a beat starts displaying; SaveService records it as heard.
 signal beat_heard(beat_id: String)
+## Emitted by the Narrator when a line that was heard before starts again (task-087). LanguageProgress answers with a
+## small understanding gain: hearing the same words again teaches them.
+signal beat_repeated(beat_id: String)
 ## Emitted by EntityProgression the moment the multi-glyph entity unlocks (the run that ends at the unlock threshold).
 signal entity_unlocked
 ## Emitted by EntityProgression when the grow moment starts: the single glyph is about to grow into the entity (a hook for the narrator).

@@ -13,6 +13,9 @@ extends Resource
 @export var death_count: int = 0
 ## Ids of narration beats already heard (filled by the narrator, task-014).
 @export var heard_beats: PackedStringArray = PackedStringArray()
+## How many times each narration line was heard (task-087), beat id -> count. A line in heard_beats without a count
+## (older saves) counts as heard once.
+@export var beat_counts: Dictionary = {}
 ## True once the multi-glyph entity has been unlocked (death_count reached EntityGrowthConfig.growth_unlock_deaths). Never reverts.
 @export var entity_unlocked: bool = false
 ## The active form after the unlock: EntityForm.SINGLE or EntityForm.GROWN (task-018 lets the player switch).
