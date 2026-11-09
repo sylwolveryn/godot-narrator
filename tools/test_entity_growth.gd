@@ -16,6 +16,9 @@ var _grown_signals: int = 0
 var _forms: Array = []
 
 
+## Held so the scene shares this (cached) config with whole_body off (task-090).
+var _growth_cfg: EntityGrowthConfig
+
 func _init() -> void:
 	process_frame.connect(_run, CONNECT_ONE_SHOT)
 
@@ -137,6 +140,9 @@ func _run() -> void:
 
 
 func _main_scene(cfg: EntityGrowthConfig) -> void:
+	# These checks predate task-090 and run on small maps: test them with the heart-sized collider.
+	_growth_cfg = load("res://resources/config/entity_growth_config.tres")
+	_growth_cfg.whole_body = false
 	var main: Node = (load("res://main.tscn") as PackedScene).instantiate()
 	var path: String = Support.isolate_save(main, SAVE_TAG)
 	var seed_progress := PersistentProgress.new()

@@ -18,6 +18,9 @@ var _moves: Array = []
 var _main: Node
 
 
+## Held so the scene shares this (cached) config with whole_body off (task-090).
+var _growth_cfg: EntityGrowthConfig
+
 func _init() -> void:
 	process_frame.connect(_run, CONNECT_ONE_SHOT)
 
@@ -90,6 +93,9 @@ func _check_map() -> void:
 
 
 func _main_scene() -> void:
+	# These checks predate task-090 and run on small maps: test them with the heart-sized collider.
+	_growth_cfg = load("res://resources/config/entity_growth_config.tres")
+	_growth_cfg.whole_body = false
 	_main = (load("res://main.tscn") as PackedScene).instantiate()
 	var path: String = Support.isolate_save(_main, SAVE_TAG)
 	var seeded := PersistentProgress.new()

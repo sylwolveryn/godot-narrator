@@ -279,7 +279,7 @@ func _step_trip(delta: float) -> void:
 		if _cands.size() <= 1:
 			pos = _from.lerp(dest, _ease(u))
 		else:
-			var zmax: float = camera_rig.view_config.zoom_max if camera_rig != null else _zoom0
+			var zmax: float = camera_rig.zoom_limit() if camera_rig != null else _zoom0
 			var out_share: float = config.zoom_out_share
 			var in_start: float = 1.0 - config.zoom_in_share
 			if u < out_share:

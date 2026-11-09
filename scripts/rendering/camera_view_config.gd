@@ -50,6 +50,9 @@ extends Resource
 ## Below 1 is closer (zoomed in), above 1 is further out.
 @export_range(0.1, 1.0, 0.01) var zoom_min: float = 0.55
 @export_range(1.0, 4.0, 0.01) var zoom_max: float = 1.6
+## Task-090: per entity form, a factor on zoom_max and on the requested zoom when that form is taken (a bigger body
+## sees further; everything seems smaller). Forms not listed use 1.
+@export var form_zoom: Dictionary[StringName, float] = {&"grown": 1.6}
 ## Seconds the zoom takes to catch up with the requested zoom (0 snaps).
 @export_range(0.0, 1.0, 0.01) var zoom_smoothing: float = 0.1
 ## The eased zoom snaps to the requested zoom once closer than this (zoom multiple), so the rig settles.

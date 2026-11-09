@@ -85,6 +85,29 @@ extends Resource
 
 
 ## The formation this identity grows into.
+## Task-090: the grown body collides as a whole and must fit where it is taken (radius: body_radius_for). Off = the
+## heart-sized collider of the single glyph in every form (no fit check).
+@export var whole_body: bool = true
+
+
+## Ground radius of the grown body (task-090): half the width of the identity's formation (its widest glyph from the
+## heart, plus half a glyph). The many form collides with and must fit in a circle this wide.
+func body_radius_for(identity: String) -> float:
+	var f: EntityFormation = formation_for(identity)
+	if f == null:
+		return 0.0
+	var heart_col: int = -1
+	for row in f.rows:
+		if row.find(EntityFormation.HEART) >= 0:
+			heart_col = row.find(EntityFormation.HEART)
+	var widest: int = 0
+	for row in f.rows:
+		for c in row.length():
+			if row[c] != EntityFormation.EMPTY:
+				widest = maxi(widest, absi(c - heart_col))
+	return widest * f.advance.x + glyph_size * 0.5
+
+
 func formation_for(identity: String) -> EntityFormation:
 	if formations.is_empty():
 		return null

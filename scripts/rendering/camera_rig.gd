@@ -22,6 +22,8 @@ var _zoom_goal: float = 1.0
 ## (smoothed) and to the zoom the player had asked for.
 var _override: bool = false
 var _zoom_goal_saved: float = 1.0
+## Task-090: the active entity form's zoom factor (CameraViewConfig.form_zoom); scales zoom_max.
+var _form_zoom: float = 1.0
 ## One full turn in degrees; used to keep the unwrapped yaw small.
 const FULL_TURN: float = 360.0
 
@@ -31,6 +33,7 @@ func _ready() -> void:
 		view_config = CameraViewConfig.new()
 	apply_view(view_config)
 	SignalBus.player_spawned.connect(_on_player_spawned)
+	SignalBus.entity_form_changed.connect(_on_entity_form_changed)
 
 
 func _process(delta: float) -> void:
@@ -88,7 +91,25 @@ func rotate_by(degrees: float) -> void:
 
 ## Requests `steps` zoom steps (negative zooms in), clamped to the profile's limits.
 func zoom_by(steps: float) -> void:
-	_zoom_goal = clampf(_zoom_goal * pow(1.0 + view_config.zoom_step, steps), view_config.zoom_min, view_config.zoom_max)
+	_zoom_goal = clampf(_zoom_goal * pow(1.0 + view_config.zoom_step, steps), view_config.zoom_min, zoom_limit())
+
+
+## Furthest zoom right now: the profile's zoom_max times the active form's factor (task-090).
+func zoom_limit() -> float:
+	return view_config.zoom_max * _form_zoom
+
+
+## A new entity form: its zoom factor scales the limit, and the requested zoom moves by the change, so a bigger body
+## sees proportionally more (and switching back returns to the zoom the player had).
+func _on_entity_form_changed(form: StringName, _animate: bool) -> void:
+	var factor: float = maxf(float(view_config.form_zoom.get(form, 1.0)), 0.01)
+	if is_equal_approx(factor, _form_zoom):
+		return
+	var change: float = factor / _form_zoom
+	_form_zoom = factor
+	_zoom_goal = clampf(_zoom_goal * change, view_config.zoom_min, zoom_limit())
+	if _override:
+		_zoom_goal_saved = clampf(_zoom_goal_saved * change, view_config.zoom_min, zoom_limit())
 
 
 ## The yaw the view shows right now, in degrees (what screen-relative movement must use).
@@ -109,7 +130,7 @@ func override_view(world_position: Vector3, zoom: float) -> void:
 		_override = true
 		_zoom_goal_saved = _zoom_goal
 	global_position = Vector3(world_position.x, view_config.look_height, world_position.z)
-	_zoom = clampf(zoom, view_config.zoom_min, view_config.zoom_max)
+	_zoom = clampf(zoom, view_config.zoom_min, zoom_limit())
 	_zoom_goal = _zoom
 	_apply_transform()
 

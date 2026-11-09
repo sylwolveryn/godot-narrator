@@ -21,6 +21,9 @@ var _forms: Array = []
 var _physics_frames: int = 0
 
 
+## Held so the scene shares this (cached) config with whole_body off (task-090).
+var _growth_cfg: EntityGrowthConfig
+
 func _init() -> void:
 	process_frame.connect(_run, CONNECT_ONE_SHOT)
 
@@ -134,6 +137,9 @@ func _run() -> void:
 
 ## Builds the real main scene on an isolated save seeded with the given progress and waits until a run is being played.
 func _make_main(tag: String, seeded: PersistentProgress) -> Node:
+	# These checks predate task-090 and run on small maps: test them with the heart-sized collider.
+	_growth_cfg = load("res://resources/config/entity_growth_config.tres")
+	_growth_cfg.whole_body = false
 	var main: Node = (load("res://main.tscn") as PackedScene).instantiate()
 	var path: String = Support.isolate_save(main, tag)
 	ResourceSaver.save(seeded, path)

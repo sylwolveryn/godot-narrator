@@ -153,6 +153,10 @@ func _build() -> void:
 	player.set("map_loader", loader)
 	player.set("save_service", save)
 	player.set("database", database)
+	# Task-090: the grown body collides as a whole; EntityProgression tests the fit at the player's place.
+	player.set("entity", progression)
+	progression.set("player", player)
+	progression.set("map_loader", loader)
 	var body := CollisionShape3D.new()
 	body.name = "Collision"
 	var capsule := CapsuleShape3D.new()

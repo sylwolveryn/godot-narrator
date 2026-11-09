@@ -8,6 +8,15 @@ extends Node
 
 @export var config: EntityGrowthConfig
 @export var save_service: SaveService
+## Optional (task-090): the fit check of the many form runs a physics shape test at the player's place (and at the
+## map's spawn for the grow moment at run start).
+@export var player: Node3D
+@export var map_loader: MapLoader
+## Physics layers the grown body must not overlap (walls, dirt, props, pushable objects).
+@export_flags_3d_physics var blocking_mask: int = 1
+## Height of the body above the floor for the fit test (centre of the test cylinder) and its height.
+@export var fit_test_height: float = 0.5
+@export var fit_test_thickness: float = 0.6
 
 
 func _ready() -> void:
@@ -40,9 +49,40 @@ func set_form(form: StringName) -> bool:
 		return false
 	if form == current_form():
 		return true
+	if not fits(form):
+		# Task-090: the whole body has no room here.
+		SignalBus.narration_event.emit(NarrationEvents.FORM_BLOCKED)
+		return false
 	save_service.set_entity_form(form)
 	SignalBus.entity_form_changed.emit(form, true)
 	return true
+
+
+## Ground radius of the body in a form (task-090): the grown body is as wide as its formation; other forms 0 (their
+## collision stays PlayerConfig.body_radius).
+func body_radius(form: StringName) -> float:
+	if form != EntityForm.GROWN or save_service == null or not config.whole_body:
+		return 0.0
+	return config.body_radius_for(save_service.progress.identity_glyph)
+
+
+## True when the body of `form` has room where the player stands: no collider of blocking_mask within its radius.
+## Forms without an own radius always fit; without a player there is nothing to test.
+func fits(form: StringName, at: Variant = null) -> bool:
+	var radius: float = body_radius(form)
+	if radius <= 0.0 or player == null or not player.is_inside_tree():
+		return true
+	var where: Vector3 = at if at is Vector3 else player.global_position
+	var shape := CylinderShape3D.new()
+	shape.radius = radius
+	shape.height = fit_test_thickness
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	query.collision_mask = blocking_mask
+	query.transform = Transform3D(Basis.IDENTITY, Vector3(where.x, fit_test_height, where.z))
+	if player is CollisionObject3D:
+		query.exclude = [(player as CollisionObject3D).get_rid()]
+	return player.get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
 
 
 func _check_unlock() -> void:
@@ -63,7 +103,9 @@ func _on_menu_action(action: StringName) -> void:
 func _on_run_started(_run_index: int) -> void:
 	if not is_unlocked():
 		return
-	if not save_service.progress.entity_grow_played:
+	# The grow moment waits for a run whose spawn has room for the whole body (task-090).
+	var spawn: Variant = map_loader.spawn_position if map_loader != null else null
+	if not save_service.progress.entity_grow_played and fits(EntityForm.GROWN, spawn):
 		save_service.mark_entity_grow_played()
 		save_service.set_entity_form(EntityForm.GROWN)
 		SignalBus.entity_grown.emit()

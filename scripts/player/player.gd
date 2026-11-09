@@ -10,6 +10,8 @@ signal identity_changed(glyph: String)
 @export var config: PlayerConfig
 @export var map_loader: MapLoader
 @export var save_service: SaveService
+## Optional (task-090): the body radius of the active form (the grown body collides as a whole).
+@export var entity: EntityProgression
 ## Read-only source of the run phase and the discovered input scheme.
 @export var run_manager: RunManager
 ## Source of the active camera view; keyboard and gamepad input is rotated by its current yaw so
@@ -66,6 +68,10 @@ func _ready() -> void:
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 	apply_movement_profile()
 	SignalBus.entity_form_changed.connect(_on_entity_form_changed)
+	# Own copy of the collision shape: its radius follows the form (task-090).
+	var body := get_node_or_null("Collision") as CollisionShape3D
+	if body != null and body.shape != null:
+		body.shape = body.shape.duplicate()
 	if database != null:
 		database.tables_loaded.connect(func(_tables: Dictionary) -> void: apply_movement_profile())
 		apply_movement_profile()
@@ -311,6 +317,20 @@ func _announce_contact(delta: float) -> void:
 	_touching = touching
 
 
+## Collision radius of the active form (task-090): the whole grown body collides, not only the heart glyph.
+func body_radius() -> float:
+	var grown: float = entity.body_radius(form) if entity != null else 0.0
+	return grown if grown > 0.0 else config.body_radius
+
+
+func apply_body_radius() -> void:
+	var body := get_node_or_null("Collision") as CollisionShape3D
+	if body != null and body.shape is CapsuleShape3D:
+		var capsule := body.shape as CapsuleShape3D
+		capsule.radius = body_radius()
+		capsule.height = maxf(capsule.height, capsule.radius * 2.0)
+
+
 ## Picks the movement of the active form: its DB movement_profile row, else the default row, else PlayerConfig.
 ## Called on every form change and every DB (re)load, so tuning in the god window applies during play.
 func apply_movement_profile() -> void:
@@ -337,4 +357,5 @@ func movement_row(profile: String) -> Dictionary:
 
 func _on_entity_form_changed(new_form: StringName, _animate: bool) -> void:
 	form = new_form
+	apply_body_radius()
 	apply_movement_profile()
