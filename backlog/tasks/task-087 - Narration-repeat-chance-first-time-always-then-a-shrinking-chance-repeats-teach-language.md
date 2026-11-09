@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-11-08T23:53:00Z'
-updated_date: '2026-11-09T00:04:00Z'
+updated_date: '2026-11-09T00:31:00Z'
 labels:
   - narration
 dependencies: []
@@ -33,6 +33,8 @@ A trigger's line plays the first time always, even when it has to wait in the qu
 
 <!-- SECTION:NOTES:BEGIN -->
 Narrator: is_repeatable (EVENT + STORY), is_guaranteed (never heard), hearings() (session over saved beat_counts, older heard_beats = 1). Fresh lines (origin or never heard) rank before repeats, least heard first. _offer rolls NarratorConfig.repeat_chance(hearings) (ladder 80..2 %, min 1 %). Guaranteed lines never get dropped: TTL, a higher class or losing the frame moves them to the _waiting FIFO (replaces _parked), which refills the queue during a run; kept across run end. _start counts every story line (SaveService beat_counts) and emits SignalBus.beat_repeated for a repeat; LanguageProgress adds a random 1..3 % (LanguageConfig.repeat_percent_min/max). Tests: test_narrator expectations updated to the new rules (origin rig keeps repeat chance 0), test_narration_triggers checks ladder values, the roll rate (~20 % at 5 hearings) and the 1..3 % gain; save, language, origin tests PASS.
+
+Fix (after commit 454c146): a never-heard line that lost to an equal-class queued line was still dropped; it now waits. Found by test_dirt (first WALL_EATEN world line).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
