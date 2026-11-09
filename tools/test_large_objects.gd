@@ -39,6 +39,7 @@ func _run() -> void:
 	_check_merging()
 	_check_args()
 	await _check_view_and_collision()
+	await _check_statues()
 	await _check_arena()
 	if _failures.is_empty():
 		print("PASS test_large_objects")
@@ -132,8 +133,14 @@ func _check_args() -> void:
 	_check(MapLoader.map_path_from_args(PackedStringArray(["--map=m1_awakening", "--map=m2_arena"]), fallback, dir) == ARENA, "last --map wins")
 
 
+## Flat-art pieces (the fallback when a def has no baked views): the gargoyle def without its views.
 func _check_view_and_collision() -> void:
 	var legend: MapLegend = _legend()
+	var flat: LargeObjectDef = (legend.large_def(GARGOYLE) as LargeObjectDef).duplicate()
+	flat.views = null
+	flat.views_small = null
+	flat.basin = false
+	legend.large_objects[GARGOYLE] = flat
 	var loader: MapLoader = _loader(legend)
 	root.add_child(loader)
 	var view: Node3D = load(VIEW_SCRIPT).new()
@@ -192,6 +199,82 @@ func _check_view_and_collision() -> void:
 	_check(walker.global_position.x >= edge + capsule.radius * 0.9, "the walker stopped at the gargoyle (x %.2f, edge %.2f)" % [walker.global_position.x, edge])
 	walker.queue_free()
 	view.queue_free()
+	loader.queue_free()
+	await process_frame
+
+
+## Statues (task-101): the gargoyle with its baked views. The basin is real geometry inside the footprint; the statue
+## is anchored on the footprint centre with a size from the shorter side, small footprints use the coarse bake, and
+## turning the camera swaps the shown view (and only the shown view) without moving the piece.
+func _check_statues() -> void:
+	var legend: MapLegend = _legend()
+	var def: LargeObjectDef = legend.large_def(GARGOYLE)
+	_check(def.has_views() and def.views.count() >= 8 and def.views_small != null, "the gargoyle has baked views")
+	_check(def.views.count() == def.views.arts.size() and def.views.arts.size() == def.views.masks.size(), "every view has a mask")
+	var loader: MapLoader = _loader(legend)
+	root.add_child(loader)
+	var rig := Node3D.new()
+	var rig_script := GDScript.new()
+	rig_script.source_code = "extends Node3D\nvar yaw: float = 0.0\nfunc current_yaw_degrees() -> float:\n\treturn yaw\n"
+	rig_script.reload()
+	rig.set_script(rig_script)
+	root.add_child(rig)
+	var cam := Camera3D.new()
+	root.add_child(cam)
+	cam.current = true
+	var view: Node3D = load(VIEW_SCRIPT).new()
+	view.set("map_loader", loader)
+	view.set("camera_rig", rig)
+	root.add_child(view)
+	loader.build(loader.parse_text("##########\n#G..GG...#\n#...GG...#\n#.....@..#\n##########"))
+	await process_frame
+	await process_frame
+	var cell: float = loader.world_config.cell_size
+	var two: int = -1
+	for i in view.call("piece_count"):
+		var p: LargeObjectPlacement = view.call("piece_placement", i)
+		var short: float = minf(p.rect.size.x, p.rect.size.y)
+		_check(view.call("piece_is_statue", i), "piece %s is a statue" % p.rect)
+		var node: Node3D = view.call("piece_node", i)
+		_check(node.scale.is_equal_approx(Vector3.ONE), "statue root is unscaled")
+		var centre: Vector3 = loader.rect_to_world(p.rect)
+		_check(is_equal_approx(node.position.x, centre.x) and is_equal_approx(node.position.z, centre.z), "statue %s centred" % p.rect)
+		var statue: Node3D = view.call("piece_statue", i)
+		_check(is_equal_approx(statue.scale.x, short * cell * def.statue_scale), "statue %s sized by its shorter side" % p.rect)
+		var expect: LargeObjectViews = def.views_small if short < def.views_small_below else def.views
+		_check(view.call("piece_views", i) == expect, "statue %s uses the %s bake" % [p.rect, "small" if expect == def.views_small else "fine"])
+		var labels: Array = view.call("piece_labels", i)
+		_check(labels.size() == def.layers().size(), "statue %s has one label per layer" % p.rect)
+		_check((labels[0] as Label3D).billboard == BaseMaterial3D.BILLBOARD_ENABLED, "statue labels face the camera")
+		var basin: MeshInstance3D = view.call("piece_basin", i)
+		_check(basin != null and basin.mesh != null, "statue %s has a basin" % p.rect)
+		if basin != null:
+			var box: AABB = basin.mesh.get_aabb()
+			var inset: float = def.basin_inset * short * cell
+			_check(is_equal_approx(box.size.x, p.rect.size.x * cell - 2.0 * inset) and is_equal_approx(box.size.z, p.rect.size.y * cell - 2.0 * inset),
+				"basin %s fits the footprint (%s)" % [p.rect, box.size])
+			_check(is_equal_approx(box.position.y, 0.0), "basin stands on the floor")
+		if p.rect.size == Vector2i(2, 2):
+			two = i
+	_check(two >= 0, "a 2x2 statue exists")
+	if two >= 0:
+		var labels: Array = view.call("piece_labels", two)
+		var before: int = view.call("piece_view", two)
+		var text: String = (labels[0] as Label3D).text
+		var position: Vector3 = (view.call("piece_node", two) as Node3D).position
+		var views: LargeObjectViews = view.call("piece_views", two)
+		rig.set("yaw", 180.0)
+		cam.rotation = Vector3(deg_to_rad(-35.264), PI, 0.0)
+		await process_frame
+		var after: int = view.call("piece_view", two)
+		_check(after == views.index_for_yaw(180.0) and after != before, "turning the camera shows another view (%d -> %d)" % [before, after])
+		_check((labels[0] as Label3D).text != text, "the view swap changes the label texts")
+		_check((view.call("piece_node", two) as Node3D).position.is_equal_approx(position), "the piece stays on its footprint")
+		var statue: Node3D = view.call("piece_statue", two)
+		_check(statue.position.normalized().is_equal_approx(cam.global_basis.z.normalized()), "the statue is pushed towards the camera")
+	view.queue_free()
+	cam.queue_free()
+	rig.queue_free()
 	loader.queue_free()
 	await process_frame
 

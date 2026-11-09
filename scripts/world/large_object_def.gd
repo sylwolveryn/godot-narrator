@@ -34,6 +34,40 @@ extends Resource
 ## Vertical offset of the bottom of the art, in world units (negative sinks it into the floor).
 @export var art_lift: float = 0.0
 
+@export_group("Views")
+## Optional pre-baked view-dependent art (task-101): when set, the prop is drawn as a statue that turns with the camera
+## (the view nearest to the camera yaw, on a camera-facing billboard) instead of `art_lines`; the masks name the layers.
+@export var views: LargeObjectViews
+## Coarser bake used for small footprints (shorter side below `views_small_below` cells), so the statue glyphs stay
+## about as large as the world's glyphs instead of shrinking with the footprint.
+@export var views_small: LargeObjectViews
+@export var views_small_below: float = 1.5
+## Size of the statue as a multiple of the footprint's shorter side (cells).
+@export var statue_scale: float = 1.0
+
+@export_group("Basin")
+## Real basin geometry fitted to the footprint (task-101, FountainBasin): a stone rim around glowing water. Sizes are in
+## multiples of the footprint's shorter side, so a 2x2 fountain has a basin twice as tall as a 1x1.
+@export var basin: bool = false
+## Gap between the footprint edge and the rim's outer face.
+@export var basin_inset: float = 0.03
+@export var basin_rim_width: float = 0.1
+@export var basin_rim_height: float = 0.2
+@export var basin_water_height: float = 0.15
+## Glyph cell of the basin surfaces (width, height), world units for a 1x1 footprint.
+@export var basin_glyph_cell: Vector2 = Vector2(0.06, 0.1)
+@export var basin_stone_dark: Color = Color(0.16, 0.18, 0.24)
+@export var basin_stone_bright: Color = Color(0.72, 0.75, 0.82)
+## The water's glow on the inner faces and the lip of the rim.
+@export var basin_lip_color: Color = Color(0.4, 0.9, 1.0)
+## Corner posts: side and height as multiples of the rim width / height (0 = none).
+@export var basin_post_size: float = 1.5
+@export var basin_post_height: float = 1.6
+@export var basin_water_deep: Color = Color(0.02, 0.18, 0.4)
+@export var basin_water_bright: Color = Color(0.7, 0.97, 1.0)
+## Where the statue's water lands in front of the centre (multiples of the footprint's shorter side; ripples start there).
+@export var basin_splash: float = 0.0
+
 @export_group("Animation")
 ## Animated layers: layer char -> glyph cycle. Every glyph of such a layer cycles through it, the phase shifted one
 ## step per row (and every other column) so the pattern flows downward, e.g. falling water. Empty: no animation.
@@ -62,27 +96,54 @@ extends Resource
 
 ## Layer char of the art glyph at (col, row).
 func layer_at(col: int, row: int) -> String:
-	if row < 0 or row >= mask_lines.size():
+	return _mask_at(mask_lines, col, row)
+
+
+static func _mask_at(masks: PackedStringArray, col: int, row: int) -> String:
+	if row < 0 or row >= masks.size():
 		return " "
-	var line: String = mask_lines[row]
+	var line: String = masks[row]
 	if col < 0 or col >= line.length():
 		return " "
 	return line[col]
 
 
-## Every layer used by a non-space art glyph, in first-use order (base layer first when used).
+## True when the prop is drawn from pre-baked views (a statue turning with the camera).
+func has_views() -> bool:
+	return views != null and views.count() > 0
+
+
+## The baked views for a footprint whose shorter side is `short_side` cells.
+func views_for(short_side: float) -> LargeObjectViews:
+	if views_small != null and views_small.count() > 0 and short_side < views_small_below:
+		return views_small
+	return views
+
+
+## Every layer used by a non-space art glyph, sorted (base layer first when used). With views: over every view.
 func layers() -> PackedStringArray:
 	var out := PackedStringArray()
-	for row in art_lines.size():
-		var line: String = art_lines[row]
+	if has_views():
+		for baked: LargeObjectViews in [views, views_small]:
+			if baked == null:
+				continue
+			for v in baked.count():
+				_collect_layers(baked.art_lines(v), baked.mask_lines(v), out)
+	else:
+		_collect_layers(art_lines, mask_lines, out)
+	out.sort()
+	return out
+
+
+static func _collect_layers(lines: PackedStringArray, masks: PackedStringArray, out: PackedStringArray) -> void:
+	for row in lines.size():
+		var line: String = lines[row]
 		for col in line.length():
 			if line[col] == " ":
 				continue
-			var layer: String = layer_at(col, row)
+			var layer: String = _mask_at(masks, col, row)
 			if not out.has(layer):
 				out.append(layer)
-	out.sort()
-	return out
 
 
 func color_of(layer: String) -> Color:
@@ -92,17 +153,22 @@ func color_of(layer: String) -> Color:
 ## Text of one layer: the art with every glyph of other layers replaced by a space (rows keep their width so all
 ## layers line up in a monospace font). An animated layer replaces its glyphs with its cycle at `step`.
 func layer_text(layer: String, step: int) -> String:
+	return lines_layer_text(art_lines, mask_lines, layer, step)
+
+
+## layer_text of any art / mask pair (a baked view of `views`).
+func lines_layer_text(lines: PackedStringArray, masks: PackedStringArray, layer: String, step: int) -> String:
 	var width: int = 0
-	for line in art_lines:
+	for line in lines:
 		width = maxi(width, line.length())
 	var cycle: String = layer_anims.get(layer, "")
 	var rows := PackedStringArray()
-	for row in art_lines.size():
-		var line: String = art_lines[row]
+	for row in lines.size():
+		var line: String = lines[row]
 		var out: String = ""
 		for col in width:
 			var ch: String = line[col] if col < line.length() else " "
-			if ch == " " or layer_at(col, row) != layer:
+			if ch == " " or _mask_at(masks, col, row) != layer:
 				out += " "
 			elif cycle != "":
 				out += cycle[posmod(row - step + col % 2, cycle.length())]

@@ -263,6 +263,7 @@ func _build() -> void:
 	large_view.name = "LargeObjectView"
 	large_view.set("map_loader", loader)
 	large_view.set("map_reveal", reveal)
+	large_view.set("camera_rig", rig)
 	_add(root, large_view)
 
 	# Narration text: above the world and above the intro veil (decision-001).

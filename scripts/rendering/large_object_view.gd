@@ -12,11 +12,19 @@ extends Node3D
 ## through the gaps of the art. Its opacity follows the selected language's understanding
 ## (SignalBus.language_understanding_changed): hidden at 0 (the old look), opaque at 1.
 ## Destroyed props (task-073, LargeObjectPlacement.destroyed) are hidden until they are restored.
+## Statues (task-101, LargeObjectDef.views): a def with pre-baked views is drawn as a statue that turns with the camera
+## instead: its labels face the camera fully and show the baked view nearest to the camera yaw (texts pre-built per
+## view, swapped only when the yaw crosses a view boundary), anchored so the model's base centre lands on the footprint
+## centre; the billboard is pushed towards the camera along the view ray by the model's front depth (an orthographic
+## camera sees no difference) so it never sinks into the floor or the basin. A def with `basin` also gets the real basin
+## geometry (FountainBasin) fitted to the footprint, so the fountain stays on its cells at every yaw.
 ## Reads MapLoader and MapReveal; never writes data.
 
 @export var map_loader: MapLoader
 ## Optional: without it every piece is shown as seen.
 @export var map_reveal: MapReveal
+## Optional (statues): the camera yaw picks the baked view; without it view 0 is shown.
+@export var camera_rig: Node3D
 
 ## Fallback width of one glyph in font pixels as a fraction of the font size (when the font cannot be measured).
 const GLYPH_ASPECT_FALLBACK: float = 0.6
@@ -30,6 +38,8 @@ const SPACE: String = " "
 @export var backing_char: String = "█"
 ## Outline of the backing label in font pixels (closes the gaps between lines and characters).
 @export_range(0, 64) var backing_outline: int = 16
+## Statues: the widest gap (cells) between drawn cells of a row that the backing closes.
+@export_range(0, 16) var statue_backing_gap: int = 3
 ## Backing opacity = understanding ^ backing_exponent.
 @export var backing_exponent: float = 1.0
 
@@ -43,6 +53,13 @@ class Piece:
 	var backing: Label3D
 	var layers: PackedStringArray = PackedStringArray()
 	## Current and target visibility (0 hidden, 1 shown) and seen fraction (0 remembered, 1 seen).
+	## Statue (task-101): the node holding the labels (pushed towards the camera), its shown view, its size (world).
+	var statue: Node3D
+	var views: LargeObjectViews
+	var view: int = -1
+	var unit: float = 1.0
+	var basin: MeshInstance3D
+	var basin_material: ShaderMaterial
 	var vis: float = 0.0
 	var vis_target: float = 0.0
 	var seen: float = 0.0
@@ -60,6 +77,12 @@ var _animating: bool = false
 ## Backing opacity (0..1) from the language understanding.
 var _clarity: float = 0.0
 var _backing_texts: Dictionary[LargeObjectDef, String] = {}
+## Statues: per def, per view: layer -> PackedStringArray of texts (one per animation step), and the backing texts.
+var _view_texts: Dictionary[LargeObjectViews, Array] = {}
+var _view_backings: Dictionary[LargeObjectViews, PackedStringArray] = {}
+var _statue_count: int = 0
+var _last_yaw: float = INF
+var _last_cam_basis: Basis = Basis()
 
 
 func _ready() -> void:
@@ -81,7 +104,9 @@ func _process(delta: float) -> void:
 		_step_fade(delta)
 	if _animating:
 		_step_anim(delta)
-	if not _fading and not _animating:
+	if _statue_count > 0:
+		_step_statues()
+	if not _fading and not _animating and _statue_count == 0:
 		set_process(false)
 
 
@@ -115,6 +140,30 @@ func piece_art_width(index: int) -> float:
 	return _base_width(piece.def) * piece.root.scale.x
 
 
+## True when the piece is a statue drawn from baked views (task-101).
+func piece_is_statue(index: int) -> bool:
+	return _pieces[index].statue != null
+
+
+## The statue node of a piece (labels inside; pushed towards the camera), or null for flat art.
+func piece_statue(index: int) -> Node3D:
+	return _pieces[index].statue
+
+
+## The baked view set and the shown view index of a statue piece.
+func piece_views(index: int) -> LargeObjectViews:
+	return _pieces[index].views
+
+
+func piece_view(index: int) -> int:
+	return _pieces[index].view
+
+
+## The basin geometry of a piece, or null.
+func piece_basin(index: int) -> MeshInstance3D:
+	return _pieces[index].basin
+
+
 ## The silhouette backing label of a piece.
 func piece_backing(index: int) -> Label3D:
 	return _pieces[index].backing
@@ -142,6 +191,8 @@ func _on_map_built(map: MapData) -> void:
 	for piece in _pieces:
 		piece.root.free()
 	_pieces.clear()
+	_statue_count = 0
+	_last_yaw = INF
 	var legend: MapLegend = map_loader.legend
 	for placement in map.large_objects:
 		var def: LargeObjectDef = legend.large_def(placement.type) if legend != null else null
@@ -171,10 +222,13 @@ func _snap_reveal() -> void:
 		_apply_look(piece)
 	_fading = false
 	_update_animating()
-	set_process(_animating)
+	_last_yaw = INF
+	set_process(_animating or _statue_count > 0)
 
 
 func _make_piece(placement: LargeObjectPlacement, def: LargeObjectDef) -> Piece:
+	if def.has_views():
+		return _make_statue(placement, def)
 	var piece := Piece.new()
 	piece.placement = placement
 	piece.def = def
@@ -199,6 +253,136 @@ func _make_piece(placement: LargeObjectPlacement, def: LargeObjectDef) -> Piece:
 		piece.labels.append(label)
 	piece.root.visible = false
 	return piece
+
+
+## A statue piece (task-101): root on the footprint centre (unscaled), the basin under it, the statue node (uniform
+## scale) holding one camera-facing label per layer plus the backing.
+func _make_statue(placement: LargeObjectPlacement, def: LargeObjectDef) -> Piece:
+	var piece := Piece.new()
+	piece.placement = placement
+	piece.def = def
+	var r: Rect2i = placement.rect
+	var cell: float = map_loader.world_config.cell_size
+	piece.unit = minf(r.size.x, r.size.y) * cell
+	piece.views = def.views_for(minf(r.size.x, r.size.y))
+	piece.root = Node3D.new()
+	piece.root.name = "%s_%d_%d" % [String(placement.type).to_pascal_case(), r.position.x, r.position.y]
+	add_child(piece.root)
+	piece.root.position = map_loader.rect_to_world(r) + Vector3.UP * def.art_lift
+	if def.basin:
+		var size := Vector2(r.size.x, r.size.y) * cell
+		piece.basin = MeshInstance3D.new()
+		piece.basin.name = "Basin"
+		piece.basin.mesh = FountainBasin.build_mesh(size, piece.unit, def)
+		piece.basin_material = FountainBasin.make_material(def, piece.unit)
+		piece.basin.material_override = piece.basin_material
+		piece.basin.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		piece.root.add_child(piece.basin)
+	piece.statue = Node3D.new()
+	piece.statue.name = "Statue"
+	piece.root.add_child(piece.statue)
+	piece.statue.scale = Vector3.ONE * piece.unit * def.statue_scale
+	var view_texts: Array = _view_texts_of(def, piece.views)
+	piece.layers = def.layers()
+	var count: int = piece.layers.size()
+	piece.backing = _make_view_label(def, piece.views, "Backing", -count - 1, backing_outline, _view_backings[piece.views][0])
+	piece.backing.visible = false
+	piece.statue.add_child(piece.backing)
+	for i in count:
+		var first: PackedStringArray = (view_texts[0] as Dictionary)[piece.layers[i]]
+		var label: Label3D = _make_view_label(def, piece.views, "Layer%d" % i, i, def.outline_size, first[0])
+		label.outline_render_priority = i - count
+		piece.statue.add_child(label)
+		piece.labels.append(label)
+	piece.view = 0
+	piece.root.visible = false
+	_statue_count += 1
+	return piece
+
+
+## A camera-facing label of a statue: one art column is views.col_width wide (before the statue scale), rows are
+## stretched to views.row_height, and the anchor cell sits at the node's origin.
+func _make_view_label(def: LargeObjectDef, views: LargeObjectViews, label_name: String, priority: int, outline: int, text: String) -> Label3D:
+	var font: SystemFont = _font_of(def)
+	var advance: float = font.get_char_size("M".unicode_at(0), def.font_size).x
+	if advance <= 0.0:
+		advance = def.font_size * GLYPH_ASPECT_FALLBACK
+	var line: float = font.get_height(def.font_size)
+	if line <= 0.0:
+		line = def.font_size
+	var label := Label3D.new()
+	label.name = label_name
+	label.font = font
+	label.font_size = def.font_size
+	label.pixel_size = views.col_width / advance
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.autowrap_trim_flags = 0
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	label.offset = Vector2(-views.anchor.x * advance, views.anchor.y * line)
+	label.scale = Vector3(1.0, views.row_height / (line * label.pixel_size), 1.0)
+	label.outline_size = outline
+	label.render_priority = priority
+	label.outline_render_priority = priority - 1
+	label.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	label.text = text
+	return label
+
+
+## Per frame while statues exist; does work only when the camera turned: the view follows the camera yaw (texts swap
+## only when it crosses a view boundary) and the statue node follows the camera's view ray.
+func _step_statues() -> void:
+	var cam: Camera3D = get_viewport().get_camera_3d()
+	if cam == null:
+		return
+	var yaw: float = camera_rig.call(&"current_yaw_degrees") if camera_rig != null else 0.0
+	var basis: Basis = cam.global_basis
+	if yaw == _last_yaw and basis.is_equal_approx(_last_cam_basis):
+		return
+	_last_yaw = yaw
+	_last_cam_basis = basis
+	var back: Vector3 = basis.z.normalized()
+	for piece in _pieces:
+		if piece.statue == null:
+			continue
+		var def: LargeObjectDef = piece.def
+		piece.statue.position = back * piece.views.front_depth * piece.unit * def.statue_scale
+		var view: int = piece.views.index_for_yaw(yaw)
+		if view != piece.view:
+			piece.view = view
+			_show_view(piece)
+
+
+func _show_view(piece: Piece) -> void:
+	var texts: Dictionary = _view_texts[piece.views][piece.view]
+	var step: int = int(_anim_clock * piece.def.anim_fps)
+	for i in piece.labels.size():
+		var frames: PackedStringArray = texts[piece.layers[i]]
+		piece.labels[i].text = frames[step % frames.size()]
+	piece.backing.text = _view_backings[piece.views][piece.view]
+
+
+## Per view: layer -> texts (animation steps), built once per def; also fills the per-view backing texts.
+func _view_texts_of(def: LargeObjectDef, views: LargeObjectViews) -> Array:
+	if _view_texts.has(views):
+		return _view_texts[views]
+	var out: Array = []
+	var backings := PackedStringArray()
+	var layers: PackedStringArray = def.layers()
+	for v in views.count():
+		var lines: PackedStringArray = views.art_lines(v)
+		var masks: PackedStringArray = views.mask_lines(v)
+		var per: Dictionary = {}
+		for layer in layers:
+			var frames := PackedStringArray()
+			for step in def.layer_steps(layer):
+				frames.append(def.lines_layer_text(lines, masks, layer, step))
+			per[layer] = frames
+		out.append(per)
+		backings.append(_solid_silhouette(lines))
+	_view_texts[views] = out
+	_view_backings[views] = backings
+	return out
 
 
 func _make_label(def: LargeObjectDef, label_name: String, priority: int, outline: int, text: String) -> Label3D:
@@ -228,7 +412,34 @@ func _make_label(def: LargeObjectDef, label_name: String, priority: int, outline
 func _backing_text_of(def: LargeObjectDef) -> String:
 	if _backing_texts.has(def):
 		return _backing_texts[def]
-	var lines: PackedStringArray = def.art_lines
+	var text: String = _silhouette(def.art_lines)
+	_backing_texts[def] = text
+	return text
+
+
+## The backing of a statue: its drawn cells, plus the gaps of at most `statue_backing_gap` cells between drawn cells of
+## a row, so the body reads as one solid mass without notches while the open space between a wing and the body stays
+## open (a full row fill would paint black slabs over the glowing water).
+func _solid_silhouette(lines: PackedStringArray) -> String:
+	var out := PackedStringArray()
+	for line in lines:
+		var row: String = ""
+		var last: int = -1
+		for c in line.length():
+			if line[c] == SPACE:
+				continue
+			if last >= 0 and c - last - 1 <= statue_backing_gap:
+				row += backing_char.repeat(c - last - 1)
+			else:
+				row += SPACE.repeat(c - row.length())
+			row += backing_char
+			last = c
+		out.append(row)
+	return "
+".join(out)
+
+
+func _silhouette(lines: PackedStringArray) -> String:
 	var cols: int = 0
 	for line in lines:
 		cols = maxi(cols, line.length())
@@ -242,10 +453,7 @@ func _backing_text_of(def: LargeObjectDef) -> String:
 				covered = _drawn_in(line, 0, c) and _drawn_in(line, c + 1, line.length()) 						and _drawn_in_column(lines, c, 0, r) and _drawn_in_column(lines, c, r + 1, lines.size())
 			row += backing_char if covered else SPACE
 		out.append(row)
-	var text: String = "
-".join(out)
-	_backing_texts[def] = text
-	return text
+	return "\n".join(out)
 
 
 static func _drawn_in(line: String, from: int, to: int) -> bool:
@@ -299,12 +507,16 @@ func _apply_look(piece: Piece) -> void:
 	var def: LargeObjectDef = piece.def
 	var tint: Color = def.memory_tint.lerp(Color.WHITE, piece.seen)
 	tint.a *= piece.vis
+	if piece.basin_material != null:
+		# Opaque geometry: the fade darkens it instead of making it transparent.
+		piece.basin_material.set_shader_parameter(&"tint", Color(tint.r * tint.a, tint.g * tint.a, tint.b * tint.a, 1.0))
 	for i in piece.labels.size():
 		var label: Label3D = piece.labels[i]
 		label.modulate = def.color_of(piece.layers[i]) * tint
 		label.outline_modulate = def.outline_color * Color(1.0, 1.0, 1.0, tint.a)
 	var back: Color = backing_color
-	back.a *= _clarity * piece.vis
+	# A statue is a solid body: its silhouette always hides the floor behind it (flat art keeps the clarity rule).
+	back.a *= (1.0 if piece.statue != null else _clarity) * piece.vis
 	piece.backing.visible = back.a > 0.0
 	piece.backing.modulate = back
 	piece.backing.outline_modulate = back
@@ -330,7 +542,7 @@ func _step_anim(delta: float) -> void:
 		var step: int = int(_anim_clock * def.anim_fps)
 		if step == int(before * def.anim_fps):
 			continue
-		var texts: Dictionary = _texts[def]
+		var texts: Dictionary = _texts[def] if piece.statue == null else _view_texts[piece.views][piece.view]
 		for i in piece.labels.size():
 			var frames: PackedStringArray = texts[piece.layers[i]]
 			if frames.size() > 1:

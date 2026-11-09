@@ -136,12 +136,34 @@ func _gargoyle_fountain() -> LargeObjectDef:
 		"s": Color(0.25, 0.65, 1.0),
 	}
 	def.layer_anims = {
-		"w": "|:|'|.",
+		"w": "|!|:|!",
 		"s": "~-~=~-",
 	}
 	def.anim_fps = 5.0
 	# Task-073: a cannon ball destroys the whole fountain.
 	def.destructible = true
+	# Task-101: a statue that turns with the camera (views baked by tools/bake_gargoyle_views.gd) over a real basin.
+	# Layers of the baked views: "a" stone in shadow, "b" stone, "c" moonlit stone, "r" stone lit cyan by the basin,
+	# "e" eyes, "w" the falling water. The old art above stays as the fallback when the views are missing.
+	var views_path: String = DIR + LARGE_DIR + "gargoyle_views.tres"
+	if ResourceLoader.exists(views_path):
+		def.views = load(views_path) as LargeObjectViews
+	var small_path: String = DIR + LARGE_DIR + "gargoyle_views_small.tres"
+	if ResourceLoader.exists(small_path):
+		def.views_small = load(small_path) as LargeObjectViews
+	def.statue_scale = 1.2
+	def.basin = true
+	def.basin_splash = 0.34
+	def.layer_colors["a"] = Color(0.2, 0.23, 0.32)
+	def.layer_colors["b"] = Color(0.46, 0.5, 0.64)
+	def.layer_colors["c"] = Color(0.8, 0.82, 0.88)
+	def.layer_colors["r"] = Color(0.4, 0.9, 1.0)
+	def.layer_colors["w"] = Color(0.92, 1.0, 1.0)
+	# "s": the splash crown on the water (the stream's "w" stays separate so it can animate its own way).
+	def.layer_colors["s"] = Color(0.95, 1.0, 1.0)
+	def.layer_anims["s"] = "*o'o"
+	def.basin_lip_color = Color(0.3, 0.75, 0.95)
+	def.outline_size = 3
 	return def
 
 

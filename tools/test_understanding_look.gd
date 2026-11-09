@@ -131,13 +131,18 @@ func _check_scene() -> void:
 			break
 	if shown >= 0:
 		var backing: Label3D = large.call("piece_backing", shown)
-		_check(not backing.visible, "no backing at understanding 0")
+		# Task-101: a statue is a solid body, its backing is always opaque; flat art follows the understanding.
+		var statue: bool = large.call("piece_is_statue", shown)
+		_check(backing.visible == statue, "backing at understanding 0: %s for a %s" % [backing.visible, "statue" if statue else "flat art"])
 		_emit(1.0)
 		_check(backing.visible and backing.modulate.a > 0.99, "opaque backing at understanding 1")
 		_check(backing.render_priority < (large.call("piece_labels", shown) as Array)[0].render_priority, "backing sorts behind the art")
 		_check(backing.text.contains(large.get("backing_char")), "backing text is the silhouette")
 		_emit(0.5)
-		_check(backing.visible and backing.modulate.a > 0.4 and backing.modulate.a < 0.6, "half backing at 0.5")
+		if statue:
+			_check(backing.visible and backing.modulate.a > 0.99, "statue backing stays opaque at 0.5")
+		else:
+			_check(backing.visible and backing.modulate.a > 0.4 and backing.modulate.a < 0.6, "half backing at 0.5")
 	else:
 		_failures.append("no gargoyle seen from the arena spawn")
 
