@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-09T11:10:00Z'
-updated_date: '2026-11-09T12:53:00Z'
+updated_date: '2026-11-09T12:55:00Z'
 labels:
   - gameplay
   - rendering
@@ -37,3 +37,14 @@ Follow-up to TASK-093 (death stains / "splat"). Playtesting found the splat work
 - [ ] #9 No FPS regression on the Compatibility renderer: marks reuse the existing per-cell stain texture approach, no per-mark nodes
 - [ ] #10 A headless test covers radius range per form, trail tint linger timing and mark persistence/reset
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. DB: new table death_splat (profile, radius_min, radius_max) in lib.rs with seed rows default 2-4, grown(many) 4-8, brain 4-6; seed.json, db_config tables, god core/seeds registration, README.
+2. DeathMarks: track the active form (entity_form_changed), pick a random radius in the form's range (fallback default row, then DeathMarksConfig defaults) per death.
+3. DeathMarks: trail tint state (none/blood/void): standing on a death stain -> blood, on a black hole (EnemyRemains) -> void; lingers trail_tint_linger s after leaving; emits trail_tint_changed. While tinted, each newly entered cell gets a persistent trail mark of that kind (not counted for items), signal trail_marked. Marks live with the stains (per map, per launch).
+4. Shader + DeathMarksView: stain texel g = kind (1 blood crimson, 0 void dark purple); crimson/dark purple colours, stronger cell fill so stains read on sparse floors.
+5. InkTrailView: per-drop tint (MultiMesh instance colour) so new drops turn crimson/dark purple while existing ones keep their colour.
+6. Headless test + screenshot capture; validate boot.
+<!-- SECTION:PLAN:END -->
