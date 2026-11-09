@@ -3,6 +3,8 @@
 	"language": "EN_GB",
 	"lines": {
 		"teleport_world_unthread": "Unthread, unstitch, away",
-		"teleport_own_was_here": "I was here. Then I was not."
+		"teleport_own_was_here": "I was here. Then I was not.",
+		"teleport_narrator_destroy": "Does teleportation really destroy you, or is it just push you through WARP?",
+		"teleport_narrator_magic": "Do you want to see a magic trick?"
 	}
 }
