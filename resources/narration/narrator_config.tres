@@ -154,5 +154,5 @@ beats = Array[ExtResource("1_la6fg")]([ExtResource("2_rtg14"), ExtResource("3_8t
 moods = Array[ExtResource("87_5yl81")]([SubResource("Resource_xbtg1"), SubResource("Resource_3ewks"), SubResource("Resource_tjbet"), SubResource("Resource_bqs5w"), SubResource("Resource_kffkf")])
 repeat_chances = PackedFloat32Array(0.8, 0.6, 0.5, 0.35, 0.2, 0.12, 0.06, 0.03, 0.03, 0.03, 0.03, 0.03, 0.02, 0.02, 0.02, 0.02, 0.02)
 font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")
-fallback_font_names = PackedStringArray("Yu Gothic", "MS Gothic", "Microsoft YaHei", "Segoe UI Symbol", "Segoe UI Emoji")
+fallback_font_names = PackedStringArray("Yu Gothic", "MS Gothic", "Microsoft YaHei", "Malgun Gothic", "Segoe UI", "Segoe UI Symbol", "Segoe UI Emoji")
 world_colors = PackedColorArray(0.22352941, 1, 0.53333336, 1, 0.7529412, 0.3019608, 1, 1)

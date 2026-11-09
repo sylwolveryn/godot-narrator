@@ -7,62 +7,96 @@
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
 pub mod add_play_stats_reducer;
+pub mod avatar_fx_table;
+pub mod avatar_fx_type;
 pub mod bump_config_version_reducer;
 pub mod clear_missing_reducer;
 pub mod config_version_table;
 pub mod config_version_type;
+pub mod craft_def_table;
+pub mod craft_def_type;
+pub mod enemy_def_table;
+pub mod enemy_def_type;
 pub mod event_def_table;
 pub mod event_def_type;
 pub mod glyph_anim_table;
 pub mod glyph_anim_type;
+pub mod glyph_ramp_table;
+pub mod glyph_ramp_type;
 pub mod language_def_table;
 pub mod language_def_type;
+pub mod map_settings_table;
+pub mod map_settings_type;
 pub mod missing_narration_table;
 pub mod missing_narration_type;
+pub mod movement_profile_table;
+pub mod movement_profile_type;
 pub mod narration_table;
 pub mod narration_triggered_reducer;
 pub mod narration_type;
+pub mod player_consumed_table;
+pub mod player_consumed_type;
 pub mod player_death_table;
 pub mod player_death_type;
 pub mod player_language_table;
 pub mod player_language_type;
 pub mod player_stats_table;
 pub mod player_stats_type;
+pub mod record_consumed_reducer;
 pub mod record_death_reducer;
 pub mod report_missing_reducer;
 pub mod reset_defaults_reducer;
 pub mod seed_defaults_reducer;
 pub mod set_language_understanding_reducer;
+pub mod upsert_avatar_fx_reducer;
 pub mod upsert_glyph_anim_reducer;
+pub mod upsert_movement_profile_reducer;
 
 pub use add_play_stats_reducer::add_play_stats;
+pub use avatar_fx_table::*;
+pub use avatar_fx_type::AvatarFx;
 pub use bump_config_version_reducer::bump_config_version;
 pub use clear_missing_reducer::clear_missing;
 pub use config_version_table::*;
 pub use config_version_type::ConfigVersion;
+pub use craft_def_table::*;
+pub use craft_def_type::CraftDef;
+pub use enemy_def_table::*;
+pub use enemy_def_type::EnemyDef;
 pub use event_def_table::*;
 pub use event_def_type::EventDef;
 pub use glyph_anim_table::*;
 pub use glyph_anim_type::GlyphAnim;
+pub use glyph_ramp_table::*;
+pub use glyph_ramp_type::GlyphRamp;
 pub use language_def_table::*;
 pub use language_def_type::LanguageDef;
+pub use map_settings_table::*;
+pub use map_settings_type::MapSettings;
 pub use missing_narration_table::*;
 pub use missing_narration_type::MissingNarration;
+pub use movement_profile_table::*;
+pub use movement_profile_type::MovementProfile;
 pub use narration_table::*;
 pub use narration_triggered_reducer::narration_triggered;
 pub use narration_type::Narration;
+pub use player_consumed_table::*;
+pub use player_consumed_type::PlayerConsumed;
 pub use player_death_table::*;
 pub use player_death_type::PlayerDeath;
 pub use player_language_table::*;
 pub use player_language_type::PlayerLanguage;
 pub use player_stats_table::*;
 pub use player_stats_type::PlayerStats;
+pub use record_consumed_reducer::record_consumed;
 pub use record_death_reducer::record_death;
 pub use report_missing_reducer::report_missing;
 pub use reset_defaults_reducer::reset_defaults;
 pub use seed_defaults_reducer::seed_defaults;
 pub use set_language_understanding_reducer::set_language_understanding;
+pub use upsert_avatar_fx_reducer::upsert_avatar_fx;
 pub use upsert_glyph_anim_reducer::upsert_glyph_anim;
+pub use upsert_movement_profile_reducer::upsert_movement_profile;
 
 #[derive(Clone, PartialEq, Debug)]
 
@@ -83,6 +117,10 @@ pub enum Reducer {
         event: String,
         language: String,
     },
+    RecordConsumed {
+        kind: String,
+        amount: u64,
+    },
     RecordDeath {
         cause: String,
     },
@@ -95,6 +133,9 @@ pub enum Reducer {
         language: String,
         understanding: f32,
     },
+    UpsertAvatarFx {
+        row: AvatarFx,
+    },
     UpsertGlyphAnim {
         surface: String,
         enabled: bool,
@@ -105,6 +146,12 @@ pub enum Reducer {
         radius: f32,
         char_speed: f32,
         color_speed: f32,
+    },
+    UpsertMovementProfile {
+        profile: String,
+        max_speed: f32,
+        acceleration: f32,
+        deceleration: f32,
     },
 }
 
@@ -119,12 +166,15 @@ impl __sdk::Reducer for Reducer {
             Reducer::BumpConfigVersion => "bump_config_version",
             Reducer::ClearMissing => "clear_missing",
             Reducer::NarrationTriggered { .. } => "narration_triggered",
+            Reducer::RecordConsumed { .. } => "record_consumed",
             Reducer::RecordDeath { .. } => "record_death",
             Reducer::ReportMissing { .. } => "report_missing",
             Reducer::ResetDefaults => "reset_defaults",
             Reducer::SeedDefaults => "seed_defaults",
             Reducer::SetLanguageUnderstanding { .. } => "set_language_understanding",
+            Reducer::UpsertAvatarFx { .. } => "upsert_avatar_fx",
             Reducer::UpsertGlyphAnim { .. } => "upsert_glyph_anim",
+            Reducer::UpsertMovementProfile { .. } => "upsert_movement_profile",
             _ => unreachable!(),
         }
     }
@@ -152,6 +202,12 @@ impl __sdk::Reducer for Reducer {
                     language: language.clone(),
                 })
             }
+            Reducer::RecordConsumed { kind, amount } => {
+                __sats::bsatn::to_vec(&record_consumed_reducer::RecordConsumedArgs {
+                    kind: kind.clone(),
+                    amount: amount.clone(),
+                })
+            }
             Reducer::RecordDeath { cause } => {
                 __sats::bsatn::to_vec(&record_death_reducer::RecordDeathArgs {
                     cause: cause.clone(),
@@ -177,6 +233,11 @@ impl __sdk::Reducer for Reducer {
                     understanding: understanding.clone(),
                 },
             ),
+            Reducer::UpsertAvatarFx { row } => {
+                __sats::bsatn::to_vec(&upsert_avatar_fx_reducer::UpsertAvatarFxArgs {
+                    row: row.clone(),
+                })
+            }
             Reducer::UpsertGlyphAnim {
                 surface,
                 enabled,
@@ -198,6 +259,19 @@ impl __sdk::Reducer for Reducer {
                 char_speed: char_speed.clone(),
                 color_speed: color_speed.clone(),
             }),
+            Reducer::UpsertMovementProfile {
+                profile,
+                max_speed,
+                acceleration,
+                deceleration,
+            } => __sats::bsatn::to_vec(
+                &upsert_movement_profile_reducer::UpsertMovementProfileArgs {
+                    profile: profile.clone(),
+                    max_speed: max_speed.clone(),
+                    acceleration: acceleration.clone(),
+                    deceleration: deceleration.clone(),
+                },
+            ),
             _ => unreachable!(),
         }
     }
@@ -207,12 +281,19 @@ impl __sdk::Reducer for Reducer {
 #[allow(non_snake_case)]
 #[doc(hidden)]
 pub struct DbUpdate {
+    avatar_fx: __sdk::TableUpdate<AvatarFx>,
     config_version: __sdk::TableUpdate<ConfigVersion>,
+    craft_def: __sdk::TableUpdate<CraftDef>,
+    enemy_def: __sdk::TableUpdate<EnemyDef>,
     event_def: __sdk::TableUpdate<EventDef>,
     glyph_anim: __sdk::TableUpdate<GlyphAnim>,
+    glyph_ramp: __sdk::TableUpdate<GlyphRamp>,
     language_def: __sdk::TableUpdate<LanguageDef>,
+    map_settings: __sdk::TableUpdate<MapSettings>,
     missing_narration: __sdk::TableUpdate<MissingNarration>,
+    movement_profile: __sdk::TableUpdate<MovementProfile>,
     narration: __sdk::TableUpdate<Narration>,
+    player_consumed: __sdk::TableUpdate<PlayerConsumed>,
     player_death: __sdk::TableUpdate<PlayerDeath>,
     player_language: __sdk::TableUpdate<PlayerLanguage>,
     player_stats: __sdk::TableUpdate<PlayerStats>,
@@ -224,24 +305,45 @@ impl TryFrom<__ws::v2::TransactionUpdate> for DbUpdate {
         let mut db_update = DbUpdate::default();
         for table_update in __sdk::transaction_update_iter_table_updates(raw) {
             match &table_update.table_name[..] {
+                "avatar_fx" => db_update
+                    .avatar_fx
+                    .append(avatar_fx_table::parse_table_update(table_update)?),
                 "config_version" => db_update
                     .config_version
                     .append(config_version_table::parse_table_update(table_update)?),
+                "craft_def" => db_update
+                    .craft_def
+                    .append(craft_def_table::parse_table_update(table_update)?),
+                "enemy_def" => db_update
+                    .enemy_def
+                    .append(enemy_def_table::parse_table_update(table_update)?),
                 "event_def" => db_update
                     .event_def
                     .append(event_def_table::parse_table_update(table_update)?),
                 "glyph_anim" => db_update
                     .glyph_anim
                     .append(glyph_anim_table::parse_table_update(table_update)?),
+                "glyph_ramp" => db_update
+                    .glyph_ramp
+                    .append(glyph_ramp_table::parse_table_update(table_update)?),
                 "language_def" => db_update
                     .language_def
                     .append(language_def_table::parse_table_update(table_update)?),
+                "map_settings" => db_update
+                    .map_settings
+                    .append(map_settings_table::parse_table_update(table_update)?),
                 "missing_narration" => db_update
                     .missing_narration
                     .append(missing_narration_table::parse_table_update(table_update)?),
+                "movement_profile" => db_update
+                    .movement_profile
+                    .append(movement_profile_table::parse_table_update(table_update)?),
                 "narration" => db_update
                     .narration
                     .append(narration_table::parse_table_update(table_update)?),
+                "player_consumed" => db_update
+                    .player_consumed
+                    .append(player_consumed_table::parse_table_update(table_update)?),
                 "player_death" => db_update
                     .player_death
                     .append(player_death_table::parse_table_update(table_update)?),
@@ -277,24 +379,45 @@ impl __sdk::DbUpdate for DbUpdate {
     ) -> AppliedDiff<'_> {
         let mut diff = AppliedDiff::default();
 
+        diff.avatar_fx = cache
+            .apply_diff_to_table::<AvatarFx>("avatar_fx", &self.avatar_fx)
+            .with_updates_by_pk(|row| &row.profile);
         diff.config_version = cache
             .apply_diff_to_table::<ConfigVersion>("config_version", &self.config_version)
             .with_updates_by_pk(|row| &row.id);
+        diff.craft_def = cache
+            .apply_diff_to_table::<CraftDef>("craft_def", &self.craft_def)
+            .with_updates_by_pk(|row| &row.id);
+        diff.enemy_def = cache
+            .apply_diff_to_table::<EnemyDef>("enemy_def", &self.enemy_def)
+            .with_updates_by_pk(|row| &row.kind);
         diff.event_def = cache
             .apply_diff_to_table::<EventDef>("event_def", &self.event_def)
             .with_updates_by_pk(|row| &row.id);
         diff.glyph_anim = cache
             .apply_diff_to_table::<GlyphAnim>("glyph_anim", &self.glyph_anim)
             .with_updates_by_pk(|row| &row.surface);
+        diff.glyph_ramp = cache
+            .apply_diff_to_table::<GlyphRamp>("glyph_ramp", &self.glyph_ramp)
+            .with_updates_by_pk(|row| &row.surface);
         diff.language_def = cache
             .apply_diff_to_table::<LanguageDef>("language_def", &self.language_def)
             .with_updates_by_pk(|row| &row.id);
+        diff.map_settings = cache
+            .apply_diff_to_table::<MapSettings>("map_settings", &self.map_settings)
+            .with_updates_by_pk(|row| &row.map_id);
         diff.missing_narration = cache
             .apply_diff_to_table::<MissingNarration>("missing_narration", &self.missing_narration)
             .with_updates_by_pk(|row| &row.key);
+        diff.movement_profile = cache
+            .apply_diff_to_table::<MovementProfile>("movement_profile", &self.movement_profile)
+            .with_updates_by_pk(|row| &row.profile);
         diff.narration = cache
             .apply_diff_to_table::<Narration>("narration", &self.narration)
             .with_updates_by_pk(|row| &row.id);
+        diff.player_consumed = cache
+            .apply_diff_to_table::<PlayerConsumed>("player_consumed", &self.player_consumed)
+            .with_updates_by_pk(|row| &row.kind);
         diff.player_death = cache
             .apply_diff_to_table::<PlayerDeath>("player_death", &self.player_death)
             .with_updates_by_pk(|row| &row.cause);
@@ -311,8 +434,17 @@ impl __sdk::DbUpdate for DbUpdate {
         let mut db_update = DbUpdate::default();
         for table_rows in raw.tables {
             match &table_rows.table[..] {
+                "avatar_fx" => db_update
+                    .avatar_fx
+                    .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
                 "config_version" => db_update
                     .config_version
+                    .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
+                "craft_def" => db_update
+                    .craft_def
+                    .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
+                "enemy_def" => db_update
+                    .enemy_def
                     .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
                 "event_def" => db_update
                     .event_def
@@ -320,14 +452,26 @@ impl __sdk::DbUpdate for DbUpdate {
                 "glyph_anim" => db_update
                     .glyph_anim
                     .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
+                "glyph_ramp" => db_update
+                    .glyph_ramp
+                    .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
                 "language_def" => db_update
                     .language_def
+                    .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
+                "map_settings" => db_update
+                    .map_settings
                     .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
                 "missing_narration" => db_update
                     .missing_narration
                     .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
+                "movement_profile" => db_update
+                    .movement_profile
+                    .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
                 "narration" => db_update
                     .narration
+                    .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
+                "player_consumed" => db_update
+                    .player_consumed
                     .append(__sdk::parse_row_list_as_inserts(table_rows.rows)?),
                 "player_death" => db_update
                     .player_death
@@ -351,8 +495,17 @@ impl __sdk::DbUpdate for DbUpdate {
         let mut db_update = DbUpdate::default();
         for table_rows in raw.tables {
             match &table_rows.table[..] {
+                "avatar_fx" => db_update
+                    .avatar_fx
+                    .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
                 "config_version" => db_update
                     .config_version
+                    .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
+                "craft_def" => db_update
+                    .craft_def
+                    .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
+                "enemy_def" => db_update
+                    .enemy_def
                     .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
                 "event_def" => db_update
                     .event_def
@@ -360,14 +513,26 @@ impl __sdk::DbUpdate for DbUpdate {
                 "glyph_anim" => db_update
                     .glyph_anim
                     .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
+                "glyph_ramp" => db_update
+                    .glyph_ramp
+                    .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
                 "language_def" => db_update
                     .language_def
+                    .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
+                "map_settings" => db_update
+                    .map_settings
                     .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
                 "missing_narration" => db_update
                     .missing_narration
                     .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
+                "movement_profile" => db_update
+                    .movement_profile
+                    .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
                 "narration" => db_update
                     .narration
+                    .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
+                "player_consumed" => db_update
+                    .player_consumed
                     .append(__sdk::parse_row_list_as_deletes(table_rows.rows)?),
                 "player_death" => db_update
                     .player_death
@@ -393,12 +558,19 @@ impl __sdk::DbUpdate for DbUpdate {
 #[allow(non_snake_case)]
 #[doc(hidden)]
 pub struct AppliedDiff<'r> {
+    avatar_fx: __sdk::TableAppliedDiff<'r, AvatarFx>,
     config_version: __sdk::TableAppliedDiff<'r, ConfigVersion>,
+    craft_def: __sdk::TableAppliedDiff<'r, CraftDef>,
+    enemy_def: __sdk::TableAppliedDiff<'r, EnemyDef>,
     event_def: __sdk::TableAppliedDiff<'r, EventDef>,
     glyph_anim: __sdk::TableAppliedDiff<'r, GlyphAnim>,
+    glyph_ramp: __sdk::TableAppliedDiff<'r, GlyphRamp>,
     language_def: __sdk::TableAppliedDiff<'r, LanguageDef>,
+    map_settings: __sdk::TableAppliedDiff<'r, MapSettings>,
     missing_narration: __sdk::TableAppliedDiff<'r, MissingNarration>,
+    movement_profile: __sdk::TableAppliedDiff<'r, MovementProfile>,
     narration: __sdk::TableAppliedDiff<'r, Narration>,
+    player_consumed: __sdk::TableAppliedDiff<'r, PlayerConsumed>,
     player_death: __sdk::TableAppliedDiff<'r, PlayerDeath>,
     player_language: __sdk::TableAppliedDiff<'r, PlayerLanguage>,
     player_stats: __sdk::TableAppliedDiff<'r, PlayerStats>,
@@ -415,16 +587,25 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
         event: &EventContext,
         callbacks: &mut __sdk::DbCallbacks<RemoteModule>,
     ) {
+        callbacks.invoke_table_row_callbacks::<AvatarFx>("avatar_fx", &self.avatar_fx, event);
         callbacks.invoke_table_row_callbacks::<ConfigVersion>(
             "config_version",
             &self.config_version,
             event,
         );
+        callbacks.invoke_table_row_callbacks::<CraftDef>("craft_def", &self.craft_def, event);
+        callbacks.invoke_table_row_callbacks::<EnemyDef>("enemy_def", &self.enemy_def, event);
         callbacks.invoke_table_row_callbacks::<EventDef>("event_def", &self.event_def, event);
         callbacks.invoke_table_row_callbacks::<GlyphAnim>("glyph_anim", &self.glyph_anim, event);
+        callbacks.invoke_table_row_callbacks::<GlyphRamp>("glyph_ramp", &self.glyph_ramp, event);
         callbacks.invoke_table_row_callbacks::<LanguageDef>(
             "language_def",
             &self.language_def,
+            event,
+        );
+        callbacks.invoke_table_row_callbacks::<MapSettings>(
+            "map_settings",
+            &self.map_settings,
             event,
         );
         callbacks.invoke_table_row_callbacks::<MissingNarration>(
@@ -432,7 +613,17 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
             &self.missing_narration,
             event,
         );
+        callbacks.invoke_table_row_callbacks::<MovementProfile>(
+            "movement_profile",
+            &self.movement_profile,
+            event,
+        );
         callbacks.invoke_table_row_callbacks::<Narration>("narration", &self.narration, event);
+        callbacks.invoke_table_row_callbacks::<PlayerConsumed>(
+            "player_consumed",
+            &self.player_consumed,
+            event,
+        );
         callbacks.invoke_table_row_callbacks::<PlayerDeath>(
             "player_death",
             &self.player_death,
@@ -1108,23 +1299,37 @@ impl __sdk::SpacetimeModule for RemoteModule {
     type QueryBuilder = __sdk::QueryBuilder;
 
     fn register_tables(client_cache: &mut __sdk::ClientCache<Self>) {
+        avatar_fx_table::register_table(client_cache);
         config_version_table::register_table(client_cache);
+        craft_def_table::register_table(client_cache);
+        enemy_def_table::register_table(client_cache);
         event_def_table::register_table(client_cache);
         glyph_anim_table::register_table(client_cache);
+        glyph_ramp_table::register_table(client_cache);
         language_def_table::register_table(client_cache);
+        map_settings_table::register_table(client_cache);
         missing_narration_table::register_table(client_cache);
+        movement_profile_table::register_table(client_cache);
         narration_table::register_table(client_cache);
+        player_consumed_table::register_table(client_cache);
         player_death_table::register_table(client_cache);
         player_language_table::register_table(client_cache);
         player_stats_table::register_table(client_cache);
     }
     const ALL_TABLE_NAMES: &'static [&'static str] = &[
+        "avatar_fx",
         "config_version",
+        "craft_def",
+        "enemy_def",
         "event_def",
         "glyph_anim",
+        "glyph_ramp",
         "language_def",
+        "map_settings",
         "missing_narration",
+        "movement_profile",
         "narration",
+        "player_consumed",
         "player_death",
         "player_language",
         "player_stats",

@@ -111,7 +111,7 @@ func repeat_chance(hearings: int) -> float:
 @export var font_names: PackedStringArray = PackedStringArray(["Consolas", "Cascadia Mono", "Courier New", "monospace"])
 @export var font_size: int = 60
 ## Fonts tried, in order, for characters the main font lacks (CJK and emoji stand-ins of the obfuscation).
-@export var fallback_font_names: PackedStringArray = PackedStringArray(["Yu Gothic", "MS Gothic", "Microsoft YaHei", "Segoe UI Symbol", "Segoe UI Emoji"])
+@export var fallback_font_names: PackedStringArray = PackedStringArray(["Yu Gothic", "MS Gothic", "Microsoft YaHei", "Malgun Gothic", "Segoe UI", "Segoe UI Symbol", "Segoe UI Emoji"])
 @export var text_color: Color = Color("#EAF2FF")
 @export var outline_color: Color = Color(0.012, 0.016, 0.035, 0.95)
 @export var outline_size: int = 16
@@ -191,6 +191,9 @@ func repeat_chance(hearings: int) -> float:
 ## understanding on it is always shown right, in every word. Below that it is a stand-in:
 ##   understanding < obf_spin_start: a stable stand-in from obf_static_glyphs (the first obfuscated version);
 ##   < obf_near_start: it spins through obf_wild_glyphs (symbols, CJK, emoji);
+##   the static and wild pools are per language (DB language_def, LanguageGlyphs, TASK-100); these two are the
+##   fallbacks for a language whose pool is empty. A language's foreign_chance share of stand-ins comes from
+##   obf_foreign_glyphs (other alphabets) instead;
 ##   above: it spins through characters near the right one (distance shrinking from obf_near_max_dist), showing the
 ##   right one more and more often as the threshold comes closer.
 @export_range(0.0, 1.0) var obf_found_min: float = 0.45
@@ -201,6 +204,9 @@ func repeat_chance(hearings: int) -> float:
 @export var obf_spin_hz: float = 6.0
 @export var obf_static_glyphs: String = "őŐűŰøØ.¤§þÞðÐ"
 @export var obf_wild_glyphs: String = "HXxó+ˇ3{8}#@%&¥ж字書夢光闇の気ア◊☼♠✦✧🌀👁🔥💀"
+## Smallest scale a stand-in wider than the real letter is shrunk to (wide CJK / Hangul / Dream glyphs).
+@export_range(0.1, 1.0) var obf_fit_min_scale: float = 0.6
+@export var obf_foreign_glyphs: String = "жЯщЖЮ字夢光の気アカ한글빛ابتجشΣΨΩλξ⏃⍜⟟⌰őűßø"
 ## Code point distance of the near stand-ins at obf_near_start (shrinks to 1 at the threshold).
 @export var obf_near_max_dist: int = 12
 ## Words with unresolved characters pulse: a slow wave runs along them (reference px, Hz, phase per letter, alpha dip).

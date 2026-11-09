@@ -221,6 +221,17 @@ camera:   Q / E rotate
   - World: 0% = old look (glyph grids of floor / hazards / props interleave). Rising % = more glyph cells drawn "layered": one whole glyph per screen cell, owner order floor < spikes / corruption < items / pushable objects. 100% = clean. Config `glyph_world_config` group "Layered clarity".
   - Gargoyles: dark silhouette behind the art fades in with % (no floor glyphs in the gaps at 100%).
   - Player glyph: < 6% hollow outline, no glow; glow (halo, crystal, sparkle) rises from 6% to today's at 100%; colour blunt at 0%, a bit more vivid at 100%. Grown body: same hollow / colour rule. Config `avatar_fx_config` group "Understanding look" (no DB columns).
+- Narration obfuscation (task-067, TASK-100): narrator + world lines (never own lines), per character, by the selected language's understanding.
+  - Each character has a threshold (hashed, 45%..92%); past it the character is always right.
+  - Roll-over below the threshold: < 10% stable stand-in from `static_glyphs` -> < 30% spins through `wild_glyphs` (6/s) -> above: characters near the right one, the right one more and more often.
+  - Unsolved words pulse in a slow wave. Wide stand-ins (CJK, Hangul, Dream) shrink to the letter width (min 0.6).
+- Glyph pools per language: DB `language_def` columns (live edit in god):
+  - `static_glyphs`, `wild_glyphs`: any single characters; empty = NarratorConfig `obf_static_glyphs` / `obf_wild_glyphs`.
+  - `foreign_chance` 0..1: share of stand-ins from the other-alphabet pool (NarratorConfig `obf_foreign_glyphs`).
+  - `font`: res:// font for the language's own stand-ins (empty = narration font).
+  - Seed: EN_GB Latin extras, HU_HU / DE_DE accented letters, RU_RU Cyrillic, JP_HAN kanji, JP_KANA hiragana + katakana (foreign 5-8%); ALIEN technical symbols (10%); MATRIX half-width kana, kanji, Hangul, Arabic, digits, symbols, emoji (0%); DREAM loops, coils and dots (3%).
+  - DREAM font: Noto Sans Vai (SIL OFL, `assets/fonts/dream/`), picked to match `docs/art/languages/dreamConcetionArt.png`.
+  - Code: `LanguageGlyphs` (pools), `NarrationLibrary.language_row`, `Narrator.current_glyphs`, `NarrationOverlay`. Preview: `tools/capture_language_glyphs.gd`.
 
 ## Database (SpacetimeDB, local)
 - Module: `database/spacetimedb/src/lib.rs`. DB name `database-narrator`. Server `http://127.0.0.1:3000`.
@@ -246,5 +257,5 @@ Run: `python god/god.py`
 - Tests:
   - `godot --headless --max-fps 30 --path . -s tools/test_x.gd`
   - god: `python -m unittest discover -s god/tests`
-- Tasks: backlog CLI (latest TASK-076).
+- Tasks: backlog CLI (latest TASK-100).
 - Legend chars used: space . # @ * ^ % o G T D C L R H W O (+ teleport channels inside T rings).

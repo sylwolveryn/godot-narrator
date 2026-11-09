@@ -121,39 +121,75 @@
 	"language_def": [
 		{
 			"id": "EN_GB",
-			"name": "English (GB)"
+			"name": "English (GB)",
+			"static_glyphs": "øØþÞðÐßæÆŋ¤§",
+			"wild_glyphs": "#@%&{}<>~^?!ƒ¥£€¶†‡ÆŒøþ",
+			"foreign_chance": 0.08,
+			"font": ""
 		},
 		{
 			"id": "HU_HU",
-			"name": "Hungarian"
+			"name": "Hungarian",
+			"static_glyphs": "őŐűŰöüÖÜ",
+			"wild_glyphs": "őűöüáéíóúŐŰÖÜÁÉÍÓÚ#%&@",
+			"foreign_chance": 0.08,
+			"font": ""
 		},
 		{
 			"id": "ALIEN",
-			"name": "Alien"
+			"name": "Alien",
+			"static_glyphs": "⏃⏚⎎⍜⟟⌰⋔",
+			"wild_glyphs": "⏃⏚☊⎅⟒⎎☌⊑⟟⟊☍⌰⋔⋏⍜⌿⍾⍀⌇⏁⎍⎐⍙⌖⊬⋉⍟҉ʘ",
+			"foreign_chance": 0.1,
+			"font": ""
 		},
 		{
 			"id": "MATRIX",
-			"name": "Matrix"
+			"name": "Matrix",
+			"static_glyphs": "ｱｶｻﾀﾅ01한ا字",
+			"wild_glyphs": "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ0123456789日月字書夢光闇한글사랑마음빛꿈ابتثجحخدذرزسشصضطظعغ#@%&$*+=<>{}[]|/~^💀👁🔥🌀⚡☢☣✦✧◊",
+			"foreign_chance": 0.0,
+			"font": ""
 		},
 		{
 			"id": "DREAM",
-			"name": "Dream"
+			"name": "Dream",
+			"static_glyphs": "ꔅꔆꔚꔛꔣꕀꕁꕢꕣꕤꖘꖜꗁꗂꗬꗢꘐꘚ",
+			"wild_glyphs": "ꔅꔆꔚꔛꔣꕀꕁꕢꕣꕤꖘꖜꗁꗂꗬꗢꘐꘚꔂꔌꔓꔧꔬꔲꕆꕊꕋꕥꕩꕹꕺꕻꖉꖒꖴꖻꖼꗈꗤꗥꗪꗮꗯꗴꗶꘈꘒ꘏꘠꘣꘨꘩ꔞꔸꔹꔺ∿≋◎⊙",
+			"foreign_chance": 0.03,
+			"font": "res://assets/fonts/dream/NotoSansVai-Regular.ttf"
 		},
 		{
 			"id": "DE_DE",
-			"name": "German"
+			"name": "German",
+			"static_glyphs": "äöüßÄÖÜẞ",
+			"wild_glyphs": "äöüßÄÖÜẞ€§#%&@ſ",
+			"foreign_chance": 0.08,
+			"font": ""
 		},
 		{
 			"id": "RU_RU",
-			"name": "Russian"
+			"name": "Russian",
+			"static_glyphs": "жшщъыэюяЖШЩЪЫЭЮЯ",
+			"wild_glyphs": "абвгдеёжзийклмнопрстуфхцчшщъыьэюяБГДЖЗИЙЛПФЦЧШЩЪЫЬЭЮЯ",
+			"foreign_chance": 0.05,
+			"font": ""
 		},
 		{
 			"id": "JP_HAN",
-			"name": "Japanese (Kanji)"
+			"name": "Japanese (Kanji)",
+			"static_glyphs": "字書夢光闇気心言葉語",
+			"wild_glyphs": "日月火水木金土山川人口目耳手足心言語書字夢光闇気雨雲風星空花鳥魚",
+			"foreign_chance": 0.05,
+			"font": ""
 		},
 		{
 			"id": "JP_KANA",
-			"name": "Japanese (Kana)"
+			"name": "Japanese (Kana)",
+			"static_glyphs": "あいうえおかきくけこ",
+			"wild_glyphs": "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオカキクケコサシスセソタチツテトナニヌネノ",
+			"foreign_chance": 0.05,
+			"font": ""
 		}
 	],
 	"narration": [

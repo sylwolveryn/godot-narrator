@@ -32,7 +32,7 @@ plain HTTP; the `god/` launcher has buttons for everything below (Database secti
 | Table | Key | Columns |
 |---|---|---|
 | `event_def` | `id` | `description` |
-| `language_def` | `id` | `name` |
+| `language_def` | `id` | `name`, `static_glyphs`, `wild_glyphs` (obfuscation stand-ins; empty = game defaults), `foreign_chance` (0..1 share from other alphabets), `font` (res:// path; empty = narration font) |
 | `narration` | `id` (auto_inc) | `event` (indexed), `language`, `triggered`, `text_path`, `sound_path` - one row per event x language |
 | `player_stats` | `id` (always 1) | `played_seconds`, `steps`, `transformations`, `deaths` |
 | `player_death` | `cause` | `count` |

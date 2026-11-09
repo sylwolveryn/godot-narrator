@@ -20,12 +20,24 @@ pub struct EventDef {
     pub description: String,
 }
 
-/// A narration language id (e.g. "EN_GB") with a display name.
+/// A narration language id (e.g. "EN_GB") with a display name, and the stand-ins its narration is obfuscated with
+/// while it is not understood (TASK-100). Glyph pools: any single code points; empty = the game's defaults.
+/// `static_glyphs`: the stable first stand-ins (understanding below obf_spin_start), `wild_glyphs`: the spinning ones,
+/// `foreign_chance`: 0..1 share of stand-ins taken from the shared other-alphabet pool instead, `font`: res:// path of
+/// a font the stand-ins are drawn with (empty = the narration font).
 #[spacetimedb::table(accessor = language_def, public)]
 pub struct LanguageDef {
     #[primary_key]
     pub id: String,
     pub name: String,
+    #[default("")]
+    pub static_glyphs: String,
+    #[default("")]
+    pub wild_glyphs: String,
+    #[default(0.0)]
+    pub foreign_chance: f32,
+    #[default("")]
+    pub font: String,
 }
 
 /// One row per (event, language): file paths and how often it played.
@@ -352,16 +364,17 @@ const SEED_EVENTS: &[(&str, &str)] = &[
     ("BRAIN_LANGUAGE_SHIFT", "The brain changes the language with the interact button"),
 ];
 
-const SEED_LANGUAGES: &[(&str, &str)] = &[
-    ("EN_GB", "English (GB)"),
-    ("HU_HU", "Hungarian"),
-    ("ALIEN", "Alien"),
-    ("MATRIX", "Matrix"),
-    ("DREAM", "Dream"),
-    ("DE_DE", "German"),
-    ("RU_RU", "Russian"),
-    ("JP_HAN", "Japanese (Kanji)"),
-    ("JP_KANA", "Japanese (Kana)"),
+/// (id, name, static_glyphs, wild_glyphs, foreign_chance, font).
+const SEED_LANGUAGES: &[(&str, &str, &str, &str, f32, &str)] = &[
+    ("EN_GB", "English (GB)", "øØþÞðÐßæÆŋ¤§", "#@%&{}<>~^?!ƒ¥£€¶†‡ÆŒøþ", 0.08, ""),
+    ("HU_HU", "Hungarian", "őŐűŰöüÖÜ", "őűöüáéíóúŐŰÖÜÁÉÍÓÚ#%&@", 0.08, ""),
+    ("ALIEN", "Alien", "⏃⏚⎎⍜⟟⌰⋔", "⏃⏚☊⎅⟒⎎☌⊑⟟⟊☍⌰⋔⋏⍜⌿⍾⍀⌇⏁⎍⎐⍙⌖⊬⋉⍟҉ʘ", 0.1, ""),
+    ("MATRIX", "Matrix", "ｱｶｻﾀﾅ01한ا字", "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ0123456789日月字書夢光闇한글사랑마음빛꿈ابتثجحخدذرزسشصضطظعغ#@%&$*+=<>{}[]|/~^💀👁🔥🌀⚡☢☣✦✧◊", 0.0, ""),
+    ("DREAM", "Dream", "ꔅꔆꔚꔛꔣꕀꕁꕢꕣꕤꖘꖜꗁꗂꗬꗢꘐꘚ", "ꔅꔆꔚꔛꔣꕀꕁꕢꕣꕤꖘꖜꗁꗂꗬꗢꘐꘚꔂꔌꔓꔧꔬꔲꕆꕊꕋꕥꕩꕹꕺꕻꖉꖒꖴꖻꖼꗈꗤꗥꗪꗮꗯꗴꗶꘈꘒ꘏꘠꘣꘨꘩ꔞꔸꔹꔺ∿≋◎⊙", 0.03, "res://assets/fonts/dream/NotoSansVai-Regular.ttf"),
+    ("DE_DE", "German", "äöüßÄÖÜẞ", "äöüßÄÖÜẞ€§#%&@ſ", 0.08, ""),
+    ("RU_RU", "Russian", "жшщъыэюяЖШЩЪЫЭЮЯ", "абвгдеёжзийклмнопрстуфхцчшщъыьэюяБГДЖЗИЙЛПФЦЧШЩЪЫЬЭЮЯ", 0.05, ""),
+    ("JP_HAN", "Japanese (Kanji)", "字書夢光闇気心言葉語", "日月火水木金土山川人口目耳手足心言語書字夢光闇気雨雲風星空花鳥魚", 0.05, ""),
+    ("JP_KANA", "Japanese (Kana)", "あいうえおかきくけこ", "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオカキクケコサシスセソタチツテトナニヌネノ", 0.05, ""),
 ];
 
 struct GlyphSeed {
@@ -471,12 +484,24 @@ fn seed(ctx: &ReducerContext) {
             });
         }
     }
-    for (id, name) in SEED_LANGUAGES {
-        if ctx.db.language_def().id().find(id.to_string()).is_none() {
-            ctx.db.language_def().insert(LanguageDef {
-                id: id.to_string(),
-                name: name.to_string(),
-            });
+    for (id, name, static_glyphs, wild_glyphs, foreign_chance, font) in SEED_LANGUAGES {
+        let seeded = LanguageDef {
+            id: id.to_string(),
+            name: name.to_string(),
+            static_glyphs: static_glyphs.to_string(),
+            wild_glyphs: wild_glyphs.to_string(),
+            foreign_chance: *foreign_chance,
+            font: font.to_string(),
+        };
+        match ctx.db.language_def().id().find(id.to_string()) {
+            None => {
+                ctx.db.language_def().insert(seeded);
+            }
+            // Rows from before the glyph columns (all empty): fill in the seeded pools, keep the name.
+            Some(row) if row.static_glyphs.is_empty() && row.wild_glyphs.is_empty() && row.font.is_empty() => {
+                ctx.db.language_def().id().update(LanguageDef { name: row.name, ..seeded });
+            }
+            Some(_) => {}
         }
         if ctx.db.player_language().language().find(id.to_string()).is_none() {
             let understanding = SEED_UNDERSTANDING;

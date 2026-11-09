@@ -69,6 +69,16 @@ func override_root() -> String:
 	return game_root()
 
 
+## The DB row (table language_def) of `language` (default: the narration language), or {} when there is none.
+func language_row(language: StringName = &"") -> Dictionary:
+	var id: String = str(language if language != &"" else config.language)
+	if database != null:
+		for row: Variant in database.rows("language_def"):
+			if row is Dictionary and str((row as Dictionary).get("id", "")) == id:
+				return row
+	return {}
+
+
 ## Understanding of the narration language as 0..1, from the DB table player_language (percent).
 func understanding() -> float:
 	if database != null:

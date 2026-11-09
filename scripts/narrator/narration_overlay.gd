@@ -15,6 +15,9 @@ extends CanvasLayer
 ## language, character by character (NarratorConfig obf_*): stable stand-ins, then wild spinning, then near
 ## characters converging, and a character past its threshold is always right. Words still holding stand-ins pulse in
 ## a slow wave. Such lines redraw every frame while on screen.
+## Per-language stand-ins (TASK-100): the static and wild stand-ins come from the selected language's pools
+## (LanguageGlyphs from DB language_def; a foreign_chance share from other alphabets) and the language's own stand-ins
+## are drawn with its font when it has one (Dream: Noto Sans Vai).
 ## Cost: two canvas items redrawn only while a morph runs (about 3 batched passes: glow quads, outlines, fills),
 ## nothing allocated per frame; a doubt line also redraws every frame while it rests, for the few seconds it is on
 ## screen. Pure presentation: it listens to the Narrator and never writes data.
@@ -30,6 +33,11 @@ enum Phase { IDLE, ASSEMBLE, HOLD, DISPERSE }
 var phase: Phase = Phase.IDLE
 
 var _font: SystemFont
+## Stand-in pools of the line's language, and the font its own stand-ins are drawn with (null = _font).
+var _glyphs: LanguageGlyphs
+var _glyph_font: Font
+## Loaded language fonts by res:// path (null = failed to load).
+var _glyph_fonts: Dictionary[String, Font] = {}
 var _font_px: int = 1
 var _outline_px: int = 0
 var _glow_px: float = 1.0
@@ -90,6 +98,7 @@ func _ready() -> void:
 		fallback.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 		fallbacks.append(fallback)
 	_font.fallbacks = fallbacks
+	_glyphs = LanguageGlyphs.defaults(config)
 	_glow_texture = _make_glow_texture()
 	_glow_node = Node2D.new()
 	_glow_node.name = "NarrationGlow"
@@ -141,7 +150,7 @@ func is_showing() -> bool:
 
 
 func _on_beat_started(beat: NarrationBeat) -> void:
-	show_beat(beat, narrator.current_doubt, narrator.current_text, narrator.current_understanding)
+	show_beat(beat, narrator.current_doubt, narrator.current_text, narrator.current_understanding, narrator.current_glyphs)
 
 
 ## True for layers that move while they rest (world and own lines).
@@ -171,7 +180,9 @@ func _has_doubt() -> bool:
 ## share of the letters unsettled (a doubt line, see Narrator.doubt_fraction).
 ## `text` replaces the beat's own text (the line resolved from the narration files); empty = the beat's text.
 ## `understanding` (0..1) decides how much of an own line is broken.
-func show_beat(beat: NarrationBeat, doubt_fraction: float = 0.0, text: String = "", understanding: float = 1.0) -> void:
+func show_beat(beat: NarrationBeat, doubt_fraction: float = 0.0, text: String = "", understanding: float = 1.0, glyphs: LanguageGlyphs = null) -> void:
+	_glyphs = glyphs if glyphs != null else LanguageGlyphs.defaults(config)
+	_glyph_font = _language_font(_glyphs.font_path)
 	_text = text if text != "" else beat.text
 	_layer = beat.layer
 	_understanding = clampf(understanding, 0.0, 1.0)
@@ -372,10 +383,10 @@ func obfuscated(i: int) -> String:
 		return ch
 	var code: int = ch.unicode_at(0)
 	if _understanding < config.obf_spin_start:
-		return _pick(config.obf_static_glyphs, _noise(code * 31 + i, 1.7), ch)
+		return _glyphs.pick_static(_noise(code * 31 + i, 1.7), _noise(code * 17 + i, 4.1), ch)
 	var tick: float = floorf(_doubt_time * config.obf_spin_hz + _noise(i, 2.3) * 4.0)
 	if _understanding < config.obf_near_start:
-		return _pick(config.obf_wild_glyphs, _noise(i * 7 + code, tick), ch)
+		return _glyphs.pick_wild(_noise(i * 7 + code, tick), _noise(i * 11 + code, tick + 0.5), ch)
 	# Near stage: closer characters, and the right one more often, as the threshold comes closer.
 	var span: float = maxf(threshold_of(ch) - config.obf_near_start, 0.001)
 	var t: float = clampf((_understanding - config.obf_near_start) / span, 0.0, 1.0)
@@ -388,10 +399,40 @@ func obfuscated(i: int) -> String:
 	return _near(ch, code, offset)
 
 
-static func _pick(glyphs: String, k: float, fallback: String) -> String:
-	if glyphs == "":
-		return fallback
-	return glyphs[mini(int(k * glyphs.length()), glyphs.length() - 1)]
+## The font of a language's own stand-ins (loaded once per path, the narration font as fallback); null = _font.
+func _language_font(path: String) -> Font:
+	if path == "":
+		return null
+	if not _glyph_fonts.has(path):
+		var loaded: Font = load(path) as Font if ResourceLoader.exists(path) else null
+		if loaded == null:
+			push_warning("NarrationOverlay: language font not found: %s" % path)
+		else:
+			loaded = loaded.duplicate() as Font
+			loaded.fallbacks = [_font]
+		_glyph_fonts[path] = loaded
+	return _glyph_fonts[path]
+
+
+## Size (x, px) and sideways offset (y) letter i is drawn with: a stand-in wider than the real letter's advance (CJK,
+## Hangul, Dream) shrinks to fit it, down to config.obf_fit_min_scale, and is centred on it.
+func _fit(i: int, shown: String, font: Font) -> Vector2:
+	if shown == _chars[i]:
+		return Vector2(_font_px, 0.0)
+	var advance: float = _advance(_chars[i])
+	# Shaped size: get_char_size only sees the primary font, not the fallback that draws CJK / Hangul / emoji.
+	var width: float = font.get_string_size(shown, HORIZONTAL_ALIGNMENT_LEFT, -1, _font_px).x
+	if width <= advance or width <= 0.0:
+		return Vector2(_font_px, (advance - width) * 0.5)
+	var scale: float = maxf(advance / width, config.obf_fit_min_scale)
+	return Vector2(maxi(1, roundi(_font_px * scale)), (advance - width * scale) * 0.5)
+
+
+## The font letter i is drawn with right now (`shown` = _char_at(i)).
+func _font_of(shown: String) -> Font:
+	if _glyph_font != null and _glyphs != null and _glyphs.is_native(shown):
+		return _glyph_font
+	return _font
 
 
 ## A character `offset` code points away, kept inside a-z / A-Z / 0-9 for those, else any printable neighbour.
@@ -559,25 +600,35 @@ func _draw_text() -> void:
 				continue
 			var o: Color = config.outline_color
 			o.a *= _alpha[i]
-			_text_node.draw_char_outline(_font, _pos[i], _char_at(i), _font_px, _outline_px, o)
+			var shown: String = _char_at(i)
+			var shown_font: Font = _font_of(shown)
+			var fit: Vector2 = _fit(i, shown, shown_font)
+			_text_node.draw_char_outline(shown_font, _pos[i] + Vector2(fit.y, 0.0), shown, int(fit.x), _outline_px, o)
 	if _layer == NarrationBeat.Layer.WORLD and config.world_colors.size() >= 2:
 		# Split ghosts: green to the left, purple to the right.
 		var split := Vector2(config.world_split_px * _scale, 0.0)
 		for i in _chars.size():
 			if _chars[i] == " " or _alpha[i] <= 0.004:
 				continue
+			var ghost: String = _char_at(i)
+			var ghost_font: Font = _font_of(ghost)
+			var ghost_fit: Vector2 = _fit(i, ghost, ghost_font)
+			var at: Vector2 = _pos[i] + Vector2(ghost_fit.y, 0.0)
 			var g: Color = config.world_colors[0]
 			g.a = _alpha[i] * config.world_ghost_alpha
-			_text_node.draw_char(_font, _pos[i] - split, _char_at(i), _font_px, g)
+			_text_node.draw_char(ghost_font, at - split, ghost, int(ghost_fit.x), g)
 			var p: Color = config.world_colors[1]
 			p.a = _alpha[i] * config.world_ghost_alpha
-			_text_node.draw_char(_font, _pos[i] + split, _char_at(i), _font_px, p)
+			_text_node.draw_char(ghost_font, at + split, ghost, int(ghost_fit.x), p)
 	for i in _chars.size():
 		if _chars[i] == " " or _alpha[i] <= 0.004:
 			continue
 		var c: Color = _letter_color(i)
 		c.a = _alpha[i]
-		_text_node.draw_char(_font, _pos[i], _char_at(i), _font_px, c)
+		var letter: String = _char_at(i)
+		var letter_font: Font = _font_of(letter)
+		var letter_fit: Vector2 = _fit(i, letter, letter_font)
+		_text_node.draw_char(letter_font, _pos[i] + Vector2(letter_fit.y, 0.0), letter, int(letter_fit.x), c)
 
 
 ## One soft radial blob (white, alpha falling off to the edge); tinted per letter at draw time.

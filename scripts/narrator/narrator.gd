@@ -59,6 +59,8 @@ var current_text: String = ""
 var current_voice: AudioStream
 ## Understanding (0..1) of the narration language, for OWN lines (NarrationLibrary.understanding()). Set before beat_started.
 var current_understanding: float = 1.0
+## Obfuscation stand-ins of the narration language for the current beat (TASK-100).
+var current_glyphs: LanguageGlyphs
 ## Latest understanding of the selected language from SignalBus.language_understanding_changed (task-065); before the
 ## first signal the library's value (DB player_language) is used.
 var _understanding: float = 1.0
@@ -425,6 +427,7 @@ func _start(beat: NarrationBeat, chained: bool = false) -> void:
 		current_understanding = _understanding
 	else:
 		current_understanding = library.understanding() if library != null else 1.0
+	current_glyphs = LanguageGlyphs.from_row(library.language_row() if library != null else {}, config)
 	current_voice = null
 	if library != null and beat.layer == NarrationBeat.Layer.NARRATOR:
 		current_voice = library.audio_for(NarrationLibrary.event_of(beat))

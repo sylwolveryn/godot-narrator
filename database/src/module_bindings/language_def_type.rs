@@ -9,6 +9,10 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 pub struct LanguageDef {
     pub id: String,
     pub name: String,
+    pub static_glyphs: String,
+    pub wild_glyphs: String,
+    pub foreign_chance: f32,
+    pub font: String,
 }
 
 impl __sdk::InModule for LanguageDef {
@@ -21,6 +25,10 @@ impl __sdk::InModule for LanguageDef {
 pub struct LanguageDefCols {
     pub id: __sdk::__query_builder::Col<LanguageDef, String>,
     pub name: __sdk::__query_builder::Col<LanguageDef, String>,
+    pub static_glyphs: __sdk::__query_builder::Col<LanguageDef, String>,
+    pub wild_glyphs: __sdk::__query_builder::Col<LanguageDef, String>,
+    pub foreign_chance: __sdk::__query_builder::Col<LanguageDef, f32>,
+    pub font: __sdk::__query_builder::Col<LanguageDef, String>,
 }
 
 impl __sdk::__query_builder::HasCols for LanguageDef {
@@ -29,6 +37,10 @@ impl __sdk::__query_builder::HasCols for LanguageDef {
         LanguageDefCols {
             id: __sdk::__query_builder::Col::new(table_name, "id"),
             name: __sdk::__query_builder::Col::new(table_name, "name"),
+            static_glyphs: __sdk::__query_builder::Col::new(table_name, "static_glyphs"),
+            wild_glyphs: __sdk::__query_builder::Col::new(table_name, "wild_glyphs"),
+            foreign_chance: __sdk::__query_builder::Col::new(table_name, "foreign_chance"),
+            font: __sdk::__query_builder::Col::new(table_name, "font"),
         }
     }
 }

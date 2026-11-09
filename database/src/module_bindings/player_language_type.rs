@@ -9,6 +9,7 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 pub struct PlayerLanguage {
     pub language: String,
     pub understanding: f32,
+    pub max: f32,
 }
 
 impl __sdk::InModule for PlayerLanguage {
@@ -21,6 +22,7 @@ impl __sdk::InModule for PlayerLanguage {
 pub struct PlayerLanguageCols {
     pub language: __sdk::__query_builder::Col<PlayerLanguage, String>,
     pub understanding: __sdk::__query_builder::Col<PlayerLanguage, f32>,
+    pub max: __sdk::__query_builder::Col<PlayerLanguage, f32>,
 }
 
 impl __sdk::__query_builder::HasCols for PlayerLanguage {
@@ -29,6 +31,7 @@ impl __sdk::__query_builder::HasCols for PlayerLanguage {
         PlayerLanguageCols {
             language: __sdk::__query_builder::Col::new(table_name, "language"),
             understanding: __sdk::__query_builder::Col::new(table_name, "understanding"),
+            max: __sdk::__query_builder::Col::new(table_name, "max"),
         }
     }
 }
