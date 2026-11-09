@@ -1,10 +1,11 @@
 ---
 id: TASK-098
 title: 'god: new game mods - fog on/off and sight area scale'
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-09T08:25:00Z'
+updated_date: '2026-11-09T08:47:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -25,3 +26,12 @@ For testing maps and forms it helps to start a run with the fog of war off (or f
 - [ ] #3 Fog off shows the map without depth fog or darkness and reveals all cells; fog on forces the normal fog and darkness even on maps whose DB row turns them off
 - [ ] #4 Headless tests cover argument parsing and the effect on the effective map settings
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. scripts/core/run_mods.gd (RunMods): parses --fog=0|1 and --sight=<percent> from the user args.
+2. MapSettings.resolve applies the fog override to a copy of the row; MapReveal.area_scale and GlyphWorldView.player_light_radius apply the sight scale.
+3. god: mods get a target (save tool vs game launch); Fog and Sight mods are game args passed only to the modded start; toggle field as a checkbox.
+4. Tests: test_map_settings run mods section, god test_mods.
+<!-- SECTION:PLAN:END -->
