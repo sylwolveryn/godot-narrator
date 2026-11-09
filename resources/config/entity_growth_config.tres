@@ -1,11 +1,17 @@
 [gd_resource type="Resource" script_class="EntityGrowthConfig" format=3]
 
-[ext_resource type="Script" path="res://scripts/core/entity_formation.gd" id="1_822a4"]
-[ext_resource type="Resource" path="res://resources/config/formations/winged.tres" id="2_5jlm3"]
-[ext_resource type="Resource" path="res://resources/config/formations/beetle.tres" id="3_556ri"]
-[ext_resource type="Resource" path="res://resources/config/formations/sprite.tres" id="4_h8m4t"]
-[ext_resource type="Script" path="res://scripts/core/entity_growth_config.gd" id="5_akrro"]
+[ext_resource type="Script" path="res://scripts/core/entity_formation.gd" id="1_5jlm3"]
+[ext_resource type="Resource" path="res://resources/config/formations/human.tres" id="2_556ri"]
+[ext_resource type="Resource" path="res://resources/config/formations/lion_head.tres" id="3_h8m4t"]
+[ext_resource type="Resource" path="res://resources/config/formations/angelic.tres" id="4_akrro"]
+[ext_resource type="Resource" path="res://resources/config/formations/hand.tres" id="5_ixyrr"]
+[ext_resource type="Script" path="res://scripts/core/entity_growth_config.gd" id="6_pwhxh"]
 
 [resource]
-script = ExtResource("5_akrro")
-formations = Array[ExtResource("1_822a4")]([ExtResource("2_5jlm3"), ExtResource("3_556ri"), ExtResource("4_h8m4t")])
+script = ExtResource("6_pwhxh")
+formations = Array[ExtResource("1_5jlm3")]([ExtResource("2_556ri")])
+glyph_size = 0.42
+filler_color = Color(0.62, 0.9, 1, 1)
+structural_color = Color(0.95, 1, 1, 1)
+outline_width = 0.16
+morph_shapes = Array[ExtResource("1_5jlm3")]([ExtResource("3_h8m4t"), ExtResource("4_akrro"), ExtResource("5_ixyrr")])

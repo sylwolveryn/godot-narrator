@@ -28,6 +28,7 @@ func _check(cond: bool, msg: String) -> void:
 
 func _run() -> void:
 	_check_resolve()
+	_check_run_mods()
 	await _check_scene()
 	if _failures.is_empty():
 		print("PASS test_map_settings")
@@ -53,6 +54,30 @@ func _check_resolve() -> void:
 	_check(s.ambient_level == look.full_light_ambient and s.ambient_color == look.full_light_color, "no darkness = full light")
 	s = MapSettings.resolve({"darkness_enabled": false, "ambient_level": 0.4}, rc, look)
 	_check(absf(s.ambient_level - 0.4) < EPS, "ambient_level column wins over darkness off")
+
+
+## Task-098: the run-only mods of god's New game with mods (command line user arguments).
+func _check_run_mods() -> void:
+	var none: RunMods = RunMods.parse(PackedStringArray(["--map=m1_awakening"]))
+	_check(not none.overrides_fog() and none.sight_scale == 1.0, "run mods: nothing without the arguments")
+	var off: RunMods = RunMods.parse(PackedStringArray(["--fog=0", "--sight=250"]))
+	_check(off.fog == 0 and absf(off.sight_scale - 2.5) < EPS, "run mods: --fog=0 --sight=250 parsed")
+	_check(RunMods.parse(PackedStringArray(["--sight=abc", "--fog=x"])).sight_scale == 1.0, "run mods: junk ignored")
+	_check(RunMods.parse(PackedStringArray(["--sight=0"])).sight_scale == RunMods.MIN_SIGHT_SCALE, "run mods: sight clamped")
+	var rc := RevealConfig.new()
+	var look := GlyphWorldConfig.new()
+	var row := {"map_id": "m3_dirt", "reveal_all": true, "fog_enabled": false, "darkness_enabled": false, "ambient_level": 0.9}
+	var s: MapSettings = MapSettings.resolve({}, rc, look, off)
+	_check(s.reveal_all and not s.fog_enabled and not s.darkness_enabled and s.ambient_level == look.full_light_ambient, "fog off: revealed, no fog, full light")
+	var on: RunMods = RunMods.parse(PackedStringArray(["--fog=1"]))
+	s = MapSettings.resolve(row, rc, look, on)
+	_check(not s.reveal_all and s.fog_enabled and s.darkness_enabled and s.ambient_level == look.ambient_level, "fog on wins over a row without fog")
+	_check(row["fog_enabled"] == false and row["reveal_all"] == true, "the DB row itself is never changed")
+	var reveal: Node = (load("res://scripts/world/map_reveal.gd") as GDScript).new()
+	reveal.set("config", rc)
+	reveal.set("run_mods", off)
+	_check(absf(float(reveal.call("area_scale")) - float(rc.form_area_scale.get(EntityForm.SINGLE, 1.0)) * 2.5) < EPS, "sight scale multiplies the form area scale")
+	reveal.free()
 
 
 func _fast_intro() -> IntroConfig:

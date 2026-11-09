@@ -106,7 +106,9 @@ func _run() -> void:
 	# The M1 checks below are about the radius; line of sight has its own check on a custom map at the end.
 	cfg.line_of_sight = false
 	reveal.set("config", cfg)
-	var radius: float = cfg.reveal_radius * loader.world_config.cell_size
+	# Task-096: the active form scales the radius (the single glyph before the entity unlock).
+	var radius: float = float(reveal.call("effective_reveal_radius")) * loader.world_config.cell_size
+	_check(is_equal_approx(float(reveal.call("area_scale")), float(cfg.form_area_scale.get(EntityForm.SINGLE, 1.0))), "single form area scale")
 
 	# Everything hidden before the run starts (the veil hides the intro anyway).
 	_check(loader.map_id == MAP_ID, "map id %s" % loader.map_id)
@@ -203,6 +205,9 @@ func _run() -> void:
 	# --- Exact radius on a custom map (own map id, so the M1 memory is not involved). ---
 	var small: RevealConfig = cfg.duplicate()
 	small.reveal_radius = 2.0
+	# Exact radii below: no form scale. The overshoot peak is narrow, so the curve is sampled over the old duration.
+	small.form_area_scale = {}
+	small.reveal_duration = 0.9
 	reveal.set("config", small)
 	loader.map_id = &"test_strip"
 	loader.build(loader.parse_text("##########\n#...@....#\n##########\n"))
@@ -284,6 +289,7 @@ func _run() -> void:
 	# --- Line of sight (task-053): walls and items hide what lies behind them; the blocker itself is seen. ---
 	var sight: RevealConfig = cfg.duplicate()
 	sight.reveal_radius = 6.0
+	sight.form_area_scale = {}
 	sight.line_of_sight = true
 	reveal.set("config", sight)
 	loader.map_id = &"test_sight"
@@ -304,6 +310,32 @@ func _run() -> void:
 	reveal.call("begin_run")
 	reveal.call("reveal_around", loader.spawn_position)
 	_check(reveal.call("state_of", Vector2i(8, 2)) == CELL_SEEN, "without line of sight the radius alone decides")
+
+	# --- Task-096: per-form area scale and the sprint pace of the reveal. ---
+	var paced: RevealConfig = cfg.duplicate()
+	paced.reveal_radius = 2.0
+	paced.form_area_scale = {EntityForm.SINGLE: 2.0, EntityForm.GROWN: 3.0}
+	reveal.set("config", paced)
+	reveal.call("begin_run")
+	root.get_node("SignalBus").get("entity_form_changed").emit(EntityForm.GROWN, false)
+	_check(is_equal_approx(float(reveal.call("effective_reveal_radius")), 6.0), "grown form: 3x reveal radius")
+	root.get_node("SignalBus").get("entity_form_changed").emit(EntityForm.BRAIN, false)
+	_check(is_equal_approx(float(reveal.call("area_scale")), 1.0), "brain form: unscaled")
+	root.get_node("SignalBus").get("entity_form_changed").emit(EntityForm.SINGLE, false)
+	_check(is_equal_approx(float(reveal.call("effective_reveal_radius")), 4.0), "single form: 2x reveal radius")
+	var world_view: Node = main.get_node("GlyphWorldView")
+	_check(float(world_view.call("player_light_radius")) >= 4.0 * loader.world_config.cell_size, "the player light covers the revealed area")
+	_check(is_equal_approx(float(reveal.call("time_scale")), 1.0), "walking: normal reveal pace")
+	player.set("_sprinting", true)
+	var mult: float = float(player.get("sprint_speed_mult"))
+	_check(mult > 1.0 and is_equal_approx(float(reveal.call("time_scale")), 1.0 / mult), "sprinting: reveal pace / sprint multiplier")
+	reveal.call("begin_run")
+	reveal.call("reveal_around", loader.spawn_position)
+	var anims: Dictionary = reveal.get("_animations")
+	var fresh_cell: Vector2i = anims.keys()[0] if not anims.is_empty() else Vector2i(-1, -1)
+	var base_duration: float = paced.memory_to_seen_duration if not anims.is_empty() and anims[fresh_cell][1] else paced.reveal_duration
+	_check(not anims.is_empty() and is_equal_approx(float(anims[fresh_cell][2]), base_duration / mult), "a sprint reveal plays in duration / sprint multiplier")
+	player.set("_sprinting", false)
 
 	main.queue_free()
 	await process_frame

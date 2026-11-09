@@ -76,7 +76,9 @@ func _run() -> void:
 	var player = main.get_node("Player")
 	var rig = main.get_node("CameraRig")
 	var radius: float = entity.body_radius(EntityForm.GROWN)
-	_check(radius > 3.0 and radius < 5.0, "grown body radius from the 9-wide formation (%s)" % radius)
+	# Task-099: the human many form is about 2 tiles wide and 3 tall.
+	var ext_grown: Vector2 = entity.body_extents(EntityForm.GROWN)
+	_check(radius > 0.8 and radius < 1.2 and ext_grown.y > 1.3 and ext_grown.y < 1.7, "grown body ~2 x 3 tiles from the human formation (%s)" % ext_grown)
 	_check(entity.body_radius(EntityForm.SINGLE) == 0.0, "the single form has no own radius")
 	_check(is_equal_approx(player.body_radius(), player.config.body_radius), "single form: the small capsule")
 
@@ -106,7 +108,7 @@ func _run() -> void:
 		_check(is_equal_approx(player.body_radius(), radius), "grown form: the whole body collides (%s)" % player.body_radius())
 		var shape: CapsuleShape3D = player.get_node("Collision").shape
 		var ext: Vector2 = entity.body_extents(EntityForm.GROWN)
-		_check(is_equal_approx(shape.radius, ext.y) and is_equal_approx(shape.height, radius * 2.0), "the lying capsule takes the body outline (task-094)")
+		_check(is_equal_approx(shape.radius, minf(ext.x, ext.y)) and is_equal_approx(shape.height, maxf(ext.x, ext.y) * 2.0), "the lying capsule takes the body outline (task-094)")
 		_check(rig.zoom_limit() > limit_single * 1.5, "the many form zooms out further (%s vs %s)" % [rig.zoom_limit(), limit_single])
 		_check(entity.set_form(EntityForm.SINGLE), "back to single always works")
 		await process_frame

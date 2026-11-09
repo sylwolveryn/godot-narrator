@@ -10,7 +10,10 @@
 //   MODEL_MATRIX[1].xyz = (start offset x, start offset y, delay)
 //   MODEL_MATRIX[2].xyz = (duration, spin turns, arc height)
 //   MODEL_MATRIX[3].xyz = (glyph slot at start, glyph slot at end, seed 0..1)
-//   COLOR = glyph colour; INSTANCE_CUSTOM.x = size at the start / size at the end.
+//   COLOR.rgb = glyph colour, COLOR.a = 1 when the glyph is shown in the current shape (task-099);
+//   INSTANCE_CUSTOM.x = size at the start / size at the end; INSTANCE_CUSTOM.yz = offset in the shape the body morphs to,
+//   INSTANCE_CUSTOM.w = its glyph slot (negative = -1 - slot: hidden in that shape). `morph` (0..1, eased on the CPU)
+//   glides from the end offsets to those; the glyph flips half way when it differs.
 shader_type spatial;
 render_mode unshaded, blend_premul_alpha, depth_test_disabled, depth_draw_never, cull_disabled, fog_disabled, skip_vertex_transform;
 
@@ -52,6 +55,7 @@ uniform float flash = 0.18;
 uniform float overshoot = 1.35;
 uniform vec3 gather_color = vec3(0.45, 0.62, 0.78);
 uniform float opacity = 1.0;              // 0 hides the whole body
+uniform float morph = 0.0;                // task-099: 0 = current shape, 1 = the shape it morphs to
 // Understanding look (task-066, same rule as glyph_actor): 1 = edge band only; colour grade (1, 1 = plain).
 uniform float hollow = 0.0;
 uniform float face_saturation = 1.0;
@@ -74,7 +78,10 @@ float ease_out_back(float x) {
 }
 
 void vertex() {
-	vec2 end_p = MODEL_MATRIX[0].xy;
+	float gb_raw = INSTANCE_CUSTOM.w;
+	float vis_b = gb_raw >= 0.0 ? 1.0 : 0.0;
+	float g_b = gb_raw >= 0.0 ? gb_raw : -1.0 - gb_raw;
+	vec2 end_p = mix(MODEL_MATRIX[0].xy, INSTANCE_CUSTOM.yz, morph);
 	float size = MODEL_MATRIX[0].z;
 	vec2 start_p = MODEL_MATRIX[1].xy;
 	float delay = MODEL_MATRIX[1].z;
@@ -103,9 +110,14 @@ void vertex() {
 		float f = smoothstep(0.2, 0.8, u);
 		glyph = f < 0.5 ? g_from : g_to;
 		fx = max(abs(cos(HALF_TURN * f)), 0.04);
+	} else if (u >= 1.0 && abs(g_b - g_to) > 0.5) {
+		// Morph: the glyph turns edge-on half way and comes back as the other shape's glyph.
+		float f = smoothstep(0.35, 0.65, morph);
+		glyph = f < 0.5 ? g_to : g_b;
+		fx = max(abs(cos(HALF_TURN * f)), 0.04);
 	}
 	vec3 col = mix(gather_color, COLOR.rgb, smoothstep(0.1, 0.9, u)) + vec3(flash * hump);
-	float alpha = smoothstep(0.0, 0.2, u);
+	float alpha = smoothstep(0.0, 0.2, u) * mix(COLOR.a, vis_b, morph);
 
 	// --- fold back into the heart (switching to the single form) ---
 	if (fold_t >= 0.0) {

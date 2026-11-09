@@ -17,6 +17,8 @@ extends Node
 ## The world is one merged mesh, so nothing is shown or hidden per node: a cell with r = 0 draws nothing.
 ## Per-map rules (task-069, MapSettings from the DB table map_settings): the reveal radius and line of sight, and
 ## `reveal_all` (every drawn cell is seen from the start of each run, no memory look). Without a row: RevealConfig.
+## Task-096: the active entity form scales the reveal radius (RevealConfig.form_area_scale; area_scale()), and a cell
+## that starts revealing while the player sprints plays faster by the sprint speed multiplier.
 
 ## Emitted when cells were seen for the first time this run (the presentation re-picks its static lights).
 signal cells_seen
@@ -60,12 +62,16 @@ var _mask: Image
 var _mask_texture: ImageTexture
 var _dirty: bool = false
 var _clock: float = 0.0
-## Running cell animations: cell -> [start time, from_memory (bool)].
+## Running cell animations: cell -> [start time, from_memory (bool), duration (seconds, sprint pace applied)].
 var _animations: Dictionary[Vector2i, Array] = {}
 ## Sight blockers of the loaded map: RevealConfig.sight_blockers plus the large prop types that block sight (task-058).
 var _blockers: Array[StringName] = []
 ## Scratch list of the animations that finished in this step (reused, no per-frame allocation).
 var _finished: Array[Vector2i] = []
+## The active entity form (task-096), from SignalBus.entity_form_changed; picks the area scale.
+var _form: StringName = &""
+## Run-only tweaks from the command line (task-098: fog override, sight scale). Tests replace it.
+var run_mods: RunMods = RunMods.current()
 
 
 func _ready() -> void:
@@ -76,6 +82,7 @@ func _ready() -> void:
 	SignalBus.player_spawned.connect(_on_player_spawned)
 	SignalBus.dirt_destroyed.connect(_on_dirt_destroyed)
 	SignalBus.dev_reveal_map_requested.connect(_on_dev_reveal_map_requested)
+	SignalBus.entity_form_changed.connect(_on_entity_form_changed)
 	SignalBus.destructible_destroyed.connect(func(_k: StringName, _r: Rect2i, _w: Vector3, _c: StringName) -> void:
 		_last_position = Vector3.INF)
 	if settings != null:
@@ -182,14 +189,36 @@ func reveal_all() -> void:
 		_check_complete()
 
 
+## Factor on the map's reveal radius (task-096): the active form's RevealConfig.form_area_scale (1 when not listed),
+## times the run-only sight scale (task-098). Before any form was announced (the entity is not unlocked yet) the
+## player is the single glyph.
+func area_scale() -> float:
+	var form: StringName = _form if _form != &"" else EntityForm.SINGLE
+	return float(config.form_area_scale.get(form, 1.0)) * run_mods.sight_scale
+
+
+## Reveal radius in effect (cells): the map's radius times area_scale().
+func effective_reveal_radius() -> float:
+	return map_settings.reveal_radius * area_scale()
+
+
+## Seconds-scale of reveal animations that start now (task-096): 1 at walking pace, 1 / sprint speed multiplier while
+## the player sprints (RevealConfig.sprint_speeds_reveal).
+func time_scale() -> float:
+	if not config.sprint_speeds_reveal or player == null or not player.is_sprinting():
+		return 1.0
+	return 1.0 / maxf(player.sprint_speed_mult, 1.0)
+
+
 ## Reveals every cell whose centre is within the reveal radius of a world position.
 func reveal_around(world_position: Vector3) -> void:
 	if map_settings.reveal_all:
 		return
 	var size: float = map_loader.world_config.cell_size
-	var reach: float = map_settings.reveal_radius * size
+	var radius: float = effective_reveal_radius()
+	var reach: float = radius * size
 	var centre: Vector2i = map_loader.world_to_cell(world_position)
-	var span: int = ceili(map_settings.reveal_radius) + 1
+	var span: int = ceili(radius) + 1
 	var fresh := PackedVector2Array()
 	var any_seen: bool = false
 	for dy in range(-span, span + 1):
@@ -239,6 +268,12 @@ func _on_dev_reveal_map_requested() -> void:
 	_flush()
 
 
+## Another form: its area scale applies from the next physics step (a bigger area reveals at once, standing still).
+func _on_entity_form_changed(form: StringName, _animate: bool) -> void:
+	_form = form
+	_last_position = Vector3.INF
+
+
 func _on_run_ended(_cause: StringName) -> void:
 	_tracking = false
 
@@ -248,7 +283,7 @@ func _on_map_built(_data: MapData) -> void:
 
 
 func _resolve_settings() -> void:
-	map_settings = MapSettings.resolve(settings.current_row() if settings != null else {}, config, null)
+	map_settings = MapSettings.resolve(settings.current_row() if settings != null else {}, config, null, run_mods)
 
 
 ## The DB was reloaded: new radius / sight rules apply from the next move; a map that became reveal_all shows at once.
@@ -331,8 +366,10 @@ func _flush() -> void:
 ## A cell that has just been seen: it waits for its stagger delay (distance in cells from the
 ## player), then animates. Until then it holds its starting look (dark, or still remembered).
 func _start_animation(cell: Vector2i, from_memory: bool, distance_cells: float) -> void:
-	var start: float = _clock + distance_cells * config.reveal_stagger_per_cell
-	_animations[cell] = [start, from_memory]
+	var pace: float = time_scale()
+	var start: float = _clock + distance_cells * config.reveal_stagger_per_cell * pace
+	var duration: float = (config.memory_to_seen_duration if from_memory else config.reveal_duration) * pace
+	_animations[cell] = [start, from_memory, duration]
 	if from_memory:
 		_set_look(cell, 1.0, 0.0, 0.0)
 	else:
@@ -345,7 +382,7 @@ func _step_animations() -> void:
 		var entry: Array = _animations[cell]
 		var start: float = entry[0]
 		var from_memory: bool = entry[1]
-		var duration: float = config.memory_to_seen_duration if from_memory else config.reveal_duration
+		var duration: float = entry[2]
 		var p: float = (_clock - start) / maxf(duration, 0.001)
 		if p < 0.0:
 			continue

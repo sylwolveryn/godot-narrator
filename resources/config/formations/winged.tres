@@ -1,8 +1,0 @@
-[gd_resource type="Resource" script_class="EntityFormation" format=3]
-
-[ext_resource type="Script" path="res://scripts/core/entity_formation.gd" id="1_vle7p"]
-
-[resource]
-script = ExtResource("1_vle7p")
-id = &"winged"
-rows = PackedStringArray("..^...^..", ".<*\\|/*>.", "<**(@)**>", ".<*/|\\*>.", "...V.V...")

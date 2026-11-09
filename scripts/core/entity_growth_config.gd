@@ -57,6 +57,21 @@ extends Resource
 ## Seconds the entity takes to fold back into the single glyph (switching form).
 @export var fold_duration: float = 0.6
 
+@export_group("Morph")
+## Task-099: the many form slowly changes shape (EntityMorph): the base formation (the human) glides into one of these
+## shapes and back. Visual only; the collider keeps the base formation. Off = the base shape only.
+@export var morph_enabled: bool = true
+@export var morph_shapes: Array[EntityFormation] = []
+## Seconds one transformation (base -> shape or shape -> base) takes; picked at random in this range.
+@export var morph_duration_min: float = 30.0
+@export var morph_duration_max: float = 50.0
+## Seconds a shape is held before the next transformation; picked at random in this range.
+@export var morph_hold_min: float = 12.0
+@export var morph_hold_max: float = 24.0
+## Size of the heart (the identity glyph) while the many body is shown, as a fraction of its single-form size, so it
+## sits in the small body like the other glyphs.
+@export_range(0.1, 1.0) var heart_size_ratio: float = 0.4
+
 @export_group("Life")
 ## Slow bob of settled glyphs (world units, radians per second).
 @export var bob_amount: float = 0.035
@@ -131,6 +146,7 @@ func formation_for(identity: String) -> EntityFormation:
 func grow_total() -> float:
 	var widest: float = 0.0
 	for f in formations:
+		widest = maxf(widest, float(f.rows.size()))
 		for row in f.rows:
 			widest = maxf(widest, float(row.length()))
 	return widest * 0.5 * grow_stagger + grow_jitter + grow_duration

@@ -40,6 +40,8 @@ const NONE: float = 0.0
 var material: ShaderMaterial
 ## Visibility rules of the loaded map (task-069), resolved over `config` on every map build and DB reload.
 var map_settings: MapSettings = MapSettings.new()
+## Run-only tweaks from the command line (task-098: fog override, sight scale). Tests replace it.
+var run_mods: RunMods = RunMods.current()
 
 var _map: MapData
 var _sources: Array[GlyphLightSource] = []
@@ -79,7 +81,9 @@ func _ready() -> void:
 	SignalBus.language_understanding_changed.connect(_on_understanding_changed)
 	SignalBus.object_moved.connect(_on_object_moved)
 	SignalBus.menu_new_items_changed.connect(_on_new_items_changed)
-	SignalBus.entity_form_changed.connect(func(form: StringName, _animate: bool) -> void: _set_aura(form == EntityForm.BRAIN))
+	SignalBus.entity_form_changed.connect(func(form: StringName, _animate: bool) -> void:
+		_set_aura(form == EntityForm.BRAIN)
+		_dirty = true)
 	SignalBus.run_ended.connect(func(_cause: StringName) -> void: _set_aura(false))
 	if pushables != null:
 		pushables.objects_reset.connect(_rebuild_layer_map)
@@ -111,13 +115,23 @@ func _process(delta: float) -> void:
 	_step_fades(delta)
 	if _visibility != null:
 		_visibility.step(delta)
-	_light_pos[PLAYER_LIGHT_SLOT] = Vector4(pos.x, config.player_light_height, pos.z, map_settings.player_light_radius)
+	_light_pos[PLAYER_LIGHT_SLOT] = Vector4(pos.x, config.player_light_height, pos.z, player_light_radius())
 	material.set_shader_parameter(&"light_pos", _light_pos)
 	_step_pulse(delta, pos)
 	if _aura_on:
 		_aura_clock += delta
 		var tile: float = map_loader.world_config.cell_size
 		material.set_shader_parameter(&"aura_geo", Vector4(pos.x, pos.z, _brain.aura_tiles(_aura_clock) * tile, _brain.aura_strength))
+
+
+## Player light radius in effect (world units, task-096): the map's (times the run-only sight scale, task-098), but at
+## least as far as the revealed area reaches (MapReveal.effective_reveal_radius, which the active form scales), so
+## newly seen cells are never left unlit.
+func player_light_radius() -> float:
+	var radius: float = map_settings.player_light_radius * run_mods.sight_scale
+	if map_reveal != null and map_loader != null:
+		radius = maxf(radius, map_reveal.effective_reveal_radius() * map_loader.world_config.cell_size)
+	return radius
 
 
 ## True while the brain aura glows (task-091).
@@ -179,7 +193,7 @@ func _step_pulse(delta: float, pos: Vector3) -> void:
 ## no fog = no screen-top darkening and no ambient fade with distance; no darkness = full ambient light and remembered
 ## cells drawn like seen ones. A map without a map_settings row gets exactly the config values.
 func apply_static() -> void:
-	map_settings = MapSettings.resolve(settings.current_row() if settings != null else {}, null, config)
+	map_settings = MapSettings.resolve(settings.current_row() if settings != null else {}, null, config, run_mods)
 	if material == null:
 		return
 	var fog: bool = map_settings.fog_enabled
@@ -493,7 +507,7 @@ func _update_player_visibility(cell: Vector2i) -> void:
 		return
 	var world: WorldConfig = map_loader.world_config
 	var values: Dictionary[Vector2i, float] = GlyphLightOcclusion.compute(
-			_map, cell, map_settings.player_light_radius / world.cell_size, config.occlusion_penumbra)
+			_map, cell, player_light_radius() / world.cell_size, config.occlusion_penumbra)
 	var moved: int = maxi(absi(cell.x - _player_vis_cell.x), absi(cell.y - _player_vis_cell.y))
 	_player_vis_cell = cell
 	if moved > JUMP_CELLS:

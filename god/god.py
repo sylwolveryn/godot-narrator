@@ -427,7 +427,8 @@ class GodApp:
             except OSError as e:
                 self._log("Could not save settings: %s" % e, error=True)
             args = mods.tool_args(choices)
-            self._act(lambda: self.ctl.new_game_with_mods(args),
+            run_args = mods.game_args(choices)
+            self._act(lambda: self.ctl.new_game_with_mods(args, game_args=run_args),
                       "Started a new game with mods: %s." % mods.summary(choices))
 
         ModsDialog(self.win, mods.merged(settings.get(mods.SETTING_MODS)), start)

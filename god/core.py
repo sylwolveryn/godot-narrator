@@ -212,16 +212,18 @@ def _spawn_detached(args: list[str], root: Path) -> None:
                      close_fds=True)
 
 
-def game_args(godot: str, root: Path, map_name: Optional[str] = None) -> list[str]:
-    """The game command line; a chosen map goes after `--` as a user argument the game reads (MapLoader)."""
+def game_args(godot: str, root: Path, map_name: Optional[str] = None, extra: Optional[list] = None) -> list[str]:
+    """The game command line; a chosen map and the run-only mods (task-098, `extra`) go after `--` as user arguments
+    the game reads (MapLoader, RunMods)."""
     args = [godot, "--path", str(root), *MAX_FPS_ARGS]
-    if map_name:
-        args += ["--", MAP_ARG_PREFIX + map_name]
+    user = ([MAP_ARG_PREFIX + map_name] if map_name else []) + list(extra or [])
+    if user:
+        args += ["--", *user]
     return args
 
 
-def spawn_game(godot: str, root: Path, map_name: Optional[str] = None) -> None:
-    _spawn_detached(game_args(godot, root, map_name), root)
+def spawn_game(godot: str, root: Path, map_name: Optional[str] = None, extra: Optional[list] = None) -> None:
+    _spawn_detached(game_args(godot, root, map_name, extra), root)
 
 
 # --------------------------------------------------------------------------- map chooser (task-060)
@@ -443,11 +445,14 @@ class GameController:
             self._sleep(0.2)
         self.warned = False
 
-    def start(self) -> None:
+    def start(self, extra: Optional[list] = None) -> None:
+        """Starts the game; `extra` = run-only user arguments (task-098), for this start only."""
         if not self.godot:
             raise RuntimeError("Godot not found: put `godot` on PATH or set GODOT_BIN")
         self._prepare(self.godot, self.root)
-        if self.map_name:
+        if extra:
+            self._spawn(self.godot, self.root, self.map_name, list(extra))
+        elif self.map_name:
             self._spawn(self.godot, self.root, self.map_name)
         else:
             self._spawn(self.godot, self.root)
@@ -460,8 +465,10 @@ class GameController:
             pass
         self.start()
 
-    def new_game_with_mods(self, tool_args: list, run_tool: Optional[Callable] = None) -> str:
-        """Like new_game, but the new save is written first by tools/dev_new_game.gd with the mods (task-078).
+    def new_game_with_mods(self, tool_args: list, run_tool: Optional[Callable] = None,
+                           game_args: Optional[list] = None) -> str:
+        """Like new_game, but the new save is written first by tools/dev_new_game.gd with the mods (task-078), and the
+        game starts with the run-only mods `game_args` (task-098; a later Continue starts without them).
         Returns the tool's line. Raises RuntimeError when Godot is missing or the tool fails (nothing is started)."""
         if not self.godot:
             raise RuntimeError("Godot not found: put `godot` on PATH or set GODOT_BIN")
@@ -476,7 +483,7 @@ class GameController:
         ok, line = run_tool(self.godot, self.root, tool_args)
         if not ok:
             raise RuntimeError("new game tool failed: %s" % line)
-        self.start()
+        self.start(game_args)
         return line
 
     def continue_game(self) -> str:

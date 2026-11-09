@@ -29,9 +29,14 @@ class ModsDialog:
             ttk.Checkbutton(row, text="on", variable=on).pack(side="left", padx=(0, 10))
             fields = {}
             for f in m.fields:
-                ttk.Label(row, text=f.label).pack(side="left", padx=(6, 4))
-                var = tk.StringVar(value=str(choices[m.key][f.arg]))
-                ttk.Spinbox(row, from_=f.minimum, to=f.maximum, textvariable=var, width=9).pack(side="left")
+                if f.toggle:
+                    var = tk.StringVar(value=str(int(bool(choices[m.key][f.arg]))))
+                    ttk.Checkbutton(row, text=f.label, variable=var, onvalue="1", offvalue="0").pack(
+                        side="left", padx=(6, 4))
+                else:
+                    ttk.Label(row, text=f.label).pack(side="left", padx=(6, 4))
+                    var = tk.StringVar(value=str(choices[m.key][f.arg]))
+                    ttk.Spinbox(row, from_=f.minimum, to=f.maximum, textvariable=var, width=9).pack(side="left")
                 fields[f.arg] = var
             ttk.Label(box, text=m.help, foreground="#666666").pack(anchor="w", padx=8, pady=(0, 6))
             self.vars[m.key] = (on, fields)

@@ -6,6 +6,8 @@ extends Node3D
 ## walking, the fold back into one glyph, the erosion look and the death burst. The instance buffer is written once
 ## per identity; a frame only sets a handful of uniforms. PlayerGlyphView drives this node (present / grow / fold /
 ## burst); it never writes data and sends no signals.
+## Task-099: the settled body slowly morphs between the base formation (the human) and the morph shapes (EntityMorph);
+## the buffer is rewritten only when a morph starts or ends (every half minute or so), a frame sets the `morph` uniform.
 
 enum State { HIDDEN, GROWING, GROWN, FOLDING }
 
@@ -32,6 +34,10 @@ var _material: ShaderMaterial
 
 var _identity: String = ""
 var _layout: EntityLayout
+var _morph: EntityMorph
+## Per slot, as last written: the instance transform and colour (the morph rewrites the shape columns only).
+var _xforms: Array[Transform3D] = []
+var _colors: Array[Color] = []
 var _slot_of: Dictionary = {}
 var _grow_t: float = SETTLED
 var _grow_end: float = 0.0
@@ -71,9 +77,14 @@ func body_material() -> ShaderMaterial:
 	return _material
 
 
-## Number of body glyphs around the heart.
+## Number of body glyphs around the heart in the base shape.
 func glyph_count() -> int:
 	return _layout.size() if _layout != null else 0
+
+
+## Number of glyph slots of the morphing body (task-099; a shape with fewer glyphs hides the rest).
+func slot_count() -> int:
+	return _morph.slot_count() if _morph != null else 0
 
 
 ## True while the body is drawn (growing, settled or folding).
@@ -96,19 +107,34 @@ func grow_duration() -> float:
 	return config.grow_delay + _grow_end
 
 
-## Heart scale while the glyphs land (1 outside the pulse).
+## Heart scale: EntityGrowthConfig.heart_size_ratio while the body is shown (back to 1 while it folds), with the pulse
+## while the glyphs land.
 func heart_scale() -> float:
+	var base: float = 1.0
+	if state == State.GROWN or state == State.GROWING:
+		base = config.heart_size_ratio
+	elif state == State.FOLDING:
+		base = lerpf(config.heart_size_ratio, 1.0, clampf(_fold_t / maxf(_fold_end, 0.001), 0.0, 1.0))
 	if state != State.GROWING or config.heart_pulse <= 0.0:
-		return 1.0
+		return base
 	var x: float = (_grow_t - (_grow_end - config.grow_duration * 0.35)) / maxf(config.heart_pulse_time, 0.001)
 	if x <= 0.0 or x >= 1.0:
-		return 1.0
-	return 1.0 + config.heart_pulse * sin(PI * x)
+		return base
+	return base * (1.0 + config.heart_pulse * sin(PI * x))
+
+
+## The shape morph of the body (task-099; null before an identity).
+func morph() -> EntityMorph:
+	return _morph
 
 
 ## Applies a form. animate = play the grow / fold, otherwise it just appears / vanishes.
 func set_form(form: StringName, animate: bool) -> void:
 	if form == EntityForm.GROWN:
+		if state == State.HIDDEN and _morph != null:
+			# A body that appears starts as the base shape.
+			_morph.reset()
+			_write_morph()
 		if animate and state != State.GROWN:
 			_grow_t = -config.grow_delay
 			_fold_t = -1.0
@@ -157,6 +183,7 @@ func present(delta: float, centre: Vector3, level: float, tint: Color, visible_n
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	_step_trail(delta, centre, camera)
 	_step_clocks(delta)
+	_step_morph(delta)
 	_material.set_shader_parameter(&"centre", centre)
 	_material.set_shader_parameter(&"level", level)
 	_material.set_shader_parameter(&"erosion_tint", Vector3(tint.r, tint.g, tint.b))
@@ -181,6 +208,15 @@ func _step_clocks(delta: float) -> void:
 	if _death_t >= 0.0:
 		_death_t += delta
 		_material.set_shader_parameter(&"death_t", _death_t)
+
+
+## The shape morph runs while the body is settled (task-099).
+func _step_morph(delta: float) -> void:
+	if _morph == null or state != State.GROWN:
+		return
+	if _morph.step(delta):
+		_write_morph()
+	_material.set_shader_parameter(&"morph", _morph.progress())
 
 
 ## Smoothed velocity of the heart on the camera plane (x right, y up).
@@ -272,22 +308,26 @@ func _build_instance() -> void:
 		_rebuild()
 
 
-## Resolves the layout, rasterises its glyphs into the atlas and writes the instance buffer once.
+## Resolves the slots of every shape, rasterises their glyphs into the atlas and writes the instance buffer.
 func _rebuild() -> void:
 	if _multimesh == null:
 		return
 	var formation: EntityFormation = config.formation_for(_identity)
 	_layout = formation.resolve(_identity, config.body_glyphs) if formation != null else EntityLayout.new()
-	var n: int = _layout.size()
+	_morph = EntityMorph.build(config, _identity)
+	var n: int = _morph.slot_count()
 	_multimesh.instance_count = n
+	_xforms.resize(n)
+	_colors.resize(n)
 	if n == 0:
 		return
 	_build_slots()
+	var base: EntityMorph.Shape = _morph.shapes[0]
 	_rng.seed = hash("%s/entity" % _identity)
 	var half: float = config.glyph_size / config.glyph_fill * 0.5
 	var grow_end: float = 0.0
 	for i in n:
-		var ring: int = _layout.rings[i]
+		var ring: int = base.rings[i]
 		var delay: float = float(ring - 1) * config.grow_stagger + _rng.randf() * config.grow_jitter
 		var duration: float = config.grow_duration * (0.85 + _rng.randf() * 0.3)
 		grow_end = maxf(grow_end, delay + duration)
@@ -299,24 +339,50 @@ func _rebuild() -> void:
 		var arc: float = config.arc_height * (0.6 + _rng.randf() * 0.4)
 		var from_glyph: String = config.gather_glyphs[_rng.randi() % config.gather_glyphs.length()]
 		var seed_value: float = _rng.randf()
-		var offset: Vector2 = _layout.offsets[i]
+		var offset: Vector2 = base.offsets[i]
 		var basis := Basis(Vector3(offset.x, offset.y, half), Vector3(start.x, start.y, delay), Vector3(duration, spin, arc))
-		var origin := Vector3(float(_slot_of[from_glyph]), float(_slot_of[_layout.glyphs[i]]), seed_value)
-		_multimesh.set_instance_transform(i, Transform3D(basis, origin))
-		var base_color: Color = config.structural_color if _layout.structural[i] == 1 else config.filler_color
+		var origin := Vector3(float(_slot_of[from_glyph]), float(_slot_of[base.glyphs[i]]), seed_value)
+		_xforms[i] = Transform3D(basis, origin)
+		# The colour belongs to the slot, not the shape, so nothing pops when a morph ends.
+		var base_color: Color = config.structural_color if base.structural[i] == 1 else config.filler_color
 		var shade: float = 1.0 - config.body_variation * _rng.randf()
-		_multimesh.set_instance_color(i, Color(base_color.r * shade, base_color.g * shade, base_color.b * shade, 1.0))
-		_multimesh.set_instance_custom_data(i, Color(config.start_size_ratio, 0.0, 0.0, 0.0))
+		_colors[i] = Color(base_color.r * shade, base_color.g * shade, base_color.b * shade, 1.0)
+	_write_morph()
 	_grow_end = grow_end
 	_fold_end = config.fold_duration + grow_end * 0.4
 
 
-## Atlas slots: [body glyphs..., substitute glyphs..., gather glyphs...]; tells the shader the grid and the substitute range.
+## Writes the two shapes of the current morph into the buffer (task-099). Per slot: the from-shape offset in the first
+## transform column and its glyph in the origin's y, its visibility in the colour's alpha; the to-shape offset in
+## INSTANCE_CUSTOM.yz and its glyph in .w (negative = -1 - glyph: hidden in that shape).
+func _write_morph() -> void:
+	if _morph == null or _morph.slot_count() == 0 or _xforms.size() != _morph.slot_count():
+		return
+	var a: EntityMorph.Shape = _morph.shapes[_morph.from_index]
+	var b: EntityMorph.Shape = _morph.shapes[_morph.to_index]
+	for i in _morph.slot_count():
+		var t: Transform3D = _xforms[i]
+		t.basis.x = Vector3(a.offsets[i].x, a.offsets[i].y, t.basis.x.z)
+		t.origin.y = float(_slot_of[a.glyphs[i]])
+		_xforms[i] = t
+		_multimesh.set_instance_transform(i, t)
+		var c: Color = _colors[i]
+		c.a = float(a.visible[i])
+		_multimesh.set_instance_color(i, c)
+		var gb: float = float(_slot_of[b.glyphs[i]])
+		_multimesh.set_instance_custom_data(i, Color(config.start_size_ratio, b.offsets[i].x, b.offsets[i].y,
+				gb if b.visible[i] == 1 else -1.0 - gb))
+	_material.set_shader_parameter(&"morph", _morph.progress())
+
+
+## Atlas slots: [body glyphs of every shape..., substitute glyphs..., gather glyphs...]; tells the shader the grid and
+## the substitute range.
 func _build_slots() -> void:
 	var glyphs := PackedStringArray()
 	_slot_of.clear()
-	for g in _layout.glyphs:
-		_add_slot(glyphs, g)
+	for shape in _morph.shapes:
+		for g in shape.glyphs:
+			_add_slot(glyphs, g)
 	var sub_first: int = glyphs.size()
 	for ch in fx_config.scramble_glyphs:
 		_add_slot(glyphs, ch)

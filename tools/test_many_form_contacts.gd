@@ -1,6 +1,6 @@
 extends SceneTree
-## Headless test of task-094: the grown (many) body's collider follows the formation (wide, shallow, turned with the
-## camera); it digs through dirt at full speed; it reaches cannons with its outline (focus + the cannon turns away);
+## Headless test of task-094: the grown (many) body's collider follows the formation (task-099: the human, deeper than
+## wide, so the capsule lies along the screen's up; turned with the camera); it digs through dirt at full speed; it reaches cannons with its outline (focus + the cannon turns away);
 ## it picks up a diamond its outline covers away from the heart cell. Plus the BodyOutline geometry.
 ## Usage: godot --headless --max-fps 30 --path . -s tools/test_many_form_contacts.gd
 
@@ -49,6 +49,10 @@ func _check_geometry() -> void:
 	_check(is_zero_approx(BodyOutline.segment_rect_distance(Vector2(-5, 0.5), Vector2(5, 0.5), Rect2(0, 0, 1, 1))), "segment crossing a rect")
 	var basis: Basis = BodyOutline.lying_basis(0.0)
 	_check((basis * Vector3.UP).is_equal_approx(Vector3.RIGHT), "the lying basis lays the capsule axis across the screen")
+	# Task-099: a body deeper than wide lies along the screen's up.
+	var tall: BodyOutline = BodyOutline.for_body(Vector2.ZERO, Vector2(1.0, 1.5), 0.0)
+	_check(is_equal_approx(tall.radius, 1.0) and absf(tall.a.x) < 0.001 and is_equal_approx(tall.a.distance_to(tall.b), 1.0), "a tall outline runs along z")
+	_check((BodyOutline.lying_basis(0.0, Vector2(1.0, 1.5)) * Vector3.UP).is_equal_approx(Vector3.FORWARD), "a tall capsule lies along the screen's up")
 
 
 func _seed(tag: String, main: Node) -> String:
@@ -127,15 +131,15 @@ func _check_field() -> void:
 	_check(player.has_grown_body(), "the grown body is active")
 	var shape: CapsuleShape3D = player.get_node("Collision").shape
 	var ext: Vector2 = player.body_extents()
-	_check(ext.y < ext.x * 0.7, "the body is shallower than it is wide (%s)" % ext)
-	_check(is_equal_approx(shape.radius, ext.y) and is_equal_approx(shape.height, ext.x * 2.0), "the capsule takes the formation's outline")
+	_check(ext.y > ext.x * 1.3, "the human body is deeper than it is wide (%s)" % ext)
+	_check(is_equal_approx(shape.radius, ext.x) and is_equal_approx(shape.height, ext.y * 2.0), "the capsule takes the formation's outline")
 	var axis: Vector3 = player.get_node("Collision").global_basis * Vector3.UP
-	var right: Vector3 = Vector3.RIGHT.rotated(Vector3.UP, deg_to_rad(rig.current_yaw_degrees()))
-	_check(absf(axis.dot(right)) > 0.99, "the capsule lies across the screen")
+	var up_screen: Vector3 = Vector3.FORWARD.rotated(Vector3.UP, deg_to_rad(rig.current_yaw_degrees()))
+	_check(absf(axis.dot(up_screen)) > 0.99, "the capsule lies along the screen's up")
 	var dirt = main.get_node("DirtWalls")
 	var left_before: int = dirt.count_left()
 	var start: Vector3 = player.global_position
-	var dir: Vector3 = right
+	var dir: Vector3 = Vector3.RIGHT.rotated(Vector3.UP, deg_to_rad(rig.current_yaw_degrees()))
 	_press_world(rig, dir)
 	var seconds: float = 1.5
 	var steps: int = int(seconds * Engine.physics_ticks_per_second)
@@ -213,9 +217,10 @@ func _check_arena() -> void:
 	var remains = main.get_node("EnemyRemains")
 	var ext: Vector2 = player.body_extents()
 	var s: float = loader.world_config.cell_size
-	var right: Vector3 = Vector3.RIGHT.rotated(Vector3.UP, deg_to_rad(main.get_node("CameraRig").current_yaw_degrees()))
+	# Along the body's long axis (task-099: the human is deeper than wide, so up the screen).
+	var long_axis: Vector3 = Vector3.RIGHT.rotated(Vector3.UP, BodyOutline.axis_yaw(ext, deg_to_rad(main.get_node("CameraRig").current_yaw_degrees())))
 	var heart: Vector3 = player.global_position
-	var side_cell: Vector2i = loader.world_to_cell(heart + right * (ext.x - s * 0.6))
+	var side_cell: Vector2i = loader.world_to_cell(heart + long_axis * (maxf(ext.x, ext.y) - s * 0.6))
 	if side_cell != loader.world_to_cell(heart) and loader.data.type_at(side_cell) != MapLegend.WALL:
 		var before: int = remains.total_collected()
 		remains.set("_diamonds", {side_cell: true} as Dictionary[Vector2i, bool])

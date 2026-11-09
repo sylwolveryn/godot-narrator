@@ -29,8 +29,11 @@ var ambient_level: float = 0.0
 var ambient_color: Color = Color.WHITE
 
 
-## The effective settings of a row over the configs (null configs use their script defaults).
-static func resolve(row: Dictionary, reveal: RevealConfig, look: GlyphWorldConfig) -> MapSettings:
+## The effective settings of a row over the configs (null configs use their script defaults). Task-098: `mods` (the
+## run-only RunMods of god's New game with mods) may override the fog of the row; null = none.
+static func resolve(row: Dictionary, reveal: RevealConfig, look: GlyphWorldConfig, mods: RunMods = null) -> MapSettings:
+	if mods != null:
+		row = mods.apply_to_row(row)
 	if reveal == null:
 		reveal = RevealConfig.new()
 	if look == null:

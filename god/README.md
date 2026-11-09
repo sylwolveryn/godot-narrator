@@ -18,7 +18,14 @@ Godot is found via the `GODOT_BIN` environment variable, else `godot` on PATH. T
   language unlocked at 80 %. **Resources**: start with 10000 dirt and 10000 diamonds. Each mod has an on switch and
   editable numbers, and the choices are remembered in `god/settings.json`. It closes the game, deletes the save, writes
   a fresh save with the mods through `tools/dev_new_game.gd` (the game's own SaveService), then starts the game.
-  New mods go in `god/mods.py` (plus their argument in the tool).
+  **All forms** (task-097): the many and brain forms plus the menu unlocked in the fresh save, so one / many / brain
+  can be switched from the first run. **Fog (this run only)** and **Sight area (this run only)** (task-098) are off by
+  default and never touch the DB or the save: they are passed to the started game as user arguments (`--fog=0|1`,
+  `--sight=<percent>`, read by `scripts/core/run_mods.gd`), so a later Continue game plays normally. Fog unchecked =
+  no depth fog, full light and the whole map revealed (the reveal is remembered in the save like god's Reveal map);
+  checked = the normal fog and darkness even on a map whose DB row turns them off. Sight area scales the reveal radius
+  and the player light of every form.
+  New mods go in `god/mods.py` (plus their argument in the tool, or in `RunMods` for a run-only mod).
 - **Continue game**: disabled while the save does not exist (checked every 3 s). If the game is not running it starts it.
   If it is already running, the first click shows a warning and the second click closes and restarts it.
 - **Reveal map**: if the game is running, it reveals the map currently in play right away, without a restart.

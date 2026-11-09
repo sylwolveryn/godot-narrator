@@ -95,7 +95,7 @@ func fits(form: StringName, at: Variant = null) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = BodyOutline.capsule_for(extents)
 	query.collision_mask = blocking_mask
-	query.transform = Transform3D(BodyOutline.lying_basis(yaw), Vector3(where.x, fit_test_height, where.z))
+	query.transform = Transform3D(BodyOutline.lying_basis(yaw, extents), Vector3(where.x, fit_test_height, where.z))
 	if player is CollisionObject3D:
 		query.exclude = [(player as CollisionObject3D).get_rid()]
 	return player.get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()

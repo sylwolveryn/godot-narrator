@@ -5,6 +5,8 @@ extends SceneTree
 ##   --language=<percent>   every language unlocked at this understanding (the start language stays selected)
 ##   --dirt=<count>         consumed dirt (PersistentProgress.consumed) to start with
 ##   --diamonds=<count>     diamonds collected (consumed and PersistentProgress.diamonds) to start with
+##   --all_forms=1          every entity form unlocked (task-097): the many (grown) and brain forms plus the menu that
+##                          switches them; the first run plays the grow moment as usual
 ##   --save=<path>          write here instead of the save from resources/config/save_config.tres (tests)
 ## Usage: godot --headless --path . -s tools/dev_new_game.gd -- --language=80 --dirt=10000 --diamonds=10000
 
@@ -57,6 +59,12 @@ func _run() -> void:
 		if pair[1] == Consumable.DIAMOND:
 			progress.diamonds = count
 		applied.append("%d %s" % [count, pair[0]])
+
+	if args.has("all_forms") and int(args["all_forms"]) != 0:
+		progress.entity_unlocked = true
+		progress.brain_unlocked = true
+		progress.menu_unlocked = true
+		applied.append("all forms")
 
 	var svc: Node = load("res://scripts/core/save_service.gd").new()
 	svc.set("config", cfg)

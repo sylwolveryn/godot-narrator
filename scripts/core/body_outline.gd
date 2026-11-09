@@ -16,11 +16,12 @@ func _init(from: Vector2 = Vector2.ZERO, to: Vector2 = Vector2.ZERO, r: float = 
 
 
 ## Outline of a body with ground half-size `extents` (x across, y deep) centred on `centre`, its long axis along the
-## screen's right turned by `yaw` radians about UP (Vector3.RIGHT.rotated(UP, yaw)).
+## screen's right turned by `yaw` radians about UP (Vector3.RIGHT.rotated(UP, yaw)); a body deeper than wide (task-099,
+## the human many form) lies along the screen's up instead (axis_yaw).
 static func for_body(centre: Vector2, extents: Vector2, yaw: float) -> BodyOutline:
 	var r: float = minf(extents.x, extents.y)
-	var half: float = maxf(extents.x - r, 0.0)
-	var axis3: Vector3 = Vector3.RIGHT.rotated(Vector3.UP, yaw)
+	var half: float = maxf(maxf(extents.x, extents.y) - r, 0.0)
+	var axis3: Vector3 = Vector3.RIGHT.rotated(Vector3.UP, axis_yaw(extents, yaw))
 	var axis := Vector2(axis3.x, axis3.z)
 	return BodyOutline.new(centre - axis * half, centre + axis * half, r)
 
@@ -33,9 +34,15 @@ static func capsule_for(extents: Vector2) -> CapsuleShape3D:
 	return capsule
 
 
-## Basis that lays a capsule (axis local Y) along the screen's right turned by `yaw` radians about UP.
-static func lying_basis(yaw: float) -> Basis:
-	return Basis(Vector3.UP, yaw) * Basis(Vector3.BACK, -PI * 0.5)
+## Basis that lays a capsule (axis local Y) along the screen's right turned by `yaw` radians about UP; with `extents`
+## of a body deeper than wide, along the screen's up (axis_yaw).
+static func lying_basis(yaw: float, extents: Vector2 = Vector2.ZERO) -> Basis:
+	return Basis(Vector3.UP, axis_yaw(extents, yaw)) * Basis(Vector3.BACK, -PI * 0.5)
+
+
+## Yaw of the long axis of a body: the screen's right (`yaw`), or a quarter turn more when it is deeper than wide.
+static func axis_yaw(extents: Vector2, yaw: float) -> float:
+	return yaw + PI * 0.5 if extents.y > extents.x else yaw
 
 
 ## Distance from the outline to a ground rectangle (0 when they touch or overlap).

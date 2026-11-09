@@ -376,7 +376,7 @@ func apply_body_radius() -> void:
 		capsule.radius = grown.radius
 		capsule.height = grown.height
 		_body_yaw = body_yaw()
-		body.basis = BodyOutline.lying_basis(_body_yaw)
+		body.basis = BodyOutline.lying_basis(_body_yaw, _body_extents)
 	else:
 		capsule.radius = config.body_radius
 		capsule.height = maxf(_heart_height, capsule.radius * 2.0)
@@ -399,11 +399,11 @@ func _follow_camera_yaw() -> void:
 	query.shape = body.shape
 	query.collision_mask = collision_mask
 	query.exclude = [get_rid()]
-	query.transform = Transform3D(BodyOutline.lying_basis(yaw), global_position + body.position)
+	query.transform = Transform3D(BodyOutline.lying_basis(yaw, _body_extents), global_position + body.position)
 	if not get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty():
 		return
 	_body_yaw = yaw
-	body.basis = BodyOutline.lying_basis(yaw)
+	body.basis = BodyOutline.lying_basis(yaw, _body_extents)
 
 
 ## Task-094: the grown body eats the dirt along its whole front before it would touch it (where it will be this step,

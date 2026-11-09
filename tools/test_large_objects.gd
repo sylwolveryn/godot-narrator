@@ -245,7 +245,7 @@ func _check_arena() -> void:
 	var reveal: Node = main.get_node("MapReveal")
 	_check(view.call("piece_count") == gargoyles, "arena: one piece per gargoyle (%d vs %d)" % [view.call("piece_count"), gargoyles])
 	# Reveal: pieces far from the spawn are hidden, the ones in sight near it are shown.
-	var reach: float = (reveal.get("config") as RevealConfig).reveal_radius * loader.world_config.cell_size
+	var reach: float = float(reveal.call("effective_reveal_radius")) * loader.world_config.cell_size
 	for i in view.call("piece_count"):
 		var r: Rect2i = view.call("piece_placement", i).rect
 		var far: bool = loader.rect_to_world(r).distance_to(loader.spawn_position) > reach + r.size.length() * loader.world_config.cell_size
@@ -259,7 +259,9 @@ func _check_arena() -> void:
 	_check(centre_index >= 0, "arena has the 3x2 centre fountain")
 	if centre_index >= 0:
 		var r: Rect2i = view.call("piece_placement", centre_index).rect
-		_check(not view.call("piece_visible", centre_index), "the centre fountain starts hidden")
+		# Task-096: the single form's bigger reveal radius may already reach the fountain from the spawn.
+		var fountain_far: bool = loader.rect_to_world(r).distance_to(loader.spawn_position) > reach + r.size.length() * loader.world_config.cell_size
+		_check(not fountain_far or not view.call("piece_visible", centre_index), "the centre fountain starts hidden")
 		var player: CharacterBody3D = main.get_node("Player")
 		player.global_position = loader.cell_to_world(Vector2i(r.position.x + 1, r.end.y + 1))
 		await _wait(0.5)

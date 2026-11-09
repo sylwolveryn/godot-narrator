@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EntityFormation" format=3]
+
+[ext_resource type="Script" path="res://scripts/core/entity_formation.gd" id="1_b78og"]
+
+[resource]
+script = ExtResource("1_b78og")
+id = &"angelic"
+rows = PackedStringArray("\\.***./", "\\\\***//", ".\\\\*//.", "\\\\***//", ".\\*|*/.", "..*@*..", "..***..", "..*|*..", "..*.*..", "..*.*..", "..\'.\'..")
+advance = Vector2(0.28, 0.27)
