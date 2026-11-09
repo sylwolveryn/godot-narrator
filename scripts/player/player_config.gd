@@ -68,3 +68,8 @@ extends Resource
 ## Dirt (task-070): share of its speed the body keeps when it eats a dirt cell it pushes into (Boulder Dash: it keeps
 ## digging on with a small slowdown per cell; 1 = no slowdown).
 @export_range(0.0, 1.0) var dig_speed_keep: float = 0.75
+## Task-094: the same share for the grown (many) body, which eats a whole front of cells at once (1 = no slowdown).
+@export_range(0.0, 1.0) var grown_dig_speed_keep: float = 1.0
+## Task-094: the grown body eats dirt cells this close (world units) to where its outline will be the next step, before
+## it would touch them.
+@export var dig_ahead_margin: float = 0.15

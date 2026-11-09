@@ -14,9 +14,8 @@ extends Node
 @export var map_loader: MapLoader
 ## Physics layers the grown body must not overlap (walls, dirt, props, pushable objects).
 @export_flags_3d_physics var blocking_mask: int = 1
-## Height of the body above the floor for the fit test (centre of the test cylinder) and its height.
-@export var fit_test_height: float = 0.5
-@export var fit_test_thickness: float = 0.6
+## Height of the body's centre above the floor for the fit test (the player's collision shape sits there).
+@export var fit_test_height: float = 0.45
 
 
 func _ready() -> void:
@@ -70,28 +69,33 @@ func set_form(form: StringName) -> bool:
 	return true
 
 
-## Ground radius of the body in a form (task-090): the grown body is as wide as its formation; other forms 0 (their
-## collision stays PlayerConfig.body_radius).
+## Ground half-width of the body in a form (task-090): the grown body is as wide as its formation; other forms 0
+## (their collision stays PlayerConfig.body_radius).
 func body_radius(form: StringName) -> float:
+	return body_extents(form).x
+
+
+## Ground half-size of the body in a form (task-094): x across the screen, y up the screen; zero for forms without an
+## own body (they collide as the heart capsule).
+func body_extents(form: StringName) -> Vector2:
 	if form != EntityForm.GROWN or save_service == null or not config.whole_body:
-		return 0.0
-	return config.body_radius_for(save_service.progress.identity_glyph)
+		return Vector2.ZERO
+	return config.body_extents_for(save_service.progress.identity_glyph)
 
 
-## True when the body of `form` has room where the player stands: no collider of blocking_mask within its radius.
-## Forms without an own radius always fit; without a player there is nothing to test.
+## True when the body of `form` has room where the player stands: no collider of blocking_mask overlaps the lying
+## capsule of its outline, turned like the camera (the player's body_yaw). Forms without an own body always fit;
+## without a player there is nothing to test.
 func fits(form: StringName, at: Variant = null) -> bool:
-	var radius: float = body_radius(form)
-	if radius <= 0.0 or player == null or not player.is_inside_tree():
+	var extents: Vector2 = body_extents(form)
+	if extents == Vector2.ZERO or player == null or not player.is_inside_tree():
 		return true
 	var where: Vector3 = at if at is Vector3 else player.global_position
-	var shape := CylinderShape3D.new()
-	shape.radius = radius
-	shape.height = fit_test_thickness
+	var yaw: float = float(player.call(&"body_yaw")) if player.has_method(&"body_yaw") else 0.0
 	var query := PhysicsShapeQueryParameters3D.new()
-	query.shape = shape
+	query.shape = BodyOutline.capsule_for(extents)
 	query.collision_mask = blocking_mask
-	query.transform = Transform3D(Basis.IDENTITY, Vector3(where.x, fit_test_height, where.z))
+	query.transform = Transform3D(BodyOutline.lying_basis(yaw), Vector3(where.x, fit_test_height, where.z))
 	if player is CollisionObject3D:
 		query.exclude = [(player as CollisionObject3D).get_rid()]
 	return player.get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()

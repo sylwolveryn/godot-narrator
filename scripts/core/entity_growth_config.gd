@@ -96,21 +96,29 @@ extends Resource
 
 
 ## Ground radius of the grown body (task-090): half the width of the identity's formation (its widest glyph from the
-## heart, plus half a glyph). The many form collides with and must fit in a circle this wide.
+## heart, plus half a glyph). The many form collides with and must fit in a lying capsule this wide and
+## body_extents_for(identity).y deep (task-094).
 func body_radius_for(identity: String) -> float:
+	return body_extents_for(identity).x
+
+
+## Ground half-size of the grown body (task-094): x = half the formation's width (across the screen), y = half its
+## depth (up the screen), each its farthest glyph from the heart plus half a glyph. Zero without a formation.
+func body_extents_for(identity: String) -> Vector2:
 	var f: EntityFormation = formation_for(identity)
 	if f == null:
-		return 0.0
-	var heart_col: int = -1
-	for row in f.rows:
-		if row.find(EntityFormation.HEART) >= 0:
-			heart_col = row.find(EntityFormation.HEART)
-	var widest: int = 0
-	for row in f.rows:
+		return Vector2.ZERO
+	var heart := Vector2i(-1, -1)
+	for y in f.rows.size():
+		if f.rows[y].find(EntityFormation.HEART) >= 0:
+			heart = Vector2i(f.rows[y].find(EntityFormation.HEART), y)
+	var far := Vector2i.ZERO
+	for y in f.rows.size():
+		var row: String = f.rows[y]
 		for c in row.length():
-			if row[c] != EntityFormation.EMPTY:
-				widest = maxi(widest, absi(c - heart_col))
-	return widest * f.advance.x + glyph_size * 0.5
+			if row[c] != EntityFormation.EMPTY and row[c] != " ":
+				far = Vector2i(maxi(far.x, absi(c - heart.x)), maxi(far.y, absi(y - heart.y)))
+	return Vector2(far.x * f.advance.x, far.y * f.advance.y) + Vector2.ONE * glyph_size * 0.5
 
 
 func formation_for(identity: String) -> EntityFormation:

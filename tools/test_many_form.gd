@@ -105,7 +105,8 @@ func _run() -> void:
 		await process_frame
 		_check(is_equal_approx(player.body_radius(), radius), "grown form: the whole body collides (%s)" % player.body_radius())
 		var shape: CapsuleShape3D = player.get_node("Collision").shape
-		_check(is_equal_approx(shape.radius, radius), "the capsule takes the body radius")
+		var ext: Vector2 = entity.body_extents(EntityForm.GROWN)
+		_check(is_equal_approx(shape.radius, ext.y) and is_equal_approx(shape.height, radius * 2.0), "the lying capsule takes the body outline (task-094)")
 		_check(rig.zoom_limit() > limit_single * 1.5, "the many form zooms out further (%s vs %s)" % [rig.zoom_limit(), limit_single])
 		_check(entity.set_form(EntityForm.SINGLE), "back to single always works")
 		await process_frame

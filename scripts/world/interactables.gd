@@ -168,17 +168,34 @@ func _refresh_focus() -> void:
 	if player == null or map_loader == null or not _playing():
 		_set_focus(null)
 		return
-	var cell: Vector2i = map_loader.world_to_cell(player.global_position)
 	var best: Interactable = null
 	var best_d: float = INF
 	for item in _items:
-		if not item.in_reach(cell, config.default_reach):
+		if not player_reaches(item):
 			continue
 		var d: float = map_loader.rect_to_world(item.footprint).distance_squared_to(player.global_position)
 		if d < best_d:
 			best_d = d
 			best = item
 	_set_focus(best)
+
+
+## True when the player is in reach of `item`. The heart forms: the player's cell lies in the footprint grown by the
+## reach. A grown body (task-094) is too wide to come that close: its outline must come within
+## InteractConfig.body_reach (plus the cells of reach beyond the first) of the footprint.
+func player_reaches(item: Interactable) -> bool:
+	if player == null or map_loader == null or item == null:
+		return false
+	var grown: bool = player.has_method(&"has_grown_body") and bool(player.call(&"has_grown_body"))
+	if not grown:
+		return item.in_reach(map_loader.world_to_cell(player.global_position), config.default_reach)
+	if not item.enabled:
+		return false
+	var s: float = map_loader.world_config.cell_size
+	var r: int = item.reach if item.reach > 0 else config.default_reach
+	var rect := Rect2(Vector2(item.footprint.position) * s, Vector2(item.footprint.size) * s)
+	var outline: BodyOutline = player.call(&"body_outline")
+	return outline.distance_to_rect(rect) <= config.body_reach + float(r - 1) * s
 
 
 func _set_focus(item: Interactable) -> void:

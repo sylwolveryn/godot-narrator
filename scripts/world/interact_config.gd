@@ -7,6 +7,9 @@ extends Resource
 @export var action: StringName = &"interact"
 ## Default reach of an interactable in cells around its footprint (1 = the 8 neighbour cells).
 @export_range(1, 8) var default_reach: int = 1
+## Task-094: the grown (many) body reaches an object when its outline comes this close (world units) to the footprint
+## (each cell of reach beyond the first adds a cell).
+@export var body_reach: float = 0.6
 
 @export_group("Hint")
 ## Glyph shown above the player while an interactable is in reach.

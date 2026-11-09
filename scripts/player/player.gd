@@ -10,7 +10,8 @@ signal identity_changed(glyph: String)
 @export var config: PlayerConfig
 @export var map_loader: MapLoader
 @export var save_service: SaveService
-## Optional (task-090): the body radius of the active form (the grown body collides as a whole).
+## Optional (task-090): the body of the active form (the grown body collides as a whole; task-094: as a lying capsule
+## of the formation's outline, turned with the camera).
 @export var entity: EntityProgression
 ## Read-only source of the run phase and the discovered input scheme.
 @export var run_manager: RunManager
@@ -57,6 +58,12 @@ var _sprint_glide: bool = false
 var _pre_slide_velocity: Vector3 = Vector3.ZERO
 ## True while an interact is held (task-072): the click belongs to the object, so the pointer does not walk.
 var _interact_hold: bool = false
+## Ground half-size of the active form's own body (task-094), zero while the heart capsule collides.
+var _body_extents: Vector2 = Vector2.ZERO
+## Yaw (radians) the grown body's collider is turned to; it follows the camera when there is room to turn.
+var _body_yaw: float = 0.0
+## Height of the heart capsule of the scene (restored when the grown body is left).
+var _heart_height: float = 0.0
 
 
 func _ready() -> void:
@@ -72,6 +79,8 @@ func _ready() -> void:
 	var body := get_node_or_null("Collision") as CollisionShape3D
 	if body != null and body.shape != null:
 		body.shape = body.shape.duplicate()
+		if body.shape is CapsuleShape3D:
+			_heart_height = (body.shape as CapsuleShape3D).height
 	if database != null:
 		database.tables_loaded.connect(func(_tables: Dictionary) -> void: apply_movement_profile())
 		apply_movement_profile()
@@ -98,6 +107,8 @@ func _physics_process(delta: float) -> void:
 	velocity = velocity.move_toward(wanted, rate * delta)
 	velocity.y = 0.0
 	_limit_to_cursor(delta)
+	_follow_camera_yaw()
+	_dig_ahead(direction, delta)
 	_pre_slide_velocity = velocity
 	move_and_slide()
 	global_position.y = 0.0
@@ -297,11 +308,14 @@ func _announce_contact(delta: float) -> void:
 	for i in get_slide_collision_count():
 		var contact: KinematicCollision3D = get_slide_collision(i)
 		var normal: Vector3 = contact.get_normal()
-		if -normal.dot(push) < config.hit_min_facing:
-			continue
+		var facing: float = -normal.dot(push)
 		var point: Vector3 = contact.get_position() - normal * config.hit_probe_depth
 		var cell: Vector2i = map_loader.world_to_cell(point)
-		if map_loader.data.type_at(cell) == MapLegend.DIRT:
+		var is_dirt: bool = map_loader.data.type_at(cell) == MapLegend.DIRT
+		# Task-094: the wide grown body eats dirt touched anywhere along its front, not only head-on.
+		if facing < (0.0 if is_dirt and has_grown_body() else config.hit_min_facing):
+			continue
+		if is_dirt:
 			SignalBus.dirt_destroy_requested.emit(cell, DirtWalls.CAUSE_EATEN)
 			dug = dug or map_loader.data.type_at(cell) != MapLegend.DIRT
 			continue
@@ -309,7 +323,7 @@ func _announce_contact(delta: float) -> void:
 			touching = true
 			probe = point
 	if dug:
-		velocity = _pre_slide_velocity * config.dig_speed_keep
+		velocity = _pre_slide_velocity * (config.grown_dig_speed_keep if has_grown_body() else config.dig_speed_keep)
 	if touching and not _touching and _hit_cooldown <= 0.0:
 		_hit_cooldown = config.hit_cooldown_seconds
 		var type: StringName = map_loader.data.type_at(map_loader.world_to_cell(probe))
@@ -317,18 +331,104 @@ func _announce_contact(delta: float) -> void:
 	_touching = touching
 
 
-## Collision radius of the active form (task-090): the whole grown body collides, not only the heart glyph.
+## Collision radius of the active form (task-090): the grown body's half-width, else the heart capsule's radius.
 func body_radius() -> float:
-	var grown: float = entity.body_radius(form) if entity != null else 0.0
-	return grown if grown > 0.0 else config.body_radius
+	return _body_extents.x if has_grown_body() else config.body_radius
 
 
+## True while the active form collides as its own (grown) body rather than the heart capsule.
+func has_grown_body() -> bool:
+	return _body_extents != Vector2.ZERO
+
+
+## Ground half-size of the grown body (x across the screen, y up the screen); zero in the heart forms.
+func body_extents() -> Vector2:
+	return _body_extents
+
+
+## Yaw (radians) a grown body takes here: the camera's (its formation faces the screen). EntityProgression's fit check
+## turns its test capsule by it.
+func body_yaw() -> float:
+	if camera_rig != null and camera_rig.view_config != null:
+		return deg_to_rad(camera_rig.current_yaw_degrees())
+	return 0.0
+
+
+## Ground outline of the body right now (task-094), at `at` (default: where the body stands). The heart forms are a
+## circle of PlayerConfig.body_radius.
+func body_outline(at: Variant = null) -> BodyOutline:
+	var where: Vector3 = at if at is Vector3 else global_position
+	var centre := Vector2(where.x, where.z)
+	if not has_grown_body():
+		return BodyOutline.new(centre, centre, config.body_radius)
+	return BodyOutline.for_body(centre, _body_extents, _body_yaw)
+
+
+## Shapes the collider for the active form: the heart capsule, or the grown body's lying capsule turned to the camera.
 func apply_body_radius() -> void:
+	_body_extents = entity.body_extents(form) if entity != null else Vector2.ZERO
 	var body := get_node_or_null("Collision") as CollisionShape3D
-	if body != null and body.shape is CapsuleShape3D:
-		var capsule := body.shape as CapsuleShape3D
-		capsule.radius = body_radius()
-		capsule.height = maxf(capsule.height, capsule.radius * 2.0)
+	if body == null or not body.shape is CapsuleShape3D:
+		return
+	var capsule := body.shape as CapsuleShape3D
+	if has_grown_body():
+		var grown: CapsuleShape3D = BodyOutline.capsule_for(_body_extents)
+		capsule.radius = grown.radius
+		capsule.height = grown.height
+		_body_yaw = body_yaw()
+		body.basis = BodyOutline.lying_basis(_body_yaw)
+	else:
+		capsule.radius = config.body_radius
+		capsule.height = maxf(_heart_height, capsule.radius * 2.0)
+		_body_yaw = 0.0
+		body.basis = Basis.IDENTITY
+
+
+## The grown collider turns with the camera (its formation faces the screen), but only when the turned capsule has
+## room: a turn into a wall waits until the body has moved clear.
+func _follow_camera_yaw() -> void:
+	if not has_grown_body():
+		return
+	var yaw: float = body_yaw()
+	if is_equal_approx(angle_difference(_body_yaw, yaw), 0.0):
+		return
+	var body := get_node_or_null("Collision") as CollisionShape3D
+	if body == null or not is_inside_tree():
+		return
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = body.shape
+	query.collision_mask = collision_mask
+	query.exclude = [get_rid()]
+	query.transform = Transform3D(BodyOutline.lying_basis(yaw), global_position + body.position)
+	if not get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty():
+		return
+	_body_yaw = yaw
+	body.basis = BodyOutline.lying_basis(yaw)
+
+
+## Task-094: the grown body eats the dirt along its whole front before it would touch it (where it will be this step,
+## plus PlayerConfig.dig_ahead_margin), so a wide body digs on at full speed instead of being stopped cell by cell.
+func _dig_ahead(direction: Vector3, delta: float) -> void:
+	if not has_grown_body() or map_loader == null or not _playing() or direction == Vector3.ZERO:
+		return
+	var next: Vector3 = global_position + velocity * delta
+	var outline: BodyOutline = body_outline(next)
+	var s: float = map_loader.world_config.cell_size
+	var reach: float = _body_extents.x + config.dig_ahead_margin
+	var lo: Vector2i = map_loader.world_to_cell(next - Vector3(reach, 0.0, reach))
+	var hi: Vector2i = map_loader.world_to_cell(next + Vector3(reach, 0.0, reach))
+	var push := Vector2(direction.x, direction.z)
+	var centre := Vector2(global_position.x, global_position.z)
+	for y in range(lo.y, hi.y + 1):
+		for x in range(lo.x, hi.x + 1):
+			var cell := Vector2i(x, y)
+			if map_loader.data.type_at(cell) != MapLegend.DIRT:
+				continue
+			var rect := Rect2(Vector2(x, y) * s, Vector2(s, s))
+			if (rect.get_center() - centre).dot(push) <= 0.0:
+				continue
+			if outline.distance_to_rect(rect) <= config.dig_ahead_margin:
+				SignalBus.dirt_destroy_requested.emit(cell, DirtWalls.CAUSE_EATEN)
 
 
 ## Picks the movement of the active form: its DB movement_profile row, else the default row, else PlayerConfig.
