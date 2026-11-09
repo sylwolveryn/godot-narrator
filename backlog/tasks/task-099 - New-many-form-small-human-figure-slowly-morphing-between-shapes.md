@@ -1,10 +1,11 @@
 ---
 id: TASK-099
 title: 'New many form: small human figure slowly morphing between shapes'
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-09T08:25:00Z'
+updated_date: '2026-11-09T08:47:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -26,3 +27,13 @@ The current many (grown) form silhouettes (winged/beetle/sprite, 9x5 glyphs) are
 - [ ] #4 Grow, fold, erosion and death burst still work on the new body
 - [ ] #5 Shapes and timings live in .tres resources built by a tools/ script; a headless test covers the morph and a capture shows the shapes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. EntityMorph (pure data): resolves base + morph shapes into a fixed slot set (hidden duplicates) and runs the hold/morph clock (human -> other -> human, 30-50 s morphs).
+2. EntityGlyphView writes from/to shapes into the instance buffer when a morph starts/ends; shader glides with a morph uniform, flips glyphs half way, fades hidden slots. Heart shrinks to heart_size_ratio.
+3. tools/build_entity_growth.gd builds human, lion_head, angelic, hand formations (7x11, small glyphs) and the config; old formations removed.
+4. BodyOutline handles a body deeper than wide (capsule along screen up).
+5. Tests: test_entity_morph, updated many form tests; capture_many_form.gd for visuals.
+<!-- SECTION:PLAN:END -->
