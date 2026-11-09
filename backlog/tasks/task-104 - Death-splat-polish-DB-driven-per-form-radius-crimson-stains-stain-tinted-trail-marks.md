@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-09T11:10:00Z'
-updated_date: '2026-11-09T12:55:00Z'
+updated_date: '2026-11-09T13:05:00Z'
 labels:
   - gameplay
   - rendering
@@ -26,16 +26,16 @@ Follow-up to TASK-093 (death stains / "splat"). Playtesting found the splat work
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Splat radius range (min/max tiles) is read from the DB per form, with a default row; seeded values: default 2-4, brain 4-6, many 4-8; each death picks a radius in its form range
+- [x] #1 Splat radius range (min/max tiles) is read from the DB per form, with a default row; seeded values: default 2-4, brain 4-6, many 4-8; each death picks a radius in its form range
 - [ ] #2 Radius range is editable in god and picked up without code changes; DeathMarksConfig no longer holds the authoritative radius
-- [ ] #3 Death stains render as a clearly visible crimson on floor and walls (verified on a captured screenshot)
-- [ ] #4 While the player stands on a stained cell the ink trail turns crimson, and stays crimson for 3 s after leaving the last stained cell (duration a config/DB value, not a magic number)
-- [ ] #5 While the trail is crimson it leaves crimson stain marks on the floor cells it passes
-- [ ] #6 Entering a black hole turns the trail dark purple with the same 3 s linger, and it leaves dark purple marks on the floor
-- [ ] #7 Trail marks (crimson and dark purple) persist across deaths and runs on that map and are cleared only when the map is restarted
-- [ ] #8 Trail marks do not count toward the stained-tile total that throws the invulnerability item (unless decided otherwise and noted)
+- [x] #3 Death stains render as a clearly visible crimson on floor and walls (verified on a captured screenshot)
+- [x] #4 While the player stands on a stained cell the ink trail turns crimson, and stays crimson for 3 s after leaving the last stained cell (duration a config/DB value, not a magic number)
+- [x] #5 While the trail is crimson it leaves crimson stain marks on the floor cells it passes
+- [x] #6 Entering a black hole turns the trail dark purple with the same 3 s linger, and it leaves dark purple marks on the floor
+- [x] #7 Trail marks (crimson and dark purple) persist across deaths and runs on that map and are cleared only when the map is restarted
+- [x] #8 Trail marks do not count toward the stained-tile total that throws the invulnerability item (unless decided otherwise and noted)
 - [ ] #9 No FPS regression on the Compatibility renderer: marks reuse the existing per-cell stain texture approach, no per-mark nodes
-- [ ] #10 A headless test covers radius range per form, trail tint linger timing and mark persistence/reset
+- [x] #10 A headless test covers radius range per form, trail tint linger timing and mark persistence/reset
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -48,3 +48,12 @@ Follow-up to TASK-093 (death stains / "splat"). Playtesting found the splat work
 5. InkTrailView: per-drop tint (MultiMesh instance colour) so new drops turn crimson/dark purple while existing ones keep their colour.
 6. Headless test + screenshot capture; validate boot.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+DB: new table death_splat (profile, radius_min, radius_max) published to the local server and seeded (default 2-4, brain 4-6, grown/many 4-8); bundled in data/db/seed.json, registered in god (core DB_TABLES/DB_PRIMARY_KEYS, seeds TABLE_KEYS) and DbConfig.tables. Single has no row and uses default.
+Marks lifetime: trail marks live with the death stains in DeathMarks (per map, whole game launch), so they survive deaths, runs, world resets and map switches; a game restart clears them.
+Side effect: a 2-4 splat is 13+ tiles, so with tiles_per_item = 10 the FIRST death now always throws a ⚛ item (before: 9 tiles, none on the first death; after that it was already ~1 per death). test_death_marks, test_respawn_invulnerability and test_entity_growth pin radius_override = 1.5 to keep their 9-tile expectations. Balance left unchanged pending a design call.
+Verification: tools/test_death_splat.gd PASS (x3), test_death_marks, test_remains, test_respawn_invulnerability, test_entity_growth, test_cannon, test_enemies, test_hazards, test_input_movement, test_intro_player, test_language_progress, test_menu, test_narrator, test_reveal, test_run_manager, test_save PASS. Visual: tools/capture_death_splat.gd Movie Maker frames show the crimson splat, crimson trail marks along M1 row 11 and dark purple marks after a black hole. FPS on the target iGPU not measured; marks only rewrite texels of the existing stain texture (no nodes).
+<!-- SECTION:NOTES:END -->
