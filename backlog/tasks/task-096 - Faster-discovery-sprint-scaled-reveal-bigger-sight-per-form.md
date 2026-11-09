@@ -1,11 +1,11 @@
 ---
 id: TASK-096
 title: Faster discovery, sprint-scaled reveal, bigger sight per form
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-09T08:25:00Z'
-updated_date: '2026-11-09T08:25:00Z'
+updated_date: '2026-11-09T09:10:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -21,10 +21,10 @@ Discovery feels slow: the reveal animation of newly seen cells lags behind movem
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Base reveal animation timings (reveal duration, per-cell stagger, memory-to-seen) are half of the previous values
-- [ ] #2 While sprinting, the reveal timings are divided further by the active sprint speed multiplier
-- [ ] #3 Reveal radius and player light radius are 2x in the single (one) form and 3x in the grown (many) form; brain form keeps 1x; the factors live in a config resource
-- [ ] #4 Headless tests cover the timing scale and the per-form area scale
+- [x] #1 Base reveal animation timings (reveal duration, per-cell stagger, memory-to-seen) are half of the previous values
+- [x] #2 While sprinting, the reveal timings are divided further by the active sprint speed multiplier
+- [x] #3 Reveal radius and player light radius are 2x in the single (one) form and 3x in the grown (many) form; brain form keeps 1x; the factors live in a config resource
+- [x] #4 Headless tests cover the timing scale and the per-form area scale
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -35,3 +35,15 @@ Discovery feels slow: the reveal animation of newly seen cells lags behind movem
 3. GlyphWorldView: player light radius x map_reveal.area_scale().
 4. Extend tools/test_reveal.gd / new test for scales.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Light occlusion cost grows with radius (~10 ms at 11 cells, ~23 ms at 22 on the dev machine), so the light is not blindly tripled: player_light_radius() = max(map light radius, effective reveal reach). Single 2x reveal (11 cells) matches the old light; grown 3x gives a 16.5 light. Tests: test_reveal (form scale, sprint pace), test_large_objects adapted.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Reveal animation halved (0.45 s, 0.035 s/cell stagger, 0.35 s memory-to-seen) and divided by the sprint speed multiplier while sprinting. RevealConfig.form_area_scale: single 2x, grown 3x reveal radius (brain 1x); the player light reaches at least the revealed area. Verified with test_reveal, test_map_settings, test_large_objects. Risk: larger light radius in the many form costs more occlusion work per cell change on potato hardware.
+<!-- SECTION:FINAL_SUMMARY:END -->
