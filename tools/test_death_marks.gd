@@ -73,6 +73,8 @@ func _check_scene() -> void:
 	main.get_node("RunManager").set("config", run_cfg)
 	# Respawn invulnerability (task-095) is covered by test_respawn_invulnerability; off here so only the item grants it.
 	main.get_node("Invulnerability").set("respawn_seconds", 0.0)
+	# Task-104 picks a random radius from the DB range; this test checks the exact 3x3 spray of radius 1.5.
+	main.get_node("DeathMarks").set("radius_override", 1.5)
 	var loader: MapLoader = main.get_node("World/MapLoader")
 	loader.map_path = MAP_PATH
 	loader.use_cmdline_map = false

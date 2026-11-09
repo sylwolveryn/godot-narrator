@@ -38,6 +38,7 @@ TABLE_KEYS = {
     "enemy_def": "kind",
     "glyph_ramp": "surface",
     "craft_def": "id",
+    "death_splat": "profile",
 }
 # Columns changed by playing, not by tuning: neutral value in a seed, ignored by comparisons, kept by a reseed.
 VOLATILE = {

@@ -41,6 +41,7 @@ plain HTTP; the `god/` launcher has buttons for everything below (Database secti
 | `missing_narration` | `key` | `first_seen` (Timestamp) |
 | `glyph_anim` | `surface` (wall, floor, spikes, corruption, item) | `enabled`, `chars`, `palette` ("#rrggbb,..."), `near_intensity`, `far_intensity`, `radius` (cells), `char_speed` (changes/s), `color_speed` (palette cycles/s) |
 | `glyph_ramp` | `surface` (wall, floor, spikes, corruption, item, dirt) | `chars`: the base glyphs of the surface from sparse to dense (blank implicit); any Unicode, split into grapheme clusters and spread over 7 density columns |
+| `death_splat` | `profile` (default, single, grown, brain; a form without a row uses default) | `radius_min`, `radius_max`: death splat radius range in tiles, a random radius per death |
 | `config_version` | `id` (always 1) | `version` |
 
 Default narration paths: `narration/event/{EVENT}_{LANG}.json` and `.mp3`.

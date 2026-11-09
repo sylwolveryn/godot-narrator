@@ -1,7 +1,7 @@
 // Ink trail of the player (task-057). ONE MultiMesh of quads lying flat on the floor, each an ink glyph from a small
 // runtime atlas (InkTrailView). The quad is oriented so the glyph stands upright on screen (like the floor glyphs).
 // Per instance: transform origin = drop centre, scale = half-size, INSTANCE_CUSTOM = (spawn clock, atlas column,
-// size jitter 0..1, rotation 0..1). Fading and spreading happen here from `now` (set once per frame), so the CPU only
+// size jitter 0..1, rotation 0..1), INSTANCE COLOR = tint (rgb, a = tint share; task-104 blood / void trail). Fading and spreading happen here from `now` (set once per frame), so the CPU only
 // writes an instance when a drop is spawned. Ink colour with a faint luminous rim, premultiplied.
 shader_type spatial;
 render_mode unshaded, blend_premul_alpha, depth_draw_never, cull_disabled, fog_disabled;
@@ -22,12 +22,14 @@ uniform float max_tilt = 0.35;               // rotation of a drop, fraction of 
 varying vec2 q;
 varying float fade;
 varying flat float column;
+varying vec4 tint;
 
 void vertex() {
 	float age = now - INSTANCE_CUSTOM.x;
 	float t = clamp(age / max(lifetime, 0.001), 0.0, 1.0);
 	fade = (age < 0.0 || age > lifetime) ? 0.0 : 1.0 - t * t;
 	column = INSTANCE_CUSTOM.y;
+	tint = COLOR;
 	vec3 c = MODEL_MATRIX[3].xyz;
 	float size = length(MODEL_MATRIX[0].xyz) * (0.75 + 0.5 * INSTANCE_CUSTOM.z) * (1.0 + spread * t);
 	vec3 cam_r = INV_VIEW_MATRIX[0].xyz;
@@ -48,7 +50,9 @@ void fragment() {
 	// a soft blot under the glyph so the ink reads as a stain, not only a letter
 	float blot = (1.0 - smoothstep(0.15, 1.0, length(q))) * 0.35;
 	float body = max(cov, blot) * ink_alpha * fade;
-	vec3 rgb = ink_color * body + rim_color * cov * rim_strength * fade * fade;
+	vec3 ink = mix(ink_color, tint.rgb, tint.a);
+	vec3 rim = mix(rim_color, mix(tint.rgb, vec3(1.0), 0.45), tint.a);
+	vec3 rgb = ink * body + rim * cov * rim_strength * fade * fade;
 	ALBEDO = rgb;
 	ALPHA = body;
 }

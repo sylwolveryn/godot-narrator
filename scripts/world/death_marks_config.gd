@@ -1,24 +1,43 @@
 class_name DeathMarksConfig
 extends Resource
-## Death marks (task-093): the purple / red stains a death sprays over the floor and walls, the invulnerability item
+## Death marks (task-093, task-104): the crimson stains a death sprays over the floor and walls, the invulnerability item
 ## they pay out, the invulnerability itself and the energy-shield aura drawn while it lasts.
 ## Instance: resources/config/death_marks_config.tres (tools/build_resources.gd).
 
 @export_group("Stain")
-## Cells within this distance (in cells, from the death cell's centre) are sprayed: floor and walls alike.
-@export_range(0.5, 8.0, 0.1) var stain_radius: float = 1.5
+## Fallback splat radius range in tiles, used only when the DB table `death_splat` has neither a row for the form nor
+## a "default" row (task-104; the DB is authoritative). Cells within the picked radius of the death cell's centre are
+## sprayed: floor and walls alike.
+@export_range(0.5, 12.0, 0.1) var fallback_radius_min: float = 2.0
+@export_range(0.5, 12.0, 0.1) var fallback_radius_max: float = 4.0
 ## Stain added to a cell by one death at its centre (fading towards the edge of the radius); a cell holds at most 1.
 @export_range(0.05, 1.0, 0.01) var stain_strength: float = 0.75
 ## Share of the strength kept at the edge of the radius.
 @export_range(0.0, 1.0, 0.01) var stain_edge: float = 0.45
-@export var stain_purple: Color = Color(0.62, 0.18, 1.0)
-@export var stain_red: Color = Color(1.0, 0.12, 0.2)
+## Death stains and blood trail marks (task-104: crimson, readable on the floor).
+@export var stain_blood: Color = Color(0.92, 0.03, 0.14)
+## Black hole trail marks (task-104).
+@export var stain_void: Color = Color(0.42, 0.08, 0.78)
 ## How much a stain takes the glyphs over (0 = invisible, 1 = fully the stain hue at full strength).
-@export_range(0.0, 1.0, 0.01) var stain_mix: float = 0.85
+@export_range(0.0, 1.0, 0.01) var stain_mix: float = 1.0
 ## Extra glyph density on a stained cell at full strength (the spray makes the cell busier).
-@export_range(0.0, 1.0, 0.01) var stain_density: float = 0.35
-## Slow shimmer of the stain hue between purple and red, cycles per second.
+@export_range(0.0, 1.0, 0.01) var stain_density: float = 0.5
+## Slow brightness shimmer of the stain, cycles per second.
 @export_range(0.0, 2.0, 0.01) var stain_shimmer_hz: float = 0.12
+## Flat wash of the stain hue over the whole cell (not only its glyphs), at full strength: sparse floors still read.
+@export_range(0.0, 1.0, 0.01) var stain_fill: float = 0.28
+
+@export_group("Trail tint")
+## Seconds the trail stays tinted after the player left the last stained cell / black hole.
+@export_range(0.0, 30.0, 0.1) var trail_tint_linger: float = 3.0
+## Stain strength a tinted trail leaves on a cell it enters (a cell holds at most 1).
+@export_range(0.0, 1.0, 0.01) var trail_mark_strength: float = 0.55
+## Chance that a step also spatters a random neighbour cell, at trail_spatter_share of the strength.
+@export_range(0.0, 1.0, 0.01) var trail_spatter_chance: float = 0.4
+@export_range(0.0, 1.0, 0.01) var trail_spatter_share: float = 0.6
+## Ink colours of the trail drops while tinted (InkTrailView); the rim is a lighter shade of the same hue.
+@export var trail_blood_ink: Color = Color(0.95, 0.05, 0.16)
+@export var trail_void_ink: Color = Color(0.5, 0.1, 0.9)
 
 @export_group("Invulnerability item")
 ## Every time the stained-tile count passes another multiple of this, the death that did it drops an item.

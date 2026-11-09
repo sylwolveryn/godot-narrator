@@ -176,6 +176,11 @@ signal language_cycle_requested
 signal death_stained(map_id: StringName, cells: Array[Vector2i], total_tiles: int)
 ## Emitted by DeathMarks when the stains of the current map were (re)loaded: a map build shows that map's stains.
 signal death_stains_reset(map_id: StringName)
+## Death splat polish (task-104). Emitted by DeathMarks when the trail tint of the player changed: &"blood" (walked
+## through a death stain), &"void" (walked through a black hole) or &"" (the tint ran out).
+signal trail_tint_changed(kind: StringName)
+## Emitted by DeathMarks when the tinted trail left a mark on `cells` (DeathMarks.trail_marks holds strength and kind).
+signal trail_marked(map_id: StringName, cells: Array[Vector2i])
 ## Emitted by DeathMarks when a death threw an invulnerability item out of `from_position` onto `cell`.
 signal invulnerability_item_dropped(cell: Vector2i, from_position: Vector3)
 ## Emitted by DeathMarks when the player picked the item in `cell` up (Invulnerability.grant follows).

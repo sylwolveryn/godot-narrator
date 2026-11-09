@@ -2518,5 +2518,22 @@
 			"surface": "dirt",
 			"chars": ".,:;o%&"
 		}
+	],
+	"death_splat": [
+		{
+			"profile": "default",
+			"radius_min": 2.0,
+			"radius_max": 4.0
+		},
+		{
+			"profile": "brain",
+			"radius_min": 4.0,
+			"radius_max": 6.0
+		},
+		{
+			"profile": "grown",
+			"radius_min": 4.0,
+			"radius_max": 8.0
+		}
 	]
 }

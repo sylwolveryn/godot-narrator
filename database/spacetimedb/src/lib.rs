@@ -298,6 +298,26 @@ const SEED_ENEMIES: &[(&str, f32, bool, f32, i32, f32, i32, i32, i32, bool)] = &
     ("wanderer", 1.8, true, 0.6, 16, 0.35, 3, 9, 2, false),
 ];
 
+/// Death splat size per entity form (task-104), key `profile`: "default" (fallback for a form without a row), then
+/// the forms ("single", "grown" = the many form, "brain"). A death sprays a random radius in [radius_min, radius_max]
+/// tiles around the death cell.
+#[spacetimedb::table(accessor = death_splat, public)]
+pub struct DeathSplat {
+    #[primary_key]
+    pub profile: String,
+    /// Smallest splat radius, tiles.
+    pub radius_min: f32,
+    /// Largest splat radius, tiles.
+    pub radius_max: f32,
+}
+
+/// (profile, radius_min, radius_max)
+const SEED_DEATH_SPLAT: &[(&str, f32, f32)] = &[
+    ("default", 2.0, 4.0),
+    ("brain", 4.0, 6.0),
+    ("grown", 4.0, 8.0),
+];
+
 /// Bumped to tell running games to reload their tables. Single row, id = 1.
 #[spacetimedb::table(accessor = config_version, public)]
 pub struct ConfigVersion {
@@ -596,6 +616,15 @@ fn seed(ctx: &ReducerContext) {
             });
         }
     }
+    for (profile, radius_min, radius_max) in SEED_DEATH_SPLAT {
+        if ctx.db.death_splat().profile().find(profile.to_string()).is_none() {
+            ctx.db.death_splat().insert(DeathSplat {
+                profile: profile.to_string(),
+                radius_min: *radius_min,
+                radius_max: *radius_max,
+            });
+        }
+    }
     if ctx.db.avatar_fx().profile().find("default".to_string()).is_none() {
         ctx.db.avatar_fx().insert(default_avatar_fx());
     }
@@ -676,6 +705,10 @@ pub fn reset_defaults(ctx: &ReducerContext) {
     let ids: Vec<String> = ctx.db.enemy_def().iter().map(|r| r.kind).collect();
     for id in ids {
         ctx.db.enemy_def().kind().delete(id);
+    }
+    let ids: Vec<String> = ctx.db.death_splat().iter().map(|r| r.profile).collect();
+    for id in ids {
+        ctx.db.death_splat().profile().delete(id);
     }
     seed(ctx);
 }

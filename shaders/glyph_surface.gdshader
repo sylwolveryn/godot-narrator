@@ -139,13 +139,15 @@ uniform vec4 wave_style = vec4(0.12, 0.6, 0.55, 0.6);   // x rainbow phase per w
 uniform vec4 pulse_geo = vec4(0.0);      // xz centre, z ring radius, w band half width (world units)
 uniform vec3 pulse_style = vec3(0.0, 1.0, 0.8);   // x strength, y rainbow turns around the ring, z turns per second
 // Brain aura (task-091, GlyphWorldView): a soft glow disc around the brain. w 0 = off, no cost.
-// Death stains (task-093, DeathMarksView): one texel per map cell, r = stain strength 0..1, g = purple (0) .. red (1)
-// bias. stain_style: x 1 = any stain on the map (0 = no cost), y how much the stain takes a glyph over, z glyph density
-// gain, w shimmer cycles per second.
+// Death stains (task-093, task-104, DeathMarksView): one texel per map cell, r = stain strength 0..1, g = kind (1 blood
+// crimson: death stains and blood trail marks, 0 void dark purple: black hole trail marks). stain_style: x 1 = any
+// stain on the map (0 = no cost), y how much the stain takes a glyph over, z glyph density gain, w shimmer cycles per
+// second. stain_fill: flat wash of the hue over the whole cell so sparse floors still read.
 uniform sampler2D stain_map : hint_default_black, filter_nearest, repeat_disable;
-uniform vec4 stain_style = vec4(0.0, 0.85, 0.35, 0.12);
-uniform vec3 stain_purple = vec3(0.62, 0.18, 1.0);
-uniform vec3 stain_red = vec3(1.0, 0.12, 0.2);
+uniform vec4 stain_style = vec4(0.0, 1.0, 0.5, 0.12);
+uniform vec3 stain_blood = vec3(0.92, 0.03, 0.14);
+uniform vec3 stain_void = vec3(0.42, 0.08, 0.78);
+uniform float stain_fill = 0.28;
 
 uniform vec4 aura_geo = vec4(0.0);       // xz centre, z radius (world units), w strength
 uniform vec3 aura_color = vec3(0.55, 0.4, 1.0);
@@ -407,8 +409,9 @@ void fragment() {
 	b += edge * edge_gain * (lum_l + edge_ambient);
 	b *= min(vis, 1.0) * mix(1.0, memory_density, mem);
 	b = max(b, memory_floor * mem * (t == T_FLOOR ? 0.8 : 1.0));
-	// Death stain: a spray over the glyphs of the cell (more glyphs taken the stronger it is), purple to red.
+	// Death stain: a spray over the glyphs of the cell (more glyphs taken the stronger it is), crimson or dark purple.
 	float stain_k = 0.0;
+	float stain_fill_k = 0.0;
 	vec3 stain_hue = vec3(0.0);
 	if (stain_style.x > 0.5) {
 		vec2 sp = pc.xz / cs;
@@ -420,8 +423,9 @@ void fragment() {
 		if (st.r > 0.0) {
 			float hs = hash12(cell * 2.17 + vec2(31.7, float(t) * 3.1));
 			stain_k = st.r * smoothstep(hs - 0.2, hs + 0.1, st.r * 1.25) * stain_style.y;
-			float hk = clamp(st.g * 0.5 + fract(hs * 7.31) * 0.5 + 0.25 * sin(TIME * TAU * stain_style.w + hs * TAU), 0.0, 1.0);
-			stain_hue = mix(stain_purple, stain_red, hk);
+			float shimmer = 0.88 + 0.12 * sin(TIME * TAU * stain_style.w + hs * TAU) + (fract(hs * 7.31) - 0.5) * 0.12;
+			stain_hue = (st.g > 0.5 ? stain_blood : stain_void) * shimmer;
+			stain_fill_k = st.r;
 			b += stain_k * stain_style.z;
 		}
 	}
@@ -520,6 +524,9 @@ void fragment() {
 	c += glint_color * m.b * cov;
 	if (stain_k > 0.0) {
 		c = mix(c, stain_hue * cov * 1.1, min(stain_k, 1.0)) + stain_hue * (0.06 * stain_k * grow);
+	}
+	if (stain_fill_k > 0.0) {
+		c += stain_hue * (stain_fill * stain_fill_k * grow);
 	}
 	// Colour waves: the glyphs in a band take the wave's (saturated) hue and brighten; a faint fill lights the cell.
 	float wave_k = max(wave_c.r, max(wave_c.g, wave_c.b));

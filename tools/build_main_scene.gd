@@ -215,6 +215,7 @@ func _build() -> void:
 	ink.set("config", load(CFG + "avatar_fx_config.tres"))
 	ink.set("database", database)
 	ink.set("player", player)
+	ink.set("marks_config", load(CFG + "death_marks_config.tres"))
 	_add(root, ink)
 
 	# The in-world menu: glyphs of the surroundings fly into a framed list (one MultiMesh, hidden while closed).
@@ -477,6 +478,8 @@ func _build() -> void:
 	marks.set("invulnerability", invulnerable)
 	marks.set("run_manager", runs)
 	marks.set("pushables", pushables)
+	marks.set("database", database)
+	marks.set("remains", remains)
 	_add(root, marks)
 	var marks_view: Node3D = load("res://scripts/rendering/death_marks_view.gd").new()
 	marks_view.name = "DeathMarksView"

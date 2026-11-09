@@ -1,9 +1,10 @@
 class_name DeathMarksView
 extends Node3D
 ## Death marks (task-093), presentation side. Reads DeathMarks / Invulnerability and the signals; never writes data.
-##  - Stains: one texel per map cell (r = strength, g = a per-cell purple / red bias) in the glyph-surface material's
-##    `stain_map`; the shader sprays the stained cells' glyphs purple to red (shaders/glyph_surface.gdshader). The
-##    texture is rebuilt on a death and on a map build only.
+##  - Stains: one texel per map cell (r = strength, g = kind: 1 blood / 0 void) in the glyph-surface material's
+##    `stain_map`; the shader sprays the stained cells crimson (death stains, blood trail marks) or dark purple (black
+##    hole trail marks), see shaders/glyph_surface.gdshader. The texture is rebuilt on a death and on a map build; a
+##    trail mark (task-104) only rewrites its own texels.
 ##  - Invulnerability items: a bobbing, glowing ⚛ over each item cell; a fresh item is thrown out of the death spot on
 ##    an arc. Items placed by the map (legend `I`) appear once their cell is revealed.
 ##  - Shield: while the player is invulnerable, two rings of small light-blue glyphs (DeathMarksConfig.ring_text) turn
@@ -44,6 +45,7 @@ func _ready() -> void:
 	_glyphs.setup(config.item_glyph + config.ring_text, config.glyph_font_names, config.glyph_tile_px, config.glyph_font_px,
 			config.ring_text.length() * rings + 64, Color(1.0, 1.0, 1.0))
 	SignalBus.death_stained.connect(func(_m: StringName, _c: Array[Vector2i], _t: int) -> void: refresh_stains())
+	SignalBus.trail_marked.connect(func(_m: StringName, cells: Array[Vector2i]) -> void: _update_cells(cells))
 	SignalBus.death_stains_reset.connect(func(_m: StringName) -> void:
 		_throws.clear()
 		refresh_stains()
@@ -73,7 +75,8 @@ func refresh_stains() -> void:
 	if surface_material == null or marks == null or map_loader == null or map_loader.data.is_empty():
 		return
 	var stains: Dictionary = marks.stains()
-	if stains.is_empty():
+	var trail: Dictionary = marks.trail_marks()
+	if stains.is_empty() and trail.is_empty():
 		surface_material.set_shader_parameter(&"stain_style", _style(0.0))
 		return
 	var w: int = maxi(map_loader.data.width, 1)
@@ -83,18 +86,53 @@ func refresh_stains() -> void:
 		_texture = null
 	_image.fill(Color(0.0, 0.0, 0.0, 0.0))
 	for cell: Vector2i in stains:
-		if cell.x < 0 or cell.y < 0 or cell.x >= w or cell.y >= h:
-			continue
-		var bias: float = fposmod(sin(float(cell.x) * 12.9898 + float(cell.y) * 78.233) * 43758.5453, 1.0)
-		_image.set_pixel(cell.x, cell.y, Color(float(stains[cell]), bias, 0.0, 1.0))
+		_put_cell(cell)
+	for cell: Vector2i in trail:
+		_put_cell(cell)
+	_upload()
+
+
+## Rewrites the texels of `cells` only (trail marks, task-104).
+func _update_cells(cells: Array[Vector2i]) -> void:
+	if surface_material == null or marks == null or map_loader == null or map_loader.data.is_empty():
+		return
+	if _image == null or _texture == null:
+		refresh_stains()
+		return
+	for cell in cells:
+		_put_cell(cell)
+	_upload()
+
+
+## The texel of a cell: the stronger of blood (death stain or blood trail mark) and void (black hole trail mark).
+func _put_cell(cell: Vector2i) -> void:
+	if cell.x < 0 or cell.y < 0 or cell.x >= _image.get_width() or cell.y >= _image.get_height():
+		return
+	var blood: float = marks.stain_at(cell)
+	var void_k: float = 0.0
+	var mark: Variant = marks.trail_marks().get(cell)
+	if mark is Vector2:
+		var m: Vector2 = mark
+		if m.y > 0.5:
+			blood = maxf(blood, m.x)
+		else:
+			void_k = m.x
+	if blood >= void_k:
+		_image.set_pixel(cell.x, cell.y, Color(blood, 1.0, 0.0, 1.0))
+	else:
+		_image.set_pixel(cell.x, cell.y, Color(void_k, 0.0, 0.0, 1.0))
+
+
+func _upload() -> void:
 	if _texture == null:
 		_texture = ImageTexture.create_from_image(_image)
 	else:
 		_texture.update(_image)
 	surface_material.set_shader_parameter(&"stain_map", _texture)
 	surface_material.set_shader_parameter(&"stain_style", _style(1.0))
-	surface_material.set_shader_parameter(&"stain_purple", Vector3(config.stain_purple.r, config.stain_purple.g, config.stain_purple.b))
-	surface_material.set_shader_parameter(&"stain_red", Vector3(config.stain_red.r, config.stain_red.g, config.stain_red.b))
+	surface_material.set_shader_parameter(&"stain_blood", Vector3(config.stain_blood.r, config.stain_blood.g, config.stain_blood.b))
+	surface_material.set_shader_parameter(&"stain_void", Vector3(config.stain_void.r, config.stain_void.g, config.stain_void.b))
+	surface_material.set_shader_parameter(&"stain_fill", config.stain_fill)
 
 
 func _style(on: float) -> Vector4:

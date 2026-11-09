@@ -5,6 +5,8 @@ extends Node3D
 ## MultiMesh (shaders/ink_trail.gdshader), a ring buffer of trail_capacity drops: the CPU writes one instance per
 ## drop, the fade runs in the shader. The ink glyphs are rasterised once (and again when the DB changes them).
 ## Values come from the DB table avatar_fx (GameDatabase.tables_loaded). Presentation only.
+## Task-104: SignalBus.trail_tint_changed (DeathMarks) tints the NEW drops crimson (blood) or dark purple (void) via
+## the MultiMesh instance colour (a = tint share); drops already on the floor keep the colour they were dropped with.
 
 const SHADER: String = "res://shaders/ink_trail.gdshader"
 ## Edge of the quad mesh; the instance scale is the half-size.
@@ -29,6 +31,8 @@ class InkPainter extends Node2D:
 @export var database: GameDatabase
 @export var player: Player
 @export var run_manager: RunManager
+## Tint colours of the trail (task-104); null uses the DeathMarksConfig defaults.
+@export var marks_config: DeathMarksConfig
 
 var _fx: AvatarFxConfig
 var _multimesh: MultiMesh
@@ -41,6 +45,8 @@ var _next: int = 0
 var _travelled: float = 0.0
 var _last_position: Vector3 = Vector3.INF
 var _drops: int = 0
+## Instance colour of new drops: rgb tint, a = share of the tint (0 = the normal ink).
+var _tint: Color = Color(1.0, 1.0, 1.0, 0.0)
 
 
 func _ready() -> void:
@@ -51,7 +57,26 @@ func _ready() -> void:
 	apply(config.from_tables(database.tables) if database != null else config)
 	if database != null:
 		database.tables_loaded.connect(func(tables: Dictionary) -> void: apply(config.from_tables(tables)))
+	if marks_config == null:
+		marks_config = DeathMarksConfig.new()
 	SignalBus.run_started.connect(func(_i: int) -> void: clear())
+	SignalBus.trail_tint_changed.connect(set_tint)
+
+
+## Tints the drops dropped from now on: &"blood", &"void" or &"" (the normal ink).
+func set_tint(kind: StringName) -> void:
+	match kind:
+		DeathMarks.TINT_BLOOD:
+			_tint = Color(marks_config.trail_blood_ink, 1.0)
+		DeathMarks.TINT_VOID:
+			_tint = Color(marks_config.trail_void_ink, 1.0)
+		_:
+			_tint = Color(1.0, 1.0, 1.0, 0.0)
+
+
+## Instance colour of the new drops (tests).
+func current_tint() -> Color:
+	return _tint
 
 
 func _process(delta: float) -> void:
@@ -92,6 +117,7 @@ func drop_count() -> int:
 func clear() -> void:
 	for i in _multimesh.instance_count:
 		_multimesh.set_instance_custom_data(i, Color(-1000.0, 0.0, 0.0, 0.0))
+		_multimesh.set_instance_color(i, Color(1.0, 1.0, 1.0, 0.0))
 	_travelled = 0.0
 	_last_position = Vector3.INF
 	_drops = 0
@@ -107,6 +133,7 @@ func _drop(pos: Vector3) -> void:
 	_multimesh.set_instance_transform(_next, Transform3D(Basis.from_scale(Vector3.ONE * _fx.trail_size), origin))
 	var count: int = mini(_fx.trail_chars.length(), _fx.trail_max_chars)
 	_multimesh.set_instance_custom_data(_next, Color(_clock, float(_rng.randi() % maxi(count, 1)), _rng.randf(), _rng.randf()))
+	_multimesh.set_instance_color(_next, _tint)
 	_next = (_next + 1) % _multimesh.instance_count
 	_drops += 1
 
@@ -132,6 +159,7 @@ func _build() -> void:
 	_multimesh = MultiMesh.new()
 	_multimesh.transform_format = MultiMesh.TRANSFORM_3D
 	_multimesh.use_custom_data = true
+	_multimesh.use_colors = true
 	_multimesh.mesh = quad
 	_multimesh.instance_count = maxi(config.trail_capacity, 1)
 	_material = ShaderMaterial.new()
