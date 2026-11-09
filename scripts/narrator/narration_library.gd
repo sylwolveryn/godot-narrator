@@ -6,8 +6,9 @@ extends Node
 ## Every triggered event counts towards its `narration.triggered` in the DB.
 ##
 ## A text file is JSON: {"event": "DEATH_BY_SPIKES", "language": "EN_GB", "lines": {"<beat id>": "text", ...},
-## "default": "optional text for a beat id the file does not list"}. Sound files are tried as MP3, M4A, then WAV
-## (config.sound_formats); an empty file is skipped for the next format.
+## "default": "optional text for a beat id the file does not list"}. Sound files may come in versions
+## (<EVENT>_<LANGUAGE>, <EVENT>_<LANGUAGE>_v2, ..._v_anything): one is picked at random. Each version is played from its
+## first non-empty format in config.sound_formats order (WebM, MP3, M4A, WAV).
 
 @export var config: NarrationLibraryConfig
 ## Optional: DB rows for the paths, and the writer for trigger counts and missing files.
@@ -20,6 +21,10 @@ var _text_cache: Dictionary[String, Variant] = {}
 var _audio_cache: Dictionary[String, Variant] = {}
 var _missing: Dictionary[String, bool] = {}
 var _transcoder: AudioTranscoder
+## Sound versions per path stem (cached like the files): stem -> Array of PackedStringArray (paths in format order).
+var _versions: Dictionary[String, Array] = {}
+## Seedable (tests): which version of a sound plays.
+var rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
@@ -28,6 +33,7 @@ func _ready() -> void:
 	# The language changes at run time (task-065); keep the shared resource untouched.
 	config = config.duplicate() as NarrationLibraryConfig
 	_transcoder = AudioTranscoder.new(config.transcode_cache_dir)
+	rng.randomize()
 	_load_missing()
 	SignalBus.language_selected.connect(set_language)
 	if database != null:
@@ -93,21 +99,65 @@ func line_for(beat: NarrationBeat) -> String:
 	return beat.text
 
 
-## The voice of an event in the current language, or null. Tries each of config.sound_formats in order (the DB / template
-## path with its extension swapped), skipping files that are empty or cannot be decoded.
+## The voice of an event in the current language, or null. The DB / template path without its extension is the stem;
+## every version of it (`sound_versions`) with a non-empty file counts, and one is picked at random. A version plays from
+## its first file (config.sound_formats order) that decodes; a version that does not decode at all is dropped for another.
 func audio_for(event: StringName) -> AudioStream:
 	var base: String = _path(event, 1).get_basename()
 	if base != "":
-		for ext: String in config.sound_formats:
-			var found: String = resolve("%s.%s" % [base, ext])
-			if found == "" or _is_empty_file(found):
-				continue
-			if not _audio_cache.has(found):
-				_audio_cache[found] = _load_audio(found)
-			if _audio_cache[found] != null:
-				return _audio_cache[found] as AudioStream
+		var versions: Array = sound_versions(base).duplicate()
+		while not versions.is_empty():
+			var k: int = rng.randi_range(0, versions.size() - 1)
+			for found: String in versions[k]:
+				if not _audio_cache.has(found):
+					_audio_cache[found] = _load_audio(found)
+				if _audio_cache[found] != null:
+					return _audio_cache[found] as AudioStream
+			versions.remove_at(k)
 	_report_missing(event, config.missing_audio_suffix)
 	return null
+
+
+## The versions of a sound path stem (relative, no extension, e.g. narration/event/CORRUPTION_ENTERED_EN_GB): the files
+## named <stem>.<format> or <stem><version_marker>*.<format> in the override folder and the bundled assets (the override
+## copy of a name wins), empty files left out. One entry per version: its file paths in config.sound_formats order.
+func sound_versions(stem: String) -> Array:
+	if _versions.has(stem):
+		return _versions[stem]
+	var dir: String = stem.get_base_dir()
+	var name: String = stem.get_file()
+	## version stem -> {format: path}
+	var found: Dictionary[String, Dictionary] = {}
+	for root: String in [override_root(), config.asset_root]:
+		var folder: String = root.path_join(dir)
+		if not DirAccess.dir_exists_absolute(folder):
+			continue
+		for file: String in DirAccess.get_files_at(folder):
+			# An exported build lists imported files by their .import / .remap entry.
+			var file_name: String = file.trim_suffix(".import").trim_suffix(".remap")
+			var ext: String = file_name.get_extension().to_lower()
+			if not config.sound_formats.has(ext):
+				continue
+			var version: String = file_name.get_basename()
+			if version != name and not (config.version_marker != "" and version.begins_with(name + config.version_marker)):
+				continue
+			var path: String = folder.path_join(file_name)
+			if _is_empty_file(path) or (found.has(version) and found[version].has(ext)):
+				continue
+			if not found.has(version):
+				found[version] = {}
+			found[version][ext] = path
+	var keys: Array = found.keys()
+	keys.sort()
+	var out: Array = []
+	for version: String in keys:
+		var paths := PackedStringArray()
+		for ext: String in config.sound_formats:
+			if found[version].has(ext):
+				paths.append(found[version][ext])
+		out.append(paths)
+	_versions[stem] = out
+	return out
 
 
 ## Absolute (or res://) path of the first existing copy of a relative path, override folder first; "" when none.
@@ -137,7 +187,7 @@ func resolve_file(rel: String) -> String:
 	return ""
 
 
-## Loads an MP3, M4A, WAV or Ogg found by `resolve` / `resolve_file` (null for an empty or unreadable file).
+## Loads an MP3, WebM, M4A, WAV or Ogg found by `resolve` / `resolve_file` (null for an empty or unreadable file).
 func load_audio(path: String) -> AudioStream:
 	return _load_audio(path)
 
@@ -153,6 +203,7 @@ func missing() -> PackedStringArray:
 func clear_cache() -> void:
 	_text_cache.clear()
 	_audio_cache.clear()
+	_versions.clear()
 
 
 static func event_of(beat: NarrationBeat) -> StringName:
@@ -197,7 +248,7 @@ func _load_audio(path: String) -> AudioStream:
 				return AudioStreamWAV.load_from_buffer(bytes)
 			"ogg":
 				return AudioStreamOggVorbis.load_from_buffer(bytes)
-			"m4a", "aac", "mp4":
+			"m4a", "aac", "mp4", "webm":
 				var wav: PackedByteArray = _transcoder.to_wav(path) if _transcoder != null else AudioTranscoder.new().to_wav(path)
 				return AudioStreamWAV.load_from_buffer(wav) if not wav.is_empty() else null
 	if path.begins_with("res://") and ResourceLoader.exists(path):

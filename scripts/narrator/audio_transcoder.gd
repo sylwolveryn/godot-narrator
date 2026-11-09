@@ -1,7 +1,7 @@
 class_name AudioTranscoder
 extends RefCounted
-## Turns audio files Godot cannot decode itself (M4A / AAC) into WAV bytes (TASK: narration formats).
-## Godot 4.7 only decodes MP3, Ogg Vorbis and WAV, so an M4A is converted once with the platform's own codecs and the
+## Turns audio files Godot cannot decode itself (M4A / AAC, WebM / Opus) into WAV bytes; only the audio is kept (a
+## video track is dropped). Godot 4.7 only decodes MP3, Ogg Vorbis and WAV, so such a file is converted once with the platform's own codecs and the
 ## WAV is cached under `cache_dir`, keyed by the source path, size and modification time (a swapped file is
 ## converted again). Windows: the built-in Media Foundation transcoder through PowerShell (nothing to install).
 ## Elsewhere, or when that fails: `ffmpeg` on the PATH. Returns empty bytes when no converter works.
@@ -34,7 +34,7 @@ func _init(dir: String = "") -> void:
 		cache_dir = dir
 
 
-## WAV bytes of `path` (an M4A), converting it on first use; empty when it cannot be converted.
+## WAV bytes of `path` (an M4A or WebM), converting it on first use; empty when it cannot be converted.
 func to_wav(path: String) -> PackedByteArray:
 	var source: String = ProjectSettings.globalize_path(path)
 	if not FileAccess.file_exists(source):
@@ -70,5 +70,5 @@ func _convert_windows(source: String, target: String) -> bool:
 
 func _convert_ffmpeg(source: String, target: String) -> bool:
 	var out: Array = []
-	var code: int = OS.execute("ffmpeg", ["-y", "-loglevel", "error", "-i", source, "-acodec", "pcm_s16le", target], out, true)
+	var code: int = OS.execute("ffmpeg", ["-y", "-loglevel", "error", "-i", source, "-vn", "-acodec", "pcm_s16le", target], out, true)
 	return code == 0 and FileAccess.file_exists(target) and FileAccess.get_size(target) > 0

@@ -10,6 +10,8 @@ const ROOT := "user://test_override_library"
 
 ## A real m4a for the sound fallback test (its own copy, independent of the game's recordings).
 const FIXTURE_M4A := "res://tools/fixtures/sound_fallback.m4a"
+## WebM with Opus audio (webm narration support).
+const FIXTURE_WEBM := "res://tools/fixtures/sound_fallback.webm"
 var _failures: PackedStringArray = []
 
 
@@ -136,8 +138,50 @@ func _test_sound_formats() -> void:
 	FileAccess.open(root_abs.path_join("narration/event/EMPTY_TEST_EN_GB.wav"), FileAccess.WRITE).close()
 	_check(library.audio_for(&"EMPTY_TEST") == null, "empty files give no sound")
 	_check(library.missing().has("EMPTY_TEST_EN_GB_AUDIO"), "only-empty sound files are reported missing")
+
+	# WebM comes first (its audio, converted to WAV); the m4a of the same name is not used then.
+	_copy(FIXTURE_WEBM, event_dir.path_join("SOUND_FALLBACK_EN_GB.webm"))
+	library.clear_cache()
+	var webm: AudioStream = library.audio_for(&"SOUND_FALLBACK")
+	_check(webm is AudioStreamWAV and fallback != null and absf(webm.get_length() - fallback.get_length()) > 0.2,
+			"webm wins over m4a: %s (m4a %.2fs)" % [webm.get_length() if webm != null else -1.0, fallback.get_length() if fallback != null else -1.0])
+
+	# Versions: <stem>, <stem>_v2, <stem>_v_something count; an empty-only version and a non-version name do not.
+	_wav(event_dir.path_join("VERSIONED_EN_GB.wav"), 100)
+	_wav(event_dir.path_join("VERSIONED_EN_GB_v2.wav"), 200)
+	FileAccess.open(event_dir.path_join("VERSIONED_EN_GB_v_something.mp3"), FileAccess.WRITE).close()
+	_wav(event_dir.path_join("VERSIONED_EN_GB_v_something.wav"), 300)
+	FileAccess.open(event_dir.path_join("VERSIONED_EN_GB_v0002.mp3"), FileAccess.WRITE).close()
+	_wav(event_dir.path_join("VERSIONED_EN_GB_other.wav"), 400)
+	library.clear_cache()
+	var versions: Array = library.sound_versions("narration/event/VERSIONED_EN_GB")
+	_check(versions.size() == 3, "3 versions with sound, got %s" % [versions])
+	library.rng.seed = 7
+	var seen: Dictionary = {}
+	for i in 60:
+		var v: AudioStream = library.audio_for(&"VERSIONED")
+		if v is AudioStreamWAV:
+			seen[(v as AudioStreamWAV).data.size()] = true
+	_check(seen.size() == 3 and seen.has(200) and seen.has(400) and seen.has(600), "every version plays at random (the _other file never): %s" % [seen.keys()])
 	library.queue_free()
 	_remove_tree(root_abs)
+
+
+## A silent 16-bit mono WAV of `samples` samples.
+func _wav(path: String, samples: int) -> void:
+	var w := AudioStreamWAV.new()
+	w.format = AudioStreamWAV.FORMAT_16_BITS
+	w.mix_rate = 22050
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	w.data = data
+	w.save_to_wav(path)
+
+
+func _copy(from: String, to: String) -> void:
+	var f := FileAccess.open(to, FileAccess.WRITE)
+	f.store_buffer(FileAccess.get_file_as_bytes(from))
+	f.close()
 
 
 func _test_narrator_events() -> void:

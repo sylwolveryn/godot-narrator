@@ -21,8 +21,11 @@ extends Resource
 @export var text_path_template: String = "narration/event/{event}_{language}.json"
 @export var sound_path_template: String = "narration/event/{event}_{language}.mp3"
 ## Sound formats tried in order for a narration sound: the path's extension is swapped for each one, and an empty or
-## undecodable file is skipped for the next. M4A is converted to a cached WAV (AudioTranscoder).
-@export var sound_formats: PackedStringArray = PackedStringArray(["mp3", "m4a", "wav"])
+## undecodable file is skipped for the next. WebM (audio only) and M4A are converted to a cached WAV (AudioTranscoder).
+@export var sound_formats: PackedStringArray = PackedStringArray(["webm", "mp3", "m4a", "wav"])
+## A sound file named <stem><version_marker><anything> (e.g. CORRUPTION_ENTERED_EN_GB_v2.mp3) is another version of the
+## <stem> sound; one version is picked at random each time the event plays.
+@export var version_marker: String = "_v"
 ## Where converted M4A files are cached as WAV.
 @export var transcode_cache_dir: String = "user://audio_cache"
 ## Set of missing files, relative to the game root. Entries are <EVENT>_<LANGUAGE>_TEXT / _AUDIO.
