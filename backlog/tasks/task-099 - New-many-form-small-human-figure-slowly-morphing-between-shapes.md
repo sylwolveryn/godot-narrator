@@ -1,11 +1,11 @@
 ---
 id: TASK-099
 title: 'New many form: small human figure slowly morphing between shapes'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-09T08:25:00Z'
-updated_date: '2026-11-09T08:47:00Z'
+updated_date: '2026-11-09T09:10:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -21,11 +21,11 @@ The current many (grown) form silhouettes (winged/beetle/sprite, 9x5 glyphs) are
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The many form is a human figure about 2 tiles wide and 3 tiles tall made of small body glyphs from the identity palette; the identity glyph is the heart
-- [ ] #2 The body morphs human -> other shape -> human, each transformation taking 30-50 s, through lion head, angelic winged body and hand shapes
-- [ ] #3 The morph is visual only: collider size and form mechanics are unchanged by the current shape
-- [ ] #4 Grow, fold, erosion and death burst still work on the new body
-- [ ] #5 Shapes and timings live in .tres resources built by a tools/ script; a headless test covers the morph and a capture shows the shapes
+- [x] #1 The many form is a human figure about 2 tiles wide and 3 tiles tall made of small body glyphs from the identity palette; the identity glyph is the heart
+- [x] #2 The body morphs human -> other shape -> human, each transformation taking 30-50 s, through lion head, angelic winged body and hand shapes
+- [x] #3 The morph is visual only: collider size and form mechanics are unchanged by the current shape
+- [x] #4 Grow, fold, erosion and death burst still work on the new body
+- [x] #5 Shapes and timings live in .tres resources built by a tools/ script; a headless test covers the morph and a capture shows the shapes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -37,3 +37,15 @@ The current many (grown) form silhouettes (winged/beetle/sprite, 9x5 glyphs) are
 4. BodyOutline handles a body deeper than wide (capsule along screen up).
 5. Tests: test_entity_morph, updated many form tests; capture_many_form.gd for visuals.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Capture (tools/capture_many_form.gd) showed the first palette (warm yellow) vanished on the brown floor; switched to pale cyan/white body glyphs, glyph size 0.42 with a dark outline. Shapes read at default zoom but are small; tuning is in tools/build_entity_growth.gd.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Many form is now a 7x11 grid (~2x3 tiles) human of the identity's body glyphs that morphs human -> lion head / angelic / hand -> human (30-50 s morphs, 12-24 s holds, no shape twice in a row). EntityMorph holds slots and the clock; the shader glides via a morph uniform, flips glyphs half way and fades hidden slots; the buffer is rewritten only at phase changes. Heart shrinks to 0.4. Collider stays the human outline; BodyOutline now lays a deeper-than-wide body along the screen's up. Old winged/beetle/sprite removed. Verified: test_entity_morph, test_entity_growth, test_many_form, test_many_form_contacts, capture frames.
+<!-- SECTION:FINAL_SUMMARY:END -->
