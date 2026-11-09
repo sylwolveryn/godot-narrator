@@ -32,6 +32,11 @@ Godot is found via the `GODOT_BIN` environment variable, else `godot` on PATH. T
   `dev_flags.cfg` (`[overlay] perf=true|false`) next to the save; the game's `DevBridge` autoload re-reads it every
   0.5 s, so a running game switches at once and later starts keep the setting. Once shown, F3 in the game also cycles it.
 
+- **Import assets**: runs `<godot> --headless --path <repo> --import`, Godot's own importer, so every new asset
+  (images, wav/mp3/ogg, fonts, models...) gets its `.import` file and changed ones are re-imported. The message line says
+  how many were generated, or which are still missing. Narration `.webm` / `.m4a` files never get one: Godot has no
+  importer for them and the game reads them itself. Folders with a `.gdignore` are skipped, as Godot does.
+
 - **Map** (task-060): lists `data/maps/*.txt`. Start new game / Continue game start the game on the chosen map as
   `<godot> --path <repo> --max-fps 30 -- --map=<name>` (the game's `MapLoader` reads the user argument and falls back to
   the scene's map). The choice is remembered in `god/settings.json` (gitignored). Map memory in the save is kept per

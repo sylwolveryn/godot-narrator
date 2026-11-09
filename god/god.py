@@ -63,7 +63,8 @@ class GodApp:
         self.btn_cont = ttk.Button(row, text="Continue game", command=self._continue)
         self.btn_reveal = ttk.Button(row, text="Reveal map", command=self._reveal)
         self.btn_fps = ttk.Button(row, text="FPS: off", command=self._toggle_fps)
-        for b in (self.btn_new, self.btn_mods, self.btn_cont, self.btn_reveal, self.btn_fps):
+        self.btn_import = ttk.Button(row, text="Import assets", command=self._import_assets)
+        for b in (self.btn_new, self.btn_mods, self.btn_cont, self.btn_reveal, self.btn_fps, self.btn_import):
             b.pack(side="left", padx=(0, 6))
         self._build_map_pick(row)
         spikes = ttk.Frame(self.win)
@@ -338,6 +339,7 @@ class GodApp:
         self.btn_reveal.config(state="normal" if st.reveal_enabled and not self.busy else "disabled")
         self.btn_new.config(state="disabled" if self.busy else "normal")
         self.btn_mods.config(state="disabled" if self.busy else "normal")
+        self.btn_import.config(state="disabled" if self.busy or not self.ctl.godot else "normal")
         self.btn_fps.config(text="FPS: on" if core.read_perf_overlay(self.fps_flags) else "FPS: off")
         self.message.config(text=st.hint or self.notice)
         self._render_seed()
@@ -438,6 +440,23 @@ class GodApp:
             self.notice = "FPS overlay %s." % ("on" if on else "off")
         except OSError as e:
             self.notice = "Error: %s" % e
+        self._render()
+
+    def _import_assets(self) -> None:
+        """Runs Godot's headless import so every new asset gets its .import file (and changed ones re-import)."""
+        def run() -> None:
+            if not self.ctl.godot:
+                raise RuntimeError("Godot not found: set GODOT_BIN")
+            ok, msg = core.run_import(self.ctl.godot, self.ctl.root)
+            if not ok:
+                raise RuntimeError(msg)
+            raise _Note(msg)
+
+        if self.busy:
+            return
+        missing = len(core.missing_imports(self.ctl.root))
+        self._act_note(run, "")
+        self.notice = "Importing assets (%d .import file(s) missing)..." % missing
         self._render()
 
     def _spike(self, scene: str, label: str) -> None:

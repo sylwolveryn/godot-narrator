@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -604,6 +605,65 @@ class DbServerTests(unittest.TestCase):
         self.assertIn("started by god", core.db_status_text(True, True))
         self.assertEqual(core.db_status_text(False, False), "DB: stopped")
         self.assertIn("SPACETIME_BIN", core.db_status_text(False, False, spacetime_found=False))
+
+
+
+class AssetImport(unittest.TestCase):
+    def _tree(self, d: Path) -> None:
+        (d / "art").mkdir()
+        (d / "art" / "a.png").write_bytes(b"x")
+        (d / "art" / "b.png").write_bytes(b"x")
+        (d / "art" / "b.png.import").write_text("[remap]")
+        (d / "art" / "voice.m4a").write_bytes(b"x")
+        (d / "art" / "notes.txt").write_text("x")
+        (d / "ignored").mkdir()
+        (d / "ignored" / ".gdignore").write_text("")
+        (d / "ignored" / "c.png").write_bytes(b"x")
+        (d / ".godot").mkdir()
+        (d / ".godot" / "d.png").write_bytes(b"x")
+        (d / "Sfx.WAV").write_bytes(b"x")
+
+    def test_missing_imports(self):
+        with tempfile.TemporaryDirectory() as d:
+            self._tree(Path(d))
+            self.assertEqual(core.missing_imports(Path(d)), ["Sfx.WAV", "art/a.png"])
+
+    def test_import_args(self):
+        self.assertEqual(core.import_args("godot", ROOT), ["godot", "--headless", "--path", str(ROOT), "--import"])
+
+    def test_run_import_generates(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            calls = []
+
+            def fake_run(args, **_kw):
+                calls.append(args)
+                for rel in core.missing_imports(root):
+                    (root / (rel + ".import")).write_text("[remap]")
+                return subprocess.CompletedProcess(args, 0, "", "")
+
+            ok, msg = core.run_import("godot", root, run=fake_run)
+            self.assertTrue(ok)
+            self.assertIn("Generated 2", msg)
+            self.assertEqual(calls[0][-1], "--import")
+
+    def test_run_import_reports_leftovers_and_failures(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._tree(root)
+            ok, msg = core.run_import("godot", root, run=lambda a, **k: subprocess.CompletedProcess(a, 0, "", ""))
+            self.assertFalse(ok)
+            self.assertIn("art/a.png", msg)
+            ok, msg = core.run_import("godot", root, run=lambda a, **k: subprocess.CompletedProcess(a, 1, "", ""))
+            self.assertFalse(ok)
+            self.assertIn("exit code 1", msg)
+
+            def boom(a, **k):
+                raise OSError("nope")
+            ok, msg = core.run_import("godot", root, run=boom)
+            self.assertFalse(ok)
+            self.assertIn("nope", msg)
 
 
 if __name__ == "__main__":

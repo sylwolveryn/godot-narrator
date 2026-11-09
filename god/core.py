@@ -290,6 +290,60 @@ def run_reveal_tool(godot: str, root: Path, map_name: Optional[str] = None) -> t
     return r.returncode == 0, line or ("exit code %d" % r.returncode)
 
 
+# --------------------------------------------------------------------------- asset import
+
+# File types Godot's importers turn into resources (each gets a `<file>.import` next to it). Narration .webm / .m4a
+# are not in it: Godot has no importer for them, the game reads those files itself.
+IMPORTABLE_EXTENSIONS = frozenset({
+    ".png", ".jpg", ".jpeg", ".svg", ".webp", ".bmp", ".tga", ".hdr", ".exr", ".dds", ".ktx",
+    ".wav", ".mp3", ".ogg",
+    ".ttf", ".otf", ".woff", ".woff2", ".fnt", ".font",
+    ".glb", ".gltf", ".fbx", ".obj", ".dae", ".blend",
+    ".csv",
+})
+IMPORT_TIMEOUT = 600
+
+
+def missing_imports(root: Path) -> list:
+    """Importable files of the project without their `.import` file (relative paths, sorted). Skips hidden folders
+    (.godot, .git) and folders Godot ignores (a `.gdignore` inside)."""
+    out = []
+    for folder, dirs, files in os.walk(root):
+        if (Path(folder) / ".gdignore").exists():
+            dirs[:] = []
+            continue
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        names = set(files)
+        for f in files:
+            if Path(f).suffix.lower() in IMPORTABLE_EXTENSIONS and f + ".import" not in names:
+                out.append((Path(folder) / f).relative_to(root).as_posix())
+    return sorted(out)
+
+
+def import_args(godot: str, root: Path) -> list:
+    """Headless import of every new or changed asset, then quit (docs/godot_cli.md)."""
+    return [godot, "--headless", "--path", str(root), "--import"]
+
+
+def run_import(godot: str, root: Path, run: Callable = subprocess.run) -> tuple:
+    """Generates the missing .import files with Godot's own importer. Returns (ok, message)."""
+    before = missing_imports(root)
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    try:
+        r = run(import_args(godot, root), capture_output=True, text=True, timeout=IMPORT_TIMEOUT, creationflags=flags)
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, "Could not run Godot: %s" % e
+    after = missing_imports(root)
+    made = len([p for p in before if p not in after])
+    if r.returncode != 0:
+        return False, "Godot import failed (exit code %d)." % r.returncode
+    if after:
+        return False, "Generated %d .import file(s); still missing: %s" % (made, ", ".join(after[:5]) + (" ..." if len(after) > 5 else ""))
+    if not before:
+        return True, "No .import files were missing (changed assets re-imported)."
+    return True, "Generated %d .import file(s)." % made
+
+
 # --------------------------------------------------------------------------- game control
 
 class GameController:
