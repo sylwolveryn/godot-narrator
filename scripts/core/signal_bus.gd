@@ -4,6 +4,10 @@ extends Node
 
 ## Emitted by RunManager when a new run begins.
 signal run_started(run_index: int)
+## Emitted by RunManager right before run_started when the world goes back to the map file's picture: the first run of
+## a launch only (a death keeps the world as it was left, task-093), or every run when RunConfig.keep_world_on_death is
+## off. Dirt, large objects, pads, pushables, cannons, enemies and their remains restore on it.
+signal world_reset
 ## Emitted by RunManager when the current run ends.
 signal run_ended(cause: StringName)
 ## Emitted by gameplay (e.g. hazards) to ask RunManager to end the current run.
@@ -166,3 +170,15 @@ signal map_fully_revealed(map_id: StringName)
 ## Emitted by Interactables when the brain uses the interact button with nothing in reach; LanguageProgress answers by
 ## selecting the next unlocked language.
 signal language_cycle_requested
+
+## Death marks (task-093). Emitted by DeathMarks when a death sprayed its stain: `cells` the cells that got stain (their
+## strength is DeathMarks.stain_at), `total_tiles` the stained-tile count of the launch so far.
+signal death_stained(map_id: StringName, cells: Array[Vector2i], total_tiles: int)
+## Emitted by DeathMarks when the stains of the current map were (re)loaded: a map build shows that map's stains.
+signal death_stains_reset(map_id: StringName)
+## Emitted by DeathMarks when a death threw an invulnerability item out of `from_position` onto `cell`.
+signal invulnerability_item_dropped(cell: Vector2i, from_position: Vector3)
+## Emitted by DeathMarks when the player picked the item in `cell` up (Invulnerability.grant follows).
+signal invulnerability_item_taken(cell: Vector2i)
+## Emitted by Invulnerability when the time was granted (`active` true, `remaining` seconds) and when it ran out.
+signal invulnerability_changed(active: bool, remaining: float)

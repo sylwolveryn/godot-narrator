@@ -17,7 +17,8 @@ extends Node
 ## block_wait_seconds tries another way). Hazards (spikes, corruption) are harmless to enemies; black holes are not
 ## blocked: an enemy arriving on one (EnemyRemains.is_black_hole) is destroyed with cause CAUSE_BLACK_HOLE.
 ## Touching the player (contact_radius + body radius) while the run is PLAYING ends the run once:
-## SignalBus.hazard_lethal + SignalBus.run_end_requested(&"enemy_<kind>").
+## SignalBus.hazard_lethal + SignalBus.run_end_requested(&"enemy_<kind>"). While the player is invulnerable (task-093) a
+## touching enemy (lethal or not) is destroyed instead, cause `invulnerable_cause`, and leaves its normal remains.
 ## Destructibles kind KIND: a cannon ball entering a cell an enemy holds destroys it. Every destruction emits
 ## SignalBus.destructible_destroyed(KIND, ...) and SignalBus.enemy_destroyed(kind, cell, ...) (remains hook in there).
 ## Per-kind numbers: EnemyConfig, overridden by the DB table enemy_def. EnemyView draws the state read-only.
@@ -44,6 +45,10 @@ const WALKABLE: Array[StringName] = [MapLegend.FLOOR, MapLegend.SPAWN, MapLegend
 @export var remains: EnemyRemains
 ## Optional: per-kind numbers from the DB table enemy_def.
 @export var database: GameDatabase
+## Optional (task-093): while it is active an enemy touching the player is destroyed instead of the player.
+@export var invulnerability: Invulnerability
+## Cause of an enemy destroyed by touching the invulnerable player (DeathMarksConfig.enemy_kill_cause in the scene).
+@export var invulnerable_cause: StringName = &"invulnerable"
 
 ## Seedable (tests): wanderer rolls, crawler waits.
 var rng := RandomNumberGenerator.new()
@@ -89,7 +94,9 @@ func _ready() -> void:
 		database.tables_loaded.connect(_on_tables_loaded)
 	if destructibles != null:
 		destructibles.register(KIND, is_enemy_at, destroy)
-	SignalBus.run_started.connect(func(_i: int) -> void: reset())
+	SignalBus.world_reset.connect(reset)
+	# A death keeps the enemies where they are (task-093); the next run may be ended by contact again.
+	SignalBus.run_started.connect(func(_i: int) -> void: _fired = false)
 	if map_loader != null:
 		map_loader.map_built.connect(func(_m: MapData) -> void: reset())
 		if not map_loader.data.is_empty():
@@ -468,12 +475,16 @@ func _check_contact() -> void:
 	var p: Vector3 = player.global_position
 	var reach: float = resolved.contact_radius + (player_config.body_radius if player_config != null else 0.0)
 	var reach_sq: float = reach * reach
+	var shielded: bool = invulnerability != null and invulnerability.is_active()
 	for i in _def.size():
-		if not _alive[i] or not _def[i].lethal:
+		if not _alive[i] or (not _def[i].lethal and not shielded):
 			continue
 		var dx: float = _pos[i].x - p.x
 		var dz: float = _pos[i].z - p.z
 		if dx * dx + dz * dz < reach_sq:
+			if shielded:
+				_kill(i, invulnerable_cause)
+				continue
 			_fired = true
 			SignalBus.hazard_lethal.emit(_def[i].end_cause(), _def[i].color)
 			SignalBus.run_end_requested.emit(_def[i].end_cause())

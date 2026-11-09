@@ -459,11 +459,40 @@ func _build() -> void:
 	ting.set("library", library)
 	_add(root, ting)
 
+	# Death marks (task-093): a death keeps the world and stains it; enough stain throws an invulnerability item (⚛)
+	# whose time makes hazards harmless and enemies die on contact; the view draws the stains, the item and the shield.
+	var marks_cfg: DeathMarksConfig = load(CFG + "death_marks_config.tres")
+	var invulnerable: Node = load("res://scripts/core/invulnerability.gd").new()
+	invulnerable.name = "Invulnerability"
+	invulnerable.set("run_manager", runs)
+	_add(root, invulnerable)
+	enemies.set("invulnerability", invulnerable)
+	enemies.set("invulnerable_cause", marks_cfg.enemy_kill_cause)
+	var marks: Node = load("res://scripts/world/death_marks.gd").new()
+	marks.name = "DeathMarks"
+	marks.set("config", marks_cfg)
+	marks.set("map_loader", loader)
+	marks.set("player", player)
+	marks.set("invulnerability", invulnerable)
+	marks.set("run_manager", runs)
+	marks.set("pushables", pushables)
+	_add(root, marks)
+	var marks_view: Node3D = load("res://scripts/rendering/death_marks_view.gd").new()
+	marks_view.name = "DeathMarksView"
+	marks_view.set("config", marks_cfg)
+	marks_view.set("marks", marks)
+	marks_view.set("map_loader", loader)
+	marks_view.set("player", player)
+	marks_view.set("invulnerability", invulnerable)
+	marks_view.set("surface_material", load(GLYPH_MATERIAL))
+	_add(root, marks_view)
+
 	var hazards: Node = load("res://scripts/world/hazard_monitor.gd").new()
 	hazards.name = "HazardMonitor"
 	hazards.set("map_loader", loader)
 	hazards.set("player", player)
 	hazards.set("run_manager", runs)
+	hazards.set("invulnerability", invulnerable)
 	_add(root, hazards)
 
 	# Origin trial monitor (task-041): evaluates the demonic / ai / angelic trials from existing signals.

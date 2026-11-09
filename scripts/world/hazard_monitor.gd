@@ -3,7 +3,7 @@ extends Node
 ## Watches the player against the hazard cells of the loaded map and asks for a run end.
 ##  - Spikes (lethal_on_touch): touching ends the run at once.
 ##  - Corrupting glyphs: erosion rises while inside, recovers outside, ends the run at the threshold.
-## Hazards are lethal whether or not they have been revealed. Only acts while the run is PLAYING
+## Hazards are lethal whether or not they have been revealed, unless the player is invulnerable (task-093). Only acts while the run is PLAYING
 ## and requests the end at most once per run. Erosion is kept in RunState (per run) and announced
 ## upward through SignalBus.erosion_changed; presentation never writes it.
 
@@ -11,6 +11,8 @@ extends Node
 @export var player: Player
 ## Read-only source of the run phase and the per-run state.
 @export var run_manager: RunManager
+## Optional (task-093): while it is active spikes and corruption do not hurt (erosion recovers as if outside).
+@export var invulnerability: Invulnerability
 
 ## Set once the end was requested, so a run can never be ended twice by hazards.
 var _fired: bool = false
@@ -29,6 +31,8 @@ func _physics_process(delta: float) -> void:
 	if run_manager.phase != RunManager.Phase.PLAYING:
 		return
 	var def: HazardDefinition = hazard_at(player.global_position)
+	if invulnerability != null and invulnerability.is_active():
+		def = null
 	if def != null and def.lethal_on_touch:
 		_kill(def)
 		return

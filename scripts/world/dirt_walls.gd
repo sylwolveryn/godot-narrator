@@ -3,7 +3,8 @@ extends Node3D
 ## Data layer of the dirt walls `D` (task-070): the only writer of the dirt state. A dirt cell blocks movement, sight and
 ## light like a wall (its type is MapLegend.DIRT in MapData; light_blocking_types holds it) until it is destroyed; then
 ## it is floor. The ONE entry point is `destroy(cell, cause)`, reached through SignalBus.dirt_destroy_requested (the
-## player eats a cell it pushes into; later a cannon ball). Destroyed cells become dirt again at every run start.
+## player eats a cell it pushes into; later a cannon ball). Destroyed cells become dirt again on SignalBus.world_reset
+## (the first run; a death keeps the world, task-093).
 ##
 ## Scales to large maps (a 200x200 map of ~39,000 D cells): collision lives in strips (one row of a square chunk of
 ## DirtConfig.chunk_size), one StaticBody3D per strip with one box per horizontal run of dirt in it; destroying a cell
@@ -42,7 +43,7 @@ func _ready() -> void:
 	SignalBus.dirt_destroy_requested.connect(destroy)
 	if destructibles != null:
 		destructibles.register(KIND, is_dirt, _destroy_requested)
-	SignalBus.run_started.connect(func(_i: int) -> void: restore())
+	SignalBus.world_reset.connect(restore)
 	if map_loader != null:
 		map_loader.map_built.connect(_on_map_built)
 		if not map_loader.data.is_empty():

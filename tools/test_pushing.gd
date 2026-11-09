@@ -169,10 +169,12 @@ func _main_scene() -> void:
 	_check(not pushables.call("try_push", id0, Vector2i(1, 0)), "try_push refuses the single glyph")
 	prog.call("set_form", EntityForm.GROWN)
 
-	# --- reset at run start ---
+	# --- a death keeps pushed objects (task-093); the world reset puts them back ---
 	_check(pushables.call("try_push", id0, Vector2i(1, 0)) and pushables.call("cell_of", id0) == Vector2i(7, 3), "grown API push")
 	bus.emit_signal("run_started", 99)
-	_check(pushables.call("cell_of", id0) == Vector2i(6, 3) and _body_cell(loader, id0, pushables) == Vector2i(6, 3), "objects return to their map cells at run start")
+	_check(pushables.call("cell_of", id0) == Vector2i(7, 3), "a new run after a death keeps the pushed object")
+	bus.emit_signal("world_reset")
+	_check(pushables.call("cell_of", id0) == Vector2i(6, 3) and _body_cell(loader, id0, pushables) == Vector2i(6, 3), "objects return to their map cells on world_reset")
 	_check(view.call("position_of", id0).is_equal_approx(loader.cell_to_world(Vector2i(6, 3))), "the drawn instance resets too")
 	await _wait(0.4)
 

@@ -11,7 +11,7 @@ extends Node
 ##  - Black holes: placed in the map file (legend MapLegend.black_hole_char, `O`) or formed by hunters. Harmless and
 ##    walkable for the player (no pull, no damage); EnemySystem destroys any enemy arriving on one (cause black_hole),
 ##    which leaves its normal remains (diamonds, or another black hole for a hunter).
-## Both persist for the run only: at every run start (and map build) the diamonds are gone and the black holes are the
+## Both persist until SignalBus.world_reset (the first run; a death keeps them, task-093) or a map build: the diamonds are gone and the black holes are the
 ## map file's again (SignalBus.remains_reset). RemainsView draws them read-only.
 
 @export var config: RemainsConfig
@@ -40,7 +40,7 @@ func _ready() -> void:
 		config = RemainsConfig.new()
 	rng.randomize()
 	SignalBus.enemy_destroyed.connect(_on_enemy_destroyed)
-	SignalBus.run_started.connect(func(_i: int) -> void: reset())
+	SignalBus.world_reset.connect(reset)
 	if map_loader != null:
 		map_loader.map_built.connect(func(_m: MapData) -> void: reset())
 		if not map_loader.data.is_empty():
@@ -133,6 +133,14 @@ func _physics_process(_delta: float) -> void:
 	if _diamonds.is_empty() or player == null or map_loader == null:
 		return
 	if run_manager != null and run_manager.phase != RunManager.Phase.PLAYING:
+		return
+	if player.has_method(&"has_grown_body") and bool(player.call(&"has_grown_body")):
+		# Task-094: the grown body picks up every diamond its outline covers.
+		var outline: BodyOutline = player.call(&"body_outline")
+		var s: float = map_loader.world_config.cell_size
+		for cell: Vector2i in _diamonds.keys():
+			if outline.distance_to_rect(Rect2(Vector2(cell) * s, Vector2(s, s))) <= 0.0:
+				collect(cell)
 		return
 	collect(map_loader.world_to_cell(player.global_position))
 

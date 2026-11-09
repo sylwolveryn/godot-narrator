@@ -14,7 +14,7 @@ var _destroyed: Array[LargeObjectPlacement] = []
 
 
 func _ready() -> void:
-	SignalBus.run_started.connect(func(_i: int) -> void: restore())
+	SignalBus.world_reset.connect(restore)
 	if map_loader != null:
 		map_loader.map_built.connect(_on_map_built)
 		if not map_loader.data.is_empty():
@@ -45,7 +45,7 @@ func destroy(cell: Vector2i, cause: StringName) -> bool:
 	return true
 
 
-## Every destroyed prop stands again (run start).
+## Every destroyed prop stands again (SignalBus.world_reset).
 func restore() -> void:
 	if map_loader == null:
 		return

@@ -139,6 +139,14 @@ uniform vec4 wave_style = vec4(0.12, 0.6, 0.55, 0.6);   // x rainbow phase per w
 uniform vec4 pulse_geo = vec4(0.0);      // xz centre, z ring radius, w band half width (world units)
 uniform vec3 pulse_style = vec3(0.0, 1.0, 0.8);   // x strength, y rainbow turns around the ring, z turns per second
 // Brain aura (task-091, GlyphWorldView): a soft glow disc around the brain. w 0 = off, no cost.
+// Death stains (task-093, DeathMarksView): one texel per map cell, r = stain strength 0..1, g = purple (0) .. red (1)
+// bias. stain_style: x 1 = any stain on the map (0 = no cost), y how much the stain takes a glyph over, z glyph density
+// gain, w shimmer cycles per second.
+uniform sampler2D stain_map : hint_default_black, filter_nearest, repeat_disable;
+uniform vec4 stain_style = vec4(0.0, 0.85, 0.35, 0.12);
+uniform vec3 stain_purple = vec3(0.62, 0.18, 1.0);
+uniform vec3 stain_red = vec3(1.0, 0.12, 0.2);
+
 uniform vec4 aura_geo = vec4(0.0);       // xz centre, z radius (world units), w strength
 uniform vec3 aura_color = vec3(0.55, 0.4, 1.0);
 
@@ -399,6 +407,24 @@ void fragment() {
 	b += edge * edge_gain * (lum_l + edge_ambient);
 	b *= min(vis, 1.0) * mix(1.0, memory_density, mem);
 	b = max(b, memory_floor * mem * (t == T_FLOOR ? 0.8 : 1.0));
+	// Death stain: a spray over the glyphs of the cell (more glyphs taken the stronger it is), purple to red.
+	float stain_k = 0.0;
+	vec3 stain_hue = vec3(0.0);
+	if (stain_style.x > 0.5) {
+		vec2 sp = pc.xz / cs;
+		if (!top) {
+			sp -= n.xz * 0.25;             // a wall face reads its own wall cell
+		}
+		ivec2 st_c = clamp(ivec2(floor(sp)), ivec2(0), textureSize(stain_map, 0) - 1);
+		vec4 st = texelFetch(stain_map, st_c, 0);
+		if (st.r > 0.0) {
+			float hs = hash12(cell * 2.17 + vec2(31.7, float(t) * 3.1));
+			stain_k = st.r * smoothstep(hs - 0.2, hs + 0.1, st.r * 1.25) * stain_style.y;
+			float hk = clamp(st.g * 0.5 + fract(hs * 7.31) * 0.5 + 0.25 * sin(TIME * TAU * stain_style.w + hs * TAU), 0.0, 1.0);
+			stain_hue = mix(stain_purple, stain_red, hk);
+			b += stain_k * stain_style.z;
+		}
+	}
 	vec3 wave_c = vec3(0.0);
 	if (wave_count > 0) {
 		for (int i = 0; i < MAX_WAVES; i++) {
@@ -492,6 +518,9 @@ void fragment() {
 	float grey = dot(c, vec3(0.3, 0.59, 0.11));
 	c = mix(vec3(grey), c, mix(memory_saturation, 1.0, seen)) * mix(memory_dim, 1.0, seen) * mix(memory_tint, vec3(1.0), seen);
 	c += glint_color * m.b * cov;
+	if (stain_k > 0.0) {
+		c = mix(c, stain_hue * cov * 1.1, min(stain_k, 1.0)) + stain_hue * (0.06 * stain_k * grow);
+	}
 	// Colour waves: the glyphs in a band take the wave's (saturated) hue and brighten; a faint fill lights the cell.
 	float wave_k = max(wave_c.r, max(wave_c.g, wave_c.b));
 	if (wave_k > 0.0) {

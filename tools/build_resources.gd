@@ -88,6 +88,8 @@ func _init() -> void:
 	# Enemies (task-075) and their remains (task-076).
 	ok = _save(_enemy_config(), "enemy_config.tres") and ok
 	ok = _save(RemainsConfig.new(), "remains_config.tres") and ok
+	# Death marks (task-093): stains, the invulnerability item and the shield aura.
+	ok = _save(DeathMarksConfig.new(), "death_marks_config.tres") and ok
 
 	quit(0 if ok else 1)
 

@@ -5,10 +5,11 @@ extends Node3D
 ## Sokoban style, one cell at a time along a world axis. When the entity presses against an object (the movement input
 ## points at it, it touches the collision box) for `push_hold_time`, the object slides one cell if the target cell is
 ## allowed (PushConfig.allowed_target_types), holds no other object and is not the entity's cell. The single glyph never
-## pushes. Objects return to their map cells at every run start (no persistence).
+## pushes. Objects return to their map cells on SignalBus.world_reset (the first run; a
+## death keeps them where they were pushed, task-093).
 ## Speaks through SignalBus.object_moved and its own `objects_reset`; the presentation (ObjectGlyphView) only listens.
 
-## Emitted after the objects were (re)placed at their map cells: on a map build and on every run start.
+## Emitted after the objects were (re)placed at their map cells: on a map build and on SignalBus.world_reset.
 signal objects_reset
 
 @export var config: PushConfig
@@ -32,7 +33,7 @@ var _hold_key: Vector3i = Vector3i(-1, 0, 0)
 func _ready() -> void:
 	if config == null:
 		config = PushConfig.new()
-	SignalBus.run_started.connect(_on_run_started)
+	SignalBus.world_reset.connect(reset)
 	if map_loader != null:
 		map_loader.map_built.connect(_on_map_built)
 		if not map_loader.data.is_empty():
@@ -161,10 +162,6 @@ func _on_map_built(map: MapData) -> void:
 		body.position = _body_position(_home[i])
 		_bodies.append(body)
 	objects_reset.emit()
-
-
-func _on_run_started(_run_index: int) -> void:
-	reset()
 
 
 func _body_position(cell: Vector2i) -> Vector3:

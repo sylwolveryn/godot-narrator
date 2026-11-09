@@ -7,8 +7,8 @@ extends SceneTree
 ##    normal remains; the hole stays;
 ##  - in the main scene: walking over a diamond collects it, the saved counter (PersistentProgress.diamonds) rises and
 ##    is in the save file, SignalBus.diamond_collected, narration DIAMOND_FOUND, the pickup sound plays; the player walks
-##    over a black hole unharmed; a cannon ball on a hunter makes a black hole, on a crawler diamonds; a new run puts
-##    diamonds and black holes back to the map file's.
+##    over a black hole unharmed; a cannon ball on a hunter makes a black hole, on a crawler diamonds; a death keeps
+##    them, SignalBus.world_reset puts diamonds and black holes back to the map file's.
 ## Usage: godot --headless --max-fps 30 --path . -s tools/test_remains.gd
 
 const Support := preload("res://tools/test_support.gd")
@@ -268,15 +268,19 @@ func _check_scene() -> void:
 	_check(rem.call("diamond_count") > diamonds_before, "a cannon ball on the crawler bursts it into diamonds")
 	await _frames(40)
 	_check(main.get_node("RemainsView").call("drawn") > 0, "remains are drawn")
-	# A new run: diamonds gone, holes back to the map's.
+	# A death keeps the remains (task-093); the world reset puts them back to the map's.
+	var kept: int = rem.call("diamond_count")
+	var holes_kept: int = rem.call("holes").size()
 	runs.call("end_run", &"test")
 	guard = 0.0
 	await _wait(0.1)
 	while runs.get("phase") != PHASE_PLAYING and guard < 3.0:
 		await _wait(0.1)
 		guard += 0.1
-	_check(rem.call("diamond_count") == 0, "a new run clears the diamonds")
-	_check(rem.call("holes").size() == 1 and rem.call("is_black_hole", Vector2i(4, 4)), "a new run keeps only the map's black hole")
+	_check(rem.call("diamond_count") == kept and rem.call("holes").size() == holes_kept, "a new run after a death keeps the remains")
+	root.get_node("SignalBus").emit_signal("world_reset")
+	_check(rem.call("diamond_count") == 0, "world_reset clears the diamonds")
+	_check(rem.call("holes").size() == 1 and rem.call("is_black_hole", Vector2i(4, 4)), "world_reset keeps only the map's black hole")
 	_check(save.progress.diamonds == before + 1, "the collected counter persists")
 	_done = true
 	main.queue_free()

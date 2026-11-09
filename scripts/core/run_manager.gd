@@ -29,13 +29,17 @@ func _process(delta: float) -> void:
 		state.elapsed += delta
 
 
-## Starts a run with a brand new RunState.
+## Starts a run with a brand new RunState. The world resets only on the first run (or every run without
+## RunConfig.keep_world_on_death).
 func start_run() -> void:
+	var fresh_world: bool = run_count == 0 or not config.keep_world_on_death
 	state = RunState.new()
 	state.run_index = run_count
 	state.input_scheme = input_scheme
 	run_count += 1
 	phase = Phase.PLAYING
+	if fresh_world:
+		SignalBus.world_reset.emit()
 	SignalBus.run_started.emit(state.run_index)
 
 

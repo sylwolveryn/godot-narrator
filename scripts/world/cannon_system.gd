@@ -7,7 +7,7 @@ extends Node
 ## stands behind it; otherwise it keeps its last facing. Firing (through the interact hold, see Cannon) launches a ball
 ## from the muzzle (footprint edge along the facing + a margin) in a random direction within the cone around the facing,
 ## sized by the footprint, into CannonBalls; SignalBus.cannon_fired announces it (boom, muzzle flash).
-## The run start puts every cannon back to the start facing.
+## SignalBus.world_reset puts every cannon back to the start facing.
 ## Many form (task-077): while the entity form is CannonConfig.many_form (SignalBus.entity_form_changed), autofire is
 ## many_rate_multiplier times faster and each shot launches many_balls_min..many_balls_max balls (random); the first
 ## such shot fires the narration event MANY_FIRED_CANNON.
@@ -32,7 +32,7 @@ func _ready() -> void:
 	if config == null:
 		config = CannonConfig.new()
 	rng.randomize()
-	SignalBus.run_started.connect(func(_i: int) -> void: reset_facing())
+	SignalBus.world_reset.connect(reset_facing)
 	SignalBus.entity_form_changed.connect(_on_entity_form_changed)
 	if map_loader != null:
 		map_loader.map_built.connect(_on_map_built)
@@ -102,7 +102,9 @@ func _physics_process(delta: float) -> void:
 	var reach: int = interactables.config.default_reach if interactables != null and interactables.config != null else 1
 	var step: float = deg_to_rad(config.turn_speed_degrees) * delta
 	for c in _cannons:
-		if c.in_reach(cell, reach):
+		# Task-094: the same reach as the interact (the grown body reaches with its outline, not its heart cell).
+		var near: bool = interactables.player_reaches(c) if interactables != null and interactables.config != null else c.in_reach(cell, reach)
+		if near:
 			var away: Vector3 = map_loader.rect_to_world(c.footprint) - player.global_position
 			if Vector2(away.x, away.z).length_squared() > 0.0:
 				c.target_facing = atan2(away.z, away.x)

@@ -428,7 +428,7 @@ func _check_scene() -> void:
 			hit = d
 	_check(not hit.is_empty() and hit[2] == CAUSE_CANNON, "destructible_destroyed(enemy, cannon): %s" % [_destroyed])
 	_check(not sys.is_enemy_at(target), "the destroyed enemy holds no cell")
-	# Touch the hunter: the run ends with enemy_hunter, the next run brings the crawler back.
+	# Touch the hunter: the run ends with enemy_hunter; the next run keeps the crawler dead, world_reset brings it back.
 	_ended.clear()
 	var ended_cause: Array[StringName] = []
 	root.get_node("SignalBus").connect("run_ended", func(c: StringName) -> void: ended_cause.append(c))
@@ -442,7 +442,9 @@ func _check_scene() -> void:
 	while runs.get("phase") != PHASE_PLAYING and guard < 3.0:
 		await _wait(0.1)
 		guard += 0.1
-	_check(sys.alive_count() == 2 and sys.cell_of(0) == Vector2i(10, 2), "the new run brings every enemy back to its spawn")
+	_check(sys.alive_count() == 1, "a death keeps the destroyed crawler dead (task-093): %d alive" % sys.alive_count())
+	root.get_node("SignalBus").emit_signal("world_reset")
+	_check(sys.alive_count() == 2 and sys.cell_of(0) == Vector2i(10, 2), "world_reset brings every enemy back to its spawn")
 	_check(main.get_node("EnemyView").call("drawn") >= 0, "enemy view runs")
 	_done = true
 	main.queue_free()

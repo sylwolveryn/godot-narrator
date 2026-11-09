@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="DeathMarksConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/world/death_marks_config.gd" id="1_wfkd4"]
+
+[resource]
+script = ExtResource("1_wfkd4")
+ring_radii = PackedFloat32Array(0.62, 0.74)
+ring_tilts = PackedFloat32Array(62, -62)
+ring_speeds = PackedFloat32Array(75, -95)
+glyph_font_names = PackedStringArray("Segoe UI Symbol", "Segoe UI", "DejaVu Sans", "monospace")

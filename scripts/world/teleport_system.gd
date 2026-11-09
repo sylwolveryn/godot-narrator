@@ -40,7 +40,7 @@ func _ready() -> void:
 	rng.randomize()
 	SignalBus.run_started.connect(_on_run_changed)
 	SignalBus.run_ended.connect(_on_run_changed)
-	SignalBus.run_started.connect(func(_i: int) -> void: restore_pads())
+	SignalBus.world_reset.connect(restore_pads)
 	if destructibles != null:
 		destructibles.register(KIND, func(cell: Vector2i) -> bool: return pad_at(cell) >= 0, destroy_pad)
 
@@ -67,7 +67,7 @@ func destroy_pad(cell: Vector2i, cause: StringName) -> bool:
 	return true
 
 
-## Every destroyed pad works again (run start).
+## Every destroyed pad works again (SignalBus.world_reset).
 func restore_pads() -> void:
 	if map_loader == null:
 		return
