@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-09T09:53:00Z'
+updated_date: '2026-11-09T10:25:00Z'
 labels:
   - rendering
   - art
@@ -22,10 +23,10 @@ The gargoyle fountain (G) is one flat Y-billboard of ASCII art standing on its f
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The basin is anchored to the footprint cells and does not drift against the floor at any camera yaw
-- [ ] #2 The statue keeps its place over the basin centre at any camera yaw and turns with the camera (pre-baked view angles)
-- [ ] #3 The look follows the concept: dark winged bust, glowing red eyes, luminous water falling into a glowing basin
-- [ ] #4 Runtime cost stays in the potato budget (no per-frame text rebuilds beyond the animated layer, a handful of draw calls per fountain)
-- [ ] #5 Reveal, memory tint, destruction and restore still work; existing large-object tests pass
-- [ ] #6 Leftover polish ideas are recorded in a 'Polishing UI' task
+- [x] #1 The basin is anchored to the footprint cells and does not drift against the floor at any camera yaw
+- [x] #2 The statue keeps its place over the basin centre at any camera yaw and turns with the camera (pre-baked view angles)
+- [x] #3 The look follows the concept: dark winged bust, glowing red eyes, luminous water falling into a glowing basin
+- [x] #4 Runtime cost stays in the potato budget (no per-frame text rebuilds beyond the animated layer, a handful of draw calls per fountain)
+- [x] #5 Reveal, memory tint, destruction and restore still work; existing large-object tests pass
+- [x] #6 Leftover polish ideas are recorded in a 'Polishing UI' task
 <!-- AC:END -->
