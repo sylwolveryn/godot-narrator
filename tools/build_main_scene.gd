@@ -491,6 +491,12 @@ func _build() -> void:
 	_add(root, crafting)
 	menu.set("crafting", crafting)
 
+	# Brain form (task-091): the 2x2 glyph block over the player.
+	var brain_view: Node3D = load("res://scripts/rendering/brain_view.gd").new()
+	brain_view.name = "BrainView"
+	brain_view.set("player", player)
+	_add(root, brain_view)
+
 	var packed := PackedScene.new()
 	var pack_err := packed.pack(root)
 	root.free()

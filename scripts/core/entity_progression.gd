@@ -35,17 +35,29 @@ func is_unlocked() -> bool:
 	return save_service != null and save_service.progress.entity_unlocked
 
 
-## The active form; SINGLE until the entity is unlocked.
+## True once the brain form is unlocked (task-091, persisted).
+func is_brain_unlocked() -> bool:
+	return save_service != null and save_service.progress.brain_unlocked
+
+
+## The active form; SINGLE until the entity (or, for the brain, the brain) is unlocked.
 func current_form() -> StringName:
-	if not is_unlocked():
+	if save_service == null:
 		return EntityForm.SINGLE
-	return StringName(save_service.progress.entity_form)
+	var stored := StringName(save_service.progress.entity_form)
+	if stored == EntityForm.BRAIN:
+		return stored if is_brain_unlocked() else EntityForm.SINGLE
+	return stored if is_unlocked() else EntityForm.SINGLE
 
 
 ## Switches the active form (the in-world menu, task-018, calls this). Returns false before the unlock or for an
 ## unknown form. Listeners get entity_form_changed with animate = true.
 func set_form(form: StringName) -> bool:
-	if not is_unlocked() or not EntityForm.is_valid(form):
+	if not EntityForm.is_valid(form):
+		return false
+	if form == EntityForm.BRAIN and not is_brain_unlocked():
+		return false
+	if form == EntityForm.GROWN and not is_unlocked():
 		return false
 	if form == current_form():
 		return true
@@ -86,22 +98,40 @@ func fits(form: StringName, at: Variant = null) -> bool:
 
 
 func _check_unlock() -> void:
-	if save_service == null or save_service.progress.entity_unlocked:
+	if save_service == null:
+		return
+	_check_brain()
+	if save_service.progress.entity_unlocked:
 		return
 	if save_service.progress.death_count >= config.growth_unlock_deaths:
 		save_service.unlock_entity()
 		SignalBus.entity_unlocked.emit()
 
 
-## The in-world menu (task-018) asks for the other form; presentation only requested it.
-func _on_menu_action(action: StringName) -> void:
-	if action != MenuItemDef.ACTION_SWITCH_FORM:
+## Task-091: the brain unlocks once enough maps were discovered completely and enough teleport trips made.
+func _check_brain() -> void:
+	var p: PersistentProgress = save_service.progress
+	if p.brain_unlocked:
 		return
-	set_form(EntityForm.SINGLE if current_form() == EntityForm.GROWN else EntityForm.GROWN)
+	if p.complete_maps.size() >= config.brain_maps_needed and p.teleport_count >= config.brain_teleports_needed:
+		save_service.unlock_brain()
+		SignalBus.narration_event.emit(NarrationEvents.BRAIN_UNLOCKED)
+
+
+## The in-world menu (task-018) asks for another form; presentation only requested it. The brain item (task-091)
+## toggles between the brain and the single glyph.
+func _on_menu_action(action: StringName) -> void:
+	if action == MenuItemDef.ACTION_SWITCH_FORM:
+		set_form(EntityForm.SINGLE if current_form() == EntityForm.GROWN else EntityForm.GROWN)
+	elif action == MenuItemDef.ACTION_BRAIN:
+		set_form(EntityForm.SINGLE if current_form() == EntityForm.BRAIN else EntityForm.BRAIN)
 
 
 func _on_run_started(_run_index: int) -> void:
 	if not is_unlocked():
+		# The brain (task-091) needs no entity unlock: restore it on its own.
+		if is_brain_unlocked():
+			SignalBus.entity_form_changed.emit(current_form(), false)
 		return
 	# The grow moment waits for a run whose spawn has room for the whole body (task-090).
 	var spawn: Variant = map_loader.spawn_position if map_loader != null else null

@@ -161,3 +161,8 @@ signal menu_new_items_changed(pending: bool)
 signal research_requested
 ## Emitted by MenuController when a known recipe is confirmed in the crafting page; Crafting answers.
 signal craft_requested(id: StringName)
+## Brain form (task-091). Emitted by MapReveal when every drawn cell of a map is remembered (first time per launch).
+signal map_fully_revealed(map_id: StringName)
+## Emitted by Interactables when the brain uses the interact button with nothing in reach; LanguageProgress answers by
+## selecting the next unlocked language.
+signal language_cycle_requested

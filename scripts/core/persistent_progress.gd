@@ -61,3 +61,8 @@ extends Resource
 @export var spent: Dictionary = {}
 @export var known_crafts: PackedStringArray = PackedStringArray()
 @export var crafted: Dictionary = {}
+## Brain form (task-091). Written ONLY by SaveService. Teleport trips made ever; map ids discovered completely; true
+## once the brain form has been unlocked (never reverts).
+@export var teleport_count: int = 0
+@export var complete_maps: PackedStringArray = PackedStringArray()
+@export var brain_unlocked: bool = false

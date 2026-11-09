@@ -21,6 +21,9 @@ extends Node
 ## Emitted when cells were seen for the first time this run (the presentation re-picks its static lights).
 signal cells_seen
 
+## Maps already announced as fully discovered (task-091), so the announcement is made once.
+var _complete_announced: Dictionary[StringName, bool] = {}
+
 enum CellState { HIDDEN, MEMORY, SEEN }
 
 ## Largest brightness the mask can hold (r is stored divided by this).
@@ -176,6 +179,7 @@ func reveal_all() -> void:
 	cells_seen.emit()
 	if not fresh.is_empty():
 		SignalBus.cells_revealed.emit(map_loader.map_id, fresh)
+		_check_complete()
 
 
 ## Reveals every cell whose centre is within the reveal radius of a world position.
@@ -211,6 +215,7 @@ func reveal_around(world_position: Vector3) -> void:
 		cells_seen.emit()
 	if not fresh.is_empty():
 		SignalBus.cells_revealed.emit(map_loader.map_id, fresh)
+		_check_complete()
 
 
 func _on_run_started(_run_index: int) -> void:
@@ -258,6 +263,19 @@ func _on_settings_changed() -> void:
 ## A dirt cell opened (task-070): what lies behind it may be in sight now, so the next physics step reveals again.
 func _on_dirt_destroyed(_map_id: StringName, _cell: Vector2i, _cause: StringName) -> void:
 	_last_position = Vector3.INF
+
+
+## Task-091: when every drawn cell of the map is remembered, SignalBus.map_fully_revealed (once per map per launch).
+func _check_complete() -> void:
+	if map_loader == null or _complete_announced.has(map_loader.map_id):
+		return
+	if _remembered.size() < map_loader.drawn_cells.size():
+		return
+	for cell: Vector2i in map_loader.drawn_cells:
+		if not _remembered.has(cell):
+			return
+	_complete_announced[map_loader.map_id] = true
+	SignalBus.map_fully_revealed.emit(map_loader.map_id)
 
 
 ## Announces, once per run, the first revealed cell of each type that has a narration event.

@@ -356,7 +356,8 @@ func _step_death(delta: float) -> void:
 
 
 func _write_player(level: float) -> void:
-	if not _player_visible or player == null:
+	# Task-091: the brain block (BrainView) replaces the single glyph.
+	if not _player_visible or player == null or _form == EntityForm.BRAIN:
 		_multimesh.set_instance_color(PLAYER_INSTANCE, _clear_color)
 		return
 	var pos: Vector3 = player.global_position + Vector3.UP * player_config.glyph_height

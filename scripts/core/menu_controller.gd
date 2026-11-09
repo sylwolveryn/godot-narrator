@@ -400,6 +400,8 @@ func _available_items() -> Array[MenuItemDef]:
 			continue
 		if item.requires_consumed and (save_service == null or not save_service.any_consumed()):
 			continue
+		if item.requires_brain and (entity == null or not entity.is_brain_unlocked()):
+			continue
 		out.append(item)
 	return out
 

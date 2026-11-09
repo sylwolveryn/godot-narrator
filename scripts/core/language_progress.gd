@@ -53,6 +53,7 @@ func _ready() -> void:
 	SignalBus.language_list_requested.connect(_on_list_requested)
 	SignalBus.language_select_requested.connect(select)
 	SignalBus.beat_repeated.connect(_on_beat_repeated)
+	SignalBus.language_cycle_requested.connect(cycle)
 	if database != null:
 		database.tables_loaded.connect(_on_tables_loaded)
 		_read_limits(database.tables)
@@ -348,6 +349,18 @@ func _on_cells_revealed(_map_id: StringName, cells: PackedVector2Array) -> void:
 		p.discovered_types.append(String(type))
 		if not add_percent(config.percent_per_new_type):
 			save_service.commit_progress()
+
+
+## Selects the next unlocked language (after the selected one, wrapping); the brain's interact (task-091).
+## Returns the selected language; narrates BRAIN_LANGUAGE_SHIFT when it changed.
+func cycle() -> StringName:
+	var langs: PackedStringArray = unlocked_languages()
+	if langs.size() < 2:
+		return selected_language()
+	var next: StringName = StringName(langs[(langs.find(String(selected_language())) + 1) % langs.size()])
+	if select(next):
+		SignalBus.narration_event.emit(NarrationEvents.BRAIN_LANGUAGE_SHIFT)
+	return selected_language()
 
 
 ## A narration line heard again (task-087): a random repeat_percent_min..max percent for the selected language.

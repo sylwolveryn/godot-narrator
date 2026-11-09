@@ -138,6 +138,9 @@ uniform vec4 wave_style = vec4(0.12, 0.6, 0.55, 0.6);   // x rainbow phase per w
 // New menu item pulse (task-077, GlyphWorldView): one small rainbow ring out of the player's centre. w 0 = off, no cost.
 uniform vec4 pulse_geo = vec4(0.0);      // xz centre, z ring radius, w band half width (world units)
 uniform vec3 pulse_style = vec3(0.0, 1.0, 0.8);   // x strength, y rainbow turns around the ring, z turns per second
+// Brain aura (task-091, GlyphWorldView): a soft glow disc around the brain. w 0 = off, no cost.
+uniform vec4 aura_geo = vec4(0.0);       // xz centre, z radius (world units), w strength
+uniform vec3 aura_color = vec3(0.55, 0.4, 1.0);
 
 varying flat vec3 w_nrm;
 varying flat float v_type;
@@ -413,6 +416,14 @@ void fragment() {
 			wave_c += mix(wave_col[i].rgb, rainbow, wave_style.z) * wk;
 		}
 		b += max(wave_c.r, max(wave_c.g, wave_c.b)) * wave_style.w;
+	}
+	if (aura_geo.w > 0.0) {
+		float ad = distance(pc.xz, aura_geo.xy);
+		float ak = (1.0 - smoothstep(aura_geo.z * 0.35, aura_geo.z, ad)) * aura_geo.w;
+		if (ak > 0.0) {
+			wave_c += aura_color * ak;
+			b += ak * wave_style.w;
+		}
 	}
 	if (pulse_geo.w > 0.0) {
 		vec2 pv = pc.xz - pulse_geo.xy;

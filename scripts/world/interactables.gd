@@ -21,6 +21,8 @@ extends Node
 
 var _items: Array[Interactable] = []
 var _focus: Interactable = null
+## The active entity form (task-091: the brain uses interact for the language).
+var _form: StringName = EntityForm.SINGLE
 var _held: Interactable = null
 var _held_time: float = 0.0
 var _menu_open: bool = false
@@ -28,6 +30,7 @@ var _teleporting: bool = false
 
 
 func _ready() -> void:
+	SignalBus.entity_form_changed.connect(func(form: StringName, _animate: bool) -> void: _form = form)
 	if config == null:
 		config = InteractConfig.new()
 	SignalBus.menu_opened.connect(func(_l: PackedStringArray, _s: int) -> void:
@@ -137,6 +140,10 @@ func _input(event: InputEvent) -> void:
 			return
 		_refresh_focus()
 		if press():
+			get_viewport().set_input_as_handled()
+		elif _form == EntityForm.BRAIN and _focus == null and not _menu_open and not _teleporting and _playing():
+			# Task-091: the brain's interact changes the language.
+			SignalBus.language_cycle_requested.emit()
 			get_viewport().set_input_as_handled()
 	elif _held != null:
 		get_viewport().set_input_as_handled()

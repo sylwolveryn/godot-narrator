@@ -62,6 +62,10 @@ var _layer_texture: ImageTexture
 var _pulse_on: bool = false
 var _pulse_clock: float = 0.0
 var _pulse_drawn: bool = false
+## Brain aura (task-091): on while the form is the brain.
+var _aura_on: bool = false
+var _aura_clock: float = 0.0
+var _brain := BrainConfig.new()
 ## Ray height of the layer search (the tallest layered box), world units.
 var _layer_height: float = 1.0
 
@@ -75,6 +79,8 @@ func _ready() -> void:
 	SignalBus.language_understanding_changed.connect(_on_understanding_changed)
 	SignalBus.object_moved.connect(_on_object_moved)
 	SignalBus.menu_new_items_changed.connect(_on_new_items_changed)
+	SignalBus.entity_form_changed.connect(func(form: StringName, _animate: bool) -> void: _set_aura(form == EntityForm.BRAIN))
+	SignalBus.run_ended.connect(func(_cause: StringName) -> void: _set_aura(false))
 	if pushables != null:
 		pushables.objects_reset.connect(_rebuild_layer_map)
 	if map_reveal != null:
@@ -108,6 +114,25 @@ func _process(delta: float) -> void:
 	_light_pos[PLAYER_LIGHT_SLOT] = Vector4(pos.x, config.player_light_height, pos.z, map_settings.player_light_radius)
 	material.set_shader_parameter(&"light_pos", _light_pos)
 	_step_pulse(delta, pos)
+	if _aura_on:
+		_aura_clock += delta
+		var tile: float = map_loader.world_config.cell_size
+		material.set_shader_parameter(&"aura_geo", Vector4(pos.x, pos.z, _brain.aura_tiles(_aura_clock) * tile, _brain.aura_strength))
+
+
+## True while the brain aura glows (task-091).
+func is_aura_on() -> bool:
+	return _aura_on
+
+
+func _set_aura(on: bool) -> void:
+	_aura_on = on
+	_aura_clock = 0.0
+	if material == null:
+		return
+	material.set_shader_parameter(&"aura_color", Vector3(_brain.aura_color.r, _brain.aura_color.g, _brain.aura_color.b))
+	if not on:
+		material.set_shader_parameter(&"aura_geo", Vector4.ZERO)
 
 
 ## True while the new menu item pulse runs.

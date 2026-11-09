@@ -50,6 +50,30 @@ func _seed() -> PersistentProgress:
 	return p
 
 
+## A progress with a non-default, valid value in every stored field.
+func _filled(names: PackedStringArray) -> PersistentProgress:
+	var p := PersistentProgress.new()
+	for name in names:
+		var v: Variant = p.get(name)
+		match typeof(v):
+			TYPE_INT:
+				p.set(name, 7)
+			TYPE_BOOL:
+				p.set(name, true)
+			TYPE_PACKED_STRING_ARRAY:
+				p.set(name, PackedStringArray(["a", "b"]))
+			TYPE_DICTIONARY:
+				p.set(name, {"k": 3})
+	p.identity_glyph = "Q"
+	p.entity_form = "grown"
+	p.selected_language = "EN_GB"
+	p.language_understanding = {"EN_GB": 3.5}
+	p.revealed_cells = {&"m": PackedVector2Array([Vector2(1, 2)])}
+	# With the counts already present, the old-save migration (walls_eaten / diamonds -> consumed) has nothing to add.
+	p.consumed = {"dirt": 7, "diamond": 7, "k": 3}
+	return p
+
+
 func _run() -> void:
 	Support.remove_file(PATH)
 
@@ -71,7 +95,18 @@ func _run() -> void:
 		if prop["usage"] & PROPERTY_USAGE_STORAGE and prop["name"] != "script" and not String(prop["name"]).begins_with("resource_"):
 			stored_props.append(prop["name"])
 	stored_props.sort()
-	_check(stored_props == PackedStringArray(["armed_trials", "beat_counts", "consumed", "crafted", "death_count", "diamonds", "discovered_types", "entity_form", "entity_grow_played", "entity_unlocked", "heard_beats", "identity_glyph", "known_crafts", "language_step_remainder", "language_understanding", "last_strike_run", "menu_seen_initialized", "menu_unlocked", "next_devour_at", "revealed_cells", "run_count", "seen_menu_items", "selected_language", "spent", "strike_counts", "struck_natures", "unlocked_languages", "walls_eaten"]), "unexpected persistent fields: %s" % [stored_props])
+	_check(stored_props == PackedStringArray(["armed_trials", "beat_counts", "brain_unlocked", "complete_maps", "consumed", "crafted", "death_count", "diamonds", "discovered_types", "entity_form", "entity_grow_played", "entity_unlocked", "heard_beats", "identity_glyph", "known_crafts", "language_step_remainder", "language_understanding", "last_strike_run", "menu_seen_initialized", "menu_unlocked", "next_devour_at", "revealed_cells", "run_count", "seen_menu_items", "selected_language", "spent", "strike_counts", "struck_natures", "teleport_count", "unlocked_languages", "walls_eaten"]), "unexpected persistent fields: %s" % [stored_props])
+	# Every stored field survives a save and a load (the loader rebuilds progress field by field; a forgotten field
+	# would silently reset on every launch).
+	var full := _filled(stored_props)
+	svc.set("progress", full)
+	svc.save_progress()
+	svc.load_progress()
+	var back: PersistentProgress = svc.get("progress")
+	for name in stored_props:
+		_check(var_to_str(back.get(name)) == var_to_str(full.get(name)), "field %s did not survive a reload: %s -> %s" % [name, var_to_str(full.get(name)), var_to_str(back.get(name))])
+	svc.set("progress", _seed())
+	svc.save_progress()
 	svc.load_progress()
 	var p: PersistentProgress = svc.get("progress")
 	_check(p.identity_glyph == "Q" and p.run_count == 3 and p.death_count == 5, "scalar fields did not round trip")

@@ -28,6 +28,13 @@ func _ready() -> void:
 	SignalBus.cells_revealed.connect(_on_cells_revealed)
 	SignalBus.beat_heard.connect(_on_beat_heard)
 	SignalBus.consumed.connect(_on_consumed)
+	SignalBus.teleport_arrived.connect(func(_c: Vector3, _n: int) -> void:
+		progress.teleport_count += 1
+		commit_progress())
+	SignalBus.map_fully_revealed.connect(func(map_id: StringName) -> void:
+		if not progress.complete_maps.has(String(map_id)):
+			progress.complete_maps.append(String(map_id))
+			commit_progress())
 
 
 ## Reads the progress file. Missing, corrupt or foreign files give fresh progress and a warning.
@@ -135,7 +142,8 @@ func unlock_menu() -> void:
 
 ## Stores the active entity form (EntityForm names). Ignored for an unknown form or before the unlock.
 func set_entity_form(form: StringName) -> void:
-	if not progress.entity_unlocked or not EntityForm.is_valid(form) or progress.entity_form == String(form):
+	var allowed: bool = progress.brain_unlocked if form == EntityForm.BRAIN else (progress.entity_unlocked or form == EntityForm.SINGLE)
+	if not allowed or not EntityForm.is_valid(form) or progress.entity_form == String(form):
 		return
 	progress.entity_form = String(form)
 	_dirty = true
@@ -198,6 +206,14 @@ func mark_menu_items_seen(ids: PackedStringArray, initialize: bool = false) -> v
 		_dirty = true
 		progress_changed.emit()
 		save_progress()
+
+
+## Records that the brain form is unlocked (task-091; stays unlocked) and saves at once.
+func unlock_brain() -> void:
+	if progress.brain_unlocked:
+		return
+	progress.brain_unlocked = true
+	commit_progress()
 
 
 ## Records that the grow moment has played.
@@ -311,7 +327,28 @@ func _sanitized(loaded: PersistentProgress) -> PersistentProgress:
 		var cells: Variant = loaded.revealed_cells[key]
 		if (key is StringName or key is String) and cells is PackedVector2Array:
 			clean.revealed_cells[StringName(key)] = cells
+	# Task-077 / 087 / 088 / 091 fields (every field must be copied here, or it is lost on load).
+	clean.consumed = _counts(loaded.consumed)
+	clean.seen_menu_items = _unique(loaded.seen_menu_items)
+	clean.menu_seen_initialized = loaded.menu_seen_initialized
+	clean.beat_counts = _counts(loaded.beat_counts)
+	clean.spent = _counts(loaded.spent)
+	clean.known_crafts = _unique(loaded.known_crafts)
+	clean.crafted = _counts(loaded.crafted)
+	clean.teleport_count = maxi(0, loaded.teleport_count)
+	clean.complete_maps = _unique(loaded.complete_maps)
+	clean.brain_unlocked = loaded.brain_unlocked
 	return clean
+
+
+## String key -> non-negative int; other entries dropped.
+func _counts(values: Dictionary) -> Dictionary:
+	var out: Dictionary = {}
+	for key: Variant in values:
+		var n: Variant = values[key]
+		if (key is StringName or key is String) and (n is int or n is float):
+			out[String(key)] = maxi(0, int(n))
+	return out
 
 
 ## Copy without duplicates, order kept.

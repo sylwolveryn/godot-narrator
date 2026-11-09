@@ -525,7 +525,10 @@ func _on_origin_recanted(id: StringName) -> void:
 ## offered; beats on TRANSFORMED answer it through the fallback.
 func _on_entity_form_changed(form: StringName, animate: bool) -> void:
 	if animate:
-		trigger_event(NarrationEvents.TRANSFORMED_TO_ONE if form == EntityForm.SINGLE else NarrationEvents.TRANSFORMED_TO_MANY)
+		if form == EntityForm.BRAIN:
+			trigger_event(NarrationEvents.TRANSFORMED_TO_BRAIN)
+		else:
+			trigger_event(NarrationEvents.TRANSFORMED_TO_ONE if form == EntityForm.SINGLE else NarrationEvents.TRANSFORMED_TO_MANY)
 
 
 ## Fires the next idle step once the stillness reached its threshold (each step once per run).

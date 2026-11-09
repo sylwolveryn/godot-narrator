@@ -1,14 +1,15 @@
 [gd_resource type="Resource" script_class="MenuConfig" format=3]
 
-[ext_resource type="Script" path="res://scripts/core/menu_item_def.gd" id="1_rd1ul"]
-[ext_resource type="Resource" path="res://resources/config/menu_items/switch_form.tres" id="2_vo6j5"]
-[ext_resource type="Resource" path="res://resources/config/menu_items/remember.tres" id="3_v444t"]
-[ext_resource type="Resource" path="res://resources/config/menu_items/language.tres" id="4_o672j"]
-[ext_resource type="Resource" path="res://resources/config/menu_items/items.tres" id="5_m6gvc"]
-[ext_resource type="Resource" path="res://resources/config/menu_items/close.tres" id="6_vd5kv"]
-[ext_resource type="Script" path="res://scripts/core/menu_config.gd" id="7_fcguo"]
+[ext_resource type="Script" path="res://scripts/core/menu_item_def.gd" id="1_vo6j5"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/switch_form.tres" id="2_v444t"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/remember.tres" id="3_o672j"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/language.tres" id="4_m6gvc"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/brain.tres" id="5_vd5kv"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/items.tres" id="6_fcguo"]
+[ext_resource type="Resource" path="res://resources/config/menu_items/close.tres" id="7_5mude"]
+[ext_resource type="Script" path="res://scripts/core/menu_config.gd" id="8_c126n"]
 
 [resource]
-script = ExtResource("7_fcguo")
-items = Array[ExtResource("1_rd1ul")]([ExtResource("2_vo6j5"), ExtResource("3_v444t"), ExtResource("4_o672j"), ExtResource("5_m6gvc"), ExtResource("6_vd5kv")])
+script = ExtResource("8_c126n")
+items = Array[ExtResource("1_vo6j5")]([ExtResource("2_v444t"), ExtResource("3_o672j"), ExtResource("4_m6gvc"), ExtResource("5_vd5kv"), ExtResource("6_fcguo"), ExtResource("7_5mude")])
 font_names = PackedStringArray("Consolas", "Lucida Console", "Courier New", "monospace")

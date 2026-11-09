@@ -250,8 +250,8 @@ func _test_layers() -> void:
 	if times.size() == 3:
 		_check(times[1] - times[0] < line_time + cfg.beat_gap_seconds * 0.5, "own follows world without the silence gap (%.2f s)" % (times[1] - times[0]))
 		_check(times[2] - times[1] < line_time + cfg.beat_gap_seconds * 0.5, "narrator follows own without the silence gap")
-	# Once-lines: the event is spent.
-	_check(n.call("pick_for_event", NarrationEvents.SPRINT_UNLOCKED) == null, "sprint lines play once")
+	# Task-087: heard story lines are not spent; they repeat only on the repeat roll, counted per line.
+	_check(n.call("hearings", "sprint_world_slow") == 1 and n.call("hearings", "sprint_narrator_did_you") == 1, "each sprint line heard once")
 	# Before the first death nothing plays.
 	var fresh: Node = load("res://scripts/narrator/narrator.gd").new()
 	fresh.set("config", cfg)

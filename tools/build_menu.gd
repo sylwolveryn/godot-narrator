@@ -41,6 +41,19 @@ func _init() -> void:
 	ok = _save(language, ITEM_DIR + "language.tres") and ok
 	items.append(load(ITEM_DIR + "language.tres") as MenuItemDef)
 
+	# Brain form (task-091): offered once unlocked; announced as new; while the brain it reads "become one".
+	var brain := MenuItemDef.new()
+	brain.id = &"brain"
+	brain.action = MenuItemDef.ACTION_BRAIN
+	brain.label = "become the brain"
+	brain.alt_label = "become one"
+	brain.alt_form = EntityForm.BRAIN
+	brain.requires_brain = true
+	brain.announce_new = true
+	brain.closes_menu = true
+	ok = _save(brain, ITEM_DIR + "brain.tres") and ok
+	items.append(load(ITEM_DIR + "brain.tres") as MenuItemDef)
+
 	# Items list (task-077): offered once anything was consumed; announced as new even on an old save.
 	var items_item := MenuItemDef.new()
 	items_item.id = &"items"

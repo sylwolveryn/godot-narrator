@@ -5,7 +5,9 @@ extends RefCounted
 
 const SINGLE: StringName = &"single"
 const GROWN: StringName = &"grown"
+## Task-091: the brain, a 2x2 block of Japanese glyphs (unlocked by a fully discovered map and two teleports).
+const BRAIN: StringName = &"brain"
 
 
 static func is_valid(form: StringName) -> bool:
-	return form == SINGLE or form == GROWN
+	return form == SINGLE or form == GROWN or form == BRAIN

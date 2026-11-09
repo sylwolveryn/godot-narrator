@@ -89,6 +89,11 @@ extends Resource
 ## heart-sized collider of the single glyph in every form (no fit check).
 @export var whole_body: bool = true
 
+@export_group("Brain")
+## Task-091: the brain form unlocks once this many maps were discovered completely and this many teleport trips made.
+@export var brain_maps_needed: int = 1
+@export var brain_teleports_needed: int = 2
+
 
 ## Ground radius of the grown body (task-090): half the width of the identity's formation (its widest glyph from the
 ## heart, plus half a glyph). The many form collides with and must fit in a circle this wide.
