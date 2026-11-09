@@ -6,7 +6,8 @@ extends Node
 ## Every triggered event counts towards its `narration.triggered` in the DB.
 ##
 ## A text file is JSON: {"event": "DEATH_BY_SPIKES", "language": "EN_GB", "lines": {"<beat id>": "text", ...},
-## "default": "optional text for a beat id the file does not list"}. Sound files are MP3.
+## "default": "optional text for a beat id the file does not list"}. Sound files are tried as MP3, M4A, then WAV
+## (config.sound_formats); an empty file is skipped for the next format.
 
 @export var config: NarrationLibraryConfig
 ## Optional: DB rows for the paths, and the writer for trigger counts and missing files.
@@ -18,6 +19,7 @@ var _paths: Dictionary[String, PackedStringArray] = {}
 var _text_cache: Dictionary[String, Variant] = {}
 var _audio_cache: Dictionary[String, Variant] = {}
 var _missing: Dictionary[String, bool] = {}
+var _transcoder: AudioTranscoder
 
 
 func _ready() -> void:
@@ -25,6 +27,7 @@ func _ready() -> void:
 		config = NarrationLibraryConfig.new()
 	# The language changes at run time (task-065); keep the shared resource untouched.
 	config = config.duplicate() as NarrationLibraryConfig
+	_transcoder = AudioTranscoder.new(config.transcode_cache_dir)
 	_load_missing()
 	SignalBus.language_selected.connect(set_language)
 	if database != null:
@@ -90,16 +93,21 @@ func line_for(beat: NarrationBeat) -> String:
 	return beat.text
 
 
-## The voice of an event in the current language, or null.
+## The voice of an event in the current language, or null. Tries each of config.sound_formats in order (the DB / template
+## path with its extension swapped), skipping files that are empty or cannot be decoded.
 func audio_for(event: StringName) -> AudioStream:
-	var rel: String = _path(event, 1)
-	var found: String = resolve(rel)
-	if found == "":
-		_report_missing(event, config.missing_audio_suffix)
-		return null
-	if not _audio_cache.has(found):
-		_audio_cache[found] = _load_audio(found)
-	return _audio_cache[found] as AudioStream
+	var base: String = _path(event, 1).get_basename()
+	if base != "":
+		for ext: String in config.sound_formats:
+			var found: String = resolve("%s.%s" % [base, ext])
+			if found == "" or _is_empty_file(found):
+				continue
+			if not _audio_cache.has(found):
+				_audio_cache[found] = _load_audio(found)
+			if _audio_cache[found] != null:
+				return _audio_cache[found] as AudioStream
+	_report_missing(event, config.missing_audio_suffix)
+	return null
 
 
 ## Absolute (or res://) path of the first existing copy of a relative path, override folder first; "" when none.
@@ -129,7 +137,7 @@ func resolve_file(rel: String) -> String:
 	return ""
 
 
-## Loads an MP3 found by `resolve` / `resolve_file` (null for an empty or unreadable file).
+## Loads an MP3, M4A, WAV or Ogg found by `resolve` / `resolve_file` (null for an empty or unreadable file).
 func load_audio(path: String) -> AudioStream:
 	return _load_audio(path)
 
@@ -180,12 +188,26 @@ func _load_audio(path: String) -> AudioStream:
 		var bytes: PackedByteArray = FileAccess.get_file_as_bytes(path)
 		if bytes.is_empty():
 			return null
-		var stream := AudioStreamMP3.new()
-		stream.data = bytes
-		return stream
+		match path.get_extension().to_lower():
+			"mp3":
+				var mp3 := AudioStreamMP3.new()
+				mp3.data = bytes
+				return mp3
+			"wav":
+				return AudioStreamWAV.load_from_buffer(bytes)
+			"ogg":
+				return AudioStreamOggVorbis.load_from_buffer(bytes)
+			"m4a", "aac", "mp4":
+				var wav: PackedByteArray = _transcoder.to_wav(path) if _transcoder != null else AudioTranscoder.new().to_wav(path)
+				return AudioStreamWAV.load_from_buffer(wav) if not wav.is_empty() else null
 	if path.begins_with("res://") and ResourceLoader.exists(path):
 		return load(path) as AudioStream
 	return null
+
+
+## A raw file that exists but holds no bytes (an imported-only resource in an export is not "empty").
+static func _is_empty_file(path: String) -> bool:
+	return FileAccess.file_exists(path) and FileAccess.get_size(path) == 0
 
 
 func _report_missing(event: StringName, suffix: String) -> void:

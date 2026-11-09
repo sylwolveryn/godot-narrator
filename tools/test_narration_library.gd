@@ -2,7 +2,7 @@ extends SceneTree
 ## Tests the plugin-style narration lookup (task-048), the SpacetimeDB SQL parsing, the idle ladder and the
 ## transformation fallback of the narrator (task-049), the glyph-animation palette parsing (task-054) and the per-form
 ## movement profiles of the player (task-055), the narration layers world -> own -> narrator with their looks
-## (task-062) and the dev override / missing-log paths (task-064).
+## (task-062), the dev override / missing-log paths (task-064) and the mp3 -> m4a -> wav sound fallback.
 ## Usage: godot --headless --path . -s tools/test_narration_library.gd --max-fps 30
 
 const CONFIG_PATH := "res://resources/narration/narrator_config.tres"
@@ -23,6 +23,7 @@ func _check(ok: bool, message: String) -> void:
 func _run() -> void:
 	_test_sql_parse()
 	_test_lookup()
+	_test_sound_formats()
 	_test_narrator_events()
 	_test_palette()
 	_test_movement_profiles()
@@ -97,6 +98,37 @@ func _test_lookup() -> void:
 	_check(library.line_for(beat) == "Modded.", "DB text_path is used")
 	library.queue_free()
 	again.queue_free()
+	_remove_tree(root_abs)
+
+
+## Sound files are tried as mp3, m4a, wav; an empty file is skipped. The bundled RUN_STARTED has an empty mp3 and a
+## real m4a, so the m4a (converted to WAV) plays.
+func _test_sound_formats() -> void:
+	var root_abs: String = ProjectSettings.globalize_path(ROOT + "_formats")
+	_remove_tree(root_abs)
+	DirAccess.make_dir_recursive_absolute(root_abs.path_join("narration/event"))
+	var cfg := NarrationLibraryConfig.new()
+	cfg.override_root = root_abs
+	cfg.transcode_cache_dir = ROOT + "_formats_cache"
+	var library = load("res://scripts/narrator/narration_library.gd").new()
+	library.config = cfg
+	root.add_child(library)
+	var run_started: AudioStream = library.audio_for(&"RUN_STARTED")
+	_check(run_started is AudioStreamWAV, "RUN_STARTED: empty mp3 skipped, m4a played as WAV, got %s" % [run_started])
+	if run_started != null:
+		_check(run_started.get_length() > 1.0, "RUN_STARTED m4a decodes to real audio (%.2fs)" % run_started.get_length())
+	# A WAV in the override folder is found when no mp3 / m4a exists; an empty WAV alone counts as missing.
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = 22050
+	wav.data = PackedByteArray([0, 0, 0, 0])
+	wav.save_to_wav(root_abs.path_join("narration/event/FORMAT_TEST_EN_GB.wav"))
+	_check(library.audio_for(&"FORMAT_TEST") is AudioStreamWAV, "wav fallback is loaded")
+	FileAccess.open(root_abs.path_join("narration/event/EMPTY_TEST_EN_GB.mp3"), FileAccess.WRITE).close()
+	FileAccess.open(root_abs.path_join("narration/event/EMPTY_TEST_EN_GB.wav"), FileAccess.WRITE).close()
+	_check(library.audio_for(&"EMPTY_TEST") == null, "empty files give no sound")
+	_check(library.missing().has("EMPTY_TEST_EN_GB_AUDIO"), "only-empty sound files are reported missing")
+	library.queue_free()
 	_remove_tree(root_abs)
 
 
