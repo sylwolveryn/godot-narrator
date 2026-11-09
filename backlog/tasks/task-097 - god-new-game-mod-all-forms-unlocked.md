@@ -1,10 +1,11 @@
 ---
 id: TASK-097
 title: 'god: new game mod - all forms unlocked'
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-09T08:25:00Z'
+updated_date: '2026-11-09T08:47:00Z'
 labels: []
 dependencies: []
 priority: medium
@@ -25,3 +26,11 @@ Testing the forms needs many runs (deaths, a fully discovered map, teleports) be
 - [ ] #3 No DB table is changed
 - [ ] #4 god Python tests and a headless Godot test cover the mod
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. tools/dev_new_game.gd --all_forms=1 sets entity_unlocked, brain_unlocked, menu_unlocked.
+2. god/mods.py: All forms mod (flag, save target, on by default); summary handles field-less mods.
+3. Tests: god test_mods, tools/test_all_forms_mod.gd (tool + main scene).
+<!-- SECTION:PLAN:END -->
