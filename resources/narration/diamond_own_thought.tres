@@ -9,5 +9,5 @@ text = "Hard and clear. Like a thought I almost had."
 event = &"DIAMOND_FOUND"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 66
+order = 68
 layer = 1

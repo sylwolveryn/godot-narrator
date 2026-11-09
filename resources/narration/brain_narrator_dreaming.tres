@@ -10,4 +10,4 @@ event = &"TRANSFORMED_TO_BRAIN"
 mood = &"low_drone"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 64
+order = 66

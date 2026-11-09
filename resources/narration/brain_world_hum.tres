@@ -10,5 +10,5 @@ event = &"TRANSFORMED_TO_BRAIN"
 mood = &"static"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 62
+order = 64
 layer = 0

@@ -9,5 +9,5 @@ text = "My hands remember a shape. When did I learn it?"
 event = &"CRAFT_LEARNED"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 55
+order = 57
 layer = 1

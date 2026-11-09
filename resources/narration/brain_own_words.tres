@@ -9,5 +9,5 @@ text = "So many words. All of them mine."
 event = &"TRANSFORMED_TO_BRAIN"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 63
+order = 65
 layer = 1

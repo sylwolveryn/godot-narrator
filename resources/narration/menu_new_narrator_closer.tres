@@ -10,4 +10,4 @@ event = &"MENU_ITEM_NEW"
 mood = &"chime"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 52
+order = 54

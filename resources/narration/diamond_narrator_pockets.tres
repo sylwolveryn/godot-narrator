@@ -10,4 +10,4 @@ event = &"DIAMOND_FOUND"
 mood = &"low_drone"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 67
+order = 69

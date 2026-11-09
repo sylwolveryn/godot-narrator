@@ -9,4 +9,4 @@ text = "Dust has a grammar, if you are patient enough."
 event = &"RESEARCH_DONE"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 54
+order = 56

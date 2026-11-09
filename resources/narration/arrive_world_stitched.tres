@@ -10,5 +10,5 @@ event = &"TELEPORT_ARRIVED"
 mood = &"chime"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 45
+order = 47
 layer = 0

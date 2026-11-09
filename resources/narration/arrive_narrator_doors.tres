@@ -10,4 +10,4 @@ event = &"TELEPORT_ARRIVED"
 mood = &"low_drone"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 46
+order = 48

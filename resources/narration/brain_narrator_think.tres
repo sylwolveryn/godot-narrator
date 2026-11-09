@@ -10,4 +10,4 @@ event = &"BRAIN_UNLOCKED"
 mood = &"chime"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 61
+order = 63

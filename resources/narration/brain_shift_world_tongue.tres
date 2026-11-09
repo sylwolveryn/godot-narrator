@@ -10,5 +10,5 @@ event = &"BRAIN_LANGUAGE_SHIFT"
 mood = &"chime"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 65
+order = 67
 layer = 0

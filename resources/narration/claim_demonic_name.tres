@@ -13,4 +13,4 @@ mood = &"low_drone"
 supports = PackedStringArray("demonic")
 contradicts = PackedStringArray()
 role = 1
-order = 69
+order = 71

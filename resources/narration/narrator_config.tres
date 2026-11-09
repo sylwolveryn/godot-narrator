@@ -1,102 +1,104 @@
 [gd_resource type="Resource" script_class="NarratorConfig" format=3]
 
-[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_26wqc"]
-[ext_resource type="Resource" path="res://resources/narration/wake_first.tres" id="2_kgh5f"]
-[ext_resource type="Resource" path="res://resources/narration/move_first.tres" id="3_la6fg"]
-[ext_resource type="Resource" path="res://resources/narration/idle_still.tres" id="4_rtg14"]
-[ext_resource type="Resource" path="res://resources/narration/wall_edges.tres" id="5_8tpbo"]
-[ext_resource type="Resource" path="res://resources/narration/item_not_yet.tres" id="6_fkv4m"]
-[ext_resource type="Resource" path="res://resources/narration/spikes_teeth.tres" id="7_0p0m1"]
-[ext_resource type="Resource" path="res://resources/narration/corrupt_knows.tres" id="8_qp26w"]
-[ext_resource type="Resource" path="res://resources/narration/erosion_again.tres" id="9_3tg14"]
-[ext_resource type="Resource" path="res://resources/narration/death_spikes_down.tres" id="10_yy2cb"]
-[ext_resource type="Resource" path="res://resources/narration/death_corrupt_scatter.tres" id="11_t0mjm"]
-[ext_resource type="Resource" path="res://resources/narration/start_came_back.tres" id="12_qopbl"]
-[ext_resource type="Resource" path="res://resources/narration/spikes_for_your_kind.tres" id="13_si8u5"]
-[ext_resource type="Resource" path="res://resources/narration/corrupt_after_war.tres" id="14_yswxn"]
-[ext_resource type="Resource" path="res://resources/narration/death_spikes_willing.tres" id="15_e5o8y"]
-[ext_resource type="Resource" path="res://resources/narration/start_saviour.tres" id="16_j4ieh"]
-[ext_resource type="Resource" path="res://resources/narration/item_across_stars.tres" id="17_3t3su"]
-[ext_resource type="Resource" path="res://resources/narration/idle_burned.tres" id="18_q0lkq"]
-[ext_resource type="Resource" path="res://resources/narration/death_corrupt_halo.tres" id="19_tadwr"]
-[ext_resource type="Resource" path="res://resources/narration/time_counting_signals.tres" id="20_231fh"]
-[ext_resource type="Resource" path="res://resources/narration/start_invented_voice.tres" id="21_mnukg"]
-[ext_resource type="Resource" path="res://resources/narration/wall_keep_them_out.tres" id="22_esqcd"]
-[ext_resource type="Resource" path="res://resources/narration/erosion_true_name.tres" id="23_igq0j"]
-[ext_resource type="Resource" path="res://resources/narration/start_hero_lied.tres" id="24_r88t8"]
-[ext_resource type="Resource" path="res://resources/narration/death_spikes_watch.tres" id="25_oiqj6"]
-[ext_resource type="Resource" path="res://resources/narration/start_bright_or_crashed.tres" id="26_dvq1x"]
-[ext_resource type="Resource" path="res://resources/narration/start_chose_return.tres" id="27_mnj27"]
-[ext_resource type="Resource" path="res://resources/narration/sprint_world_slow.tres" id="28_7e4gr"]
-[ext_resource type="Resource" path="res://resources/narration/sprint_own_moving.tres" id="29_eqvos"]
-[ext_resource type="Resource" path="res://resources/narration/sprint_narrator_did_you.tres" id="30_1kvba"]
-[ext_resource type="Resource" path="res://resources/narration/dirt_world_crumble.tres" id="31_vmugl"]
-[ext_resource type="Resource" path="res://resources/narration/devour_narrator_1.tres" id="32_hc3c5"]
-[ext_resource type="Resource" path="res://resources/narration/devour_narrator_2.tres" id="33_rr8gn"]
-[ext_resource type="Resource" path="res://resources/narration/devour_narrator_3.tres" id="34_unecv"]
-[ext_resource type="Resource" path="res://resources/narration/devour_narrator_4.tres" id="35_5gygg"]
-[ext_resource type="Resource" path="res://resources/narration/devour_narrator_5.tres" id="36_1jtf3"]
-[ext_resource type="Resource" path="res://resources/narration/death_enemy_world_bitten.tres" id="37_0l5jv"]
-[ext_resource type="Resource" path="res://resources/narration/death_enemy_caught.tres" id="38_ptepm"]
-[ext_resource type="Resource" path="res://resources/narration/death_enemy_they_know.tres" id="39_5eeyp"]
-[ext_resource type="Resource" path="res://resources/narration/black_hole_world_collapse.tres" id="40_qadul"]
-[ext_resource type="Resource" path="res://resources/narration/many_cannon_own_weapon.tres" id="41_almnc"]
-[ext_resource type="Resource" path="res://resources/narration/many_cannon_narrator_thousand.tres" id="42_bo3cf"]
-[ext_resource type="Resource" path="res://resources/narration/fountain_narrator_hidden.tres" id="43_4oyto"]
-[ext_resource type="Resource" path="res://resources/narration/fountain_world_lair.tres" id="44_3gyqh"]
-[ext_resource type="Resource" path="res://resources/narration/teleport_world_unthread.tres" id="45_n52mj"]
-[ext_resource type="Resource" path="res://resources/narration/teleport_own_was_here.tres" id="46_7h81y"]
-[ext_resource type="Resource" path="res://resources/narration/arrive_world_stitched.tres" id="47_yrmjd"]
-[ext_resource type="Resource" path="res://resources/narration/arrive_narrator_doors.tres" id="48_vrn08"]
-[ext_resource type="Resource" path="res://resources/narration/enemy_world_shatter.tres" id="49_bujk7"]
-[ext_resource type="Resource" path="res://resources/narration/enemy_own_like_me.tres" id="50_ev8un"]
-[ext_resource type="Resource" path="res://resources/narration/enemy_narrator_name.tres" id="51_mebv7"]
-[ext_resource type="Resource" path="res://resources/narration/cannon_world_thunder.tres" id="52_roo8m"]
-[ext_resource type="Resource" path="res://resources/narration/cannon_narrator_polite.tres" id="53_3dfnb"]
-[ext_resource type="Resource" path="res://resources/narration/menu_new_narrator_closer.tres" id="54_13f2j"]
-[ext_resource type="Resource" path="res://resources/narration/research_world_sift.tres" id="55_o0b2k"]
-[ext_resource type="Resource" path="res://resources/narration/research_narrator_grammar.tres" id="56_hki5q"]
-[ext_resource type="Resource" path="res://resources/narration/craft_own_hands.tres" id="57_pkwik"]
-[ext_resource type="Resource" path="res://resources/narration/crafted_world_pressed.tres" id="58_hef7q"]
-[ext_resource type="Resource" path="res://resources/narration/crafted_narrator_dirt.tres" id="59_fec4v"]
-[ext_resource type="Resource" path="res://resources/narration/craft_narrator_never_enough.tres" id="60_js8fq"]
-[ext_resource type="Resource" path="res://resources/narration/blocked_world_narrow.tres" id="61_ptb2d"]
-[ext_resource type="Resource" path="res://resources/narration/blocked_own_room.tres" id="62_ikw5r"]
-[ext_resource type="Resource" path="res://resources/narration/brain_narrator_think.tres" id="63_6t14n"]
-[ext_resource type="Resource" path="res://resources/narration/brain_world_hum.tres" id="64_rpfsj"]
-[ext_resource type="Resource" path="res://resources/narration/brain_own_words.tres" id="65_r47t6"]
-[ext_resource type="Resource" path="res://resources/narration/brain_narrator_dreaming.tres" id="66_e6dlj"]
-[ext_resource type="Resource" path="res://resources/narration/brain_shift_world_tongue.tres" id="67_vc46x"]
-[ext_resource type="Resource" path="res://resources/narration/diamond_own_thought.tres" id="68_rk82t"]
-[ext_resource type="Resource" path="res://resources/narration/diamond_narrator_pockets.tres" id="69_dxnlf"]
-[ext_resource type="Resource" path="res://resources/narration/diamond_world_cold.tres" id="70_khfrf"]
-[ext_resource type="Resource" path="res://resources/narration/claim_demonic_name.tres" id="71_64uri"]
-[ext_resource type="Resource" path="res://resources/narration/claim_ai_one.tres" id="72_mdm38"]
-[ext_resource type="Resource" path="res://resources/narration/claim_angelic_dark.tres" id="73_j61hf"]
-[ext_resource type="Resource" path="res://resources/narration/claim_alien_weight.tres" id="74_h2ip4"]
-[ext_resource type="Resource" path="res://resources/narration/broken_demonic.tres" id="75_xcy50"]
-[ext_resource type="Resource" path="res://resources/narration/broken_ai.tres" id="76_hd2e5"]
-[ext_resource type="Resource" path="res://resources/narration/broken_angelic.tres" id="77_467u4"]
-[ext_resource type="Resource" path="res://resources/narration/broken_alien.tres" id="78_7dno7"]
-[ext_resource type="Resource" path="res://resources/narration/recant_demonic.tres" id="79_c1yp1"]
-[ext_resource type="Resource" path="res://resources/narration/recant_ai.tres" id="80_wx2c8"]
-[ext_resource type="Resource" path="res://resources/narration/recant_angelic.tres" id="81_blk2r"]
-[ext_resource type="Resource" path="res://resources/narration/recant_alien.tres" id="82_cimo3"]
-[ext_resource type="Resource" path="res://resources/narration/item_carried_down.tres" id="83_otkda"]
-[ext_resource type="Resource" path="res://resources/narration/time_hull_burn.tres" id="84_p662d"]
-[ext_resource type="Script" path="res://scripts/narrator/narration_mood.gd" id="85_yt1ey"]
-[ext_resource type="Script" path="res://scripts/narrator/narrator_config.gd" id="86_hp4hv"]
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_la6fg"]
+[ext_resource type="Resource" path="res://resources/narration/wake_first.tres" id="2_rtg14"]
+[ext_resource type="Resource" path="res://resources/narration/move_first.tres" id="3_8tpbo"]
+[ext_resource type="Resource" path="res://resources/narration/idle_still.tres" id="4_fkv4m"]
+[ext_resource type="Resource" path="res://resources/narration/wall_edges.tres" id="5_0p0m1"]
+[ext_resource type="Resource" path="res://resources/narration/item_not_yet.tres" id="6_qp26w"]
+[ext_resource type="Resource" path="res://resources/narration/spikes_teeth.tres" id="7_3tg14"]
+[ext_resource type="Resource" path="res://resources/narration/corrupt_knows.tres" id="8_yy2cb"]
+[ext_resource type="Resource" path="res://resources/narration/erosion_again.tres" id="9_t0mjm"]
+[ext_resource type="Resource" path="res://resources/narration/death_spikes_down.tres" id="10_qopbl"]
+[ext_resource type="Resource" path="res://resources/narration/death_corrupt_scatter.tres" id="11_si8u5"]
+[ext_resource type="Resource" path="res://resources/narration/start_came_back.tres" id="12_yswxn"]
+[ext_resource type="Resource" path="res://resources/narration/spikes_for_your_kind.tres" id="13_e5o8y"]
+[ext_resource type="Resource" path="res://resources/narration/corrupt_after_war.tres" id="14_j4ieh"]
+[ext_resource type="Resource" path="res://resources/narration/death_spikes_willing.tres" id="15_3t3su"]
+[ext_resource type="Resource" path="res://resources/narration/start_saviour.tres" id="16_q0lkq"]
+[ext_resource type="Resource" path="res://resources/narration/item_across_stars.tres" id="17_tadwr"]
+[ext_resource type="Resource" path="res://resources/narration/idle_burned.tres" id="18_231fh"]
+[ext_resource type="Resource" path="res://resources/narration/death_corrupt_halo.tres" id="19_mnukg"]
+[ext_resource type="Resource" path="res://resources/narration/time_counting_signals.tres" id="20_esqcd"]
+[ext_resource type="Resource" path="res://resources/narration/start_invented_voice.tres" id="21_igq0j"]
+[ext_resource type="Resource" path="res://resources/narration/wall_keep_them_out.tres" id="22_r88t8"]
+[ext_resource type="Resource" path="res://resources/narration/erosion_true_name.tres" id="23_oiqj6"]
+[ext_resource type="Resource" path="res://resources/narration/start_hero_lied.tres" id="24_dvq1x"]
+[ext_resource type="Resource" path="res://resources/narration/death_spikes_watch.tres" id="25_mnj27"]
+[ext_resource type="Resource" path="res://resources/narration/start_bright_or_crashed.tres" id="26_7e4gr"]
+[ext_resource type="Resource" path="res://resources/narration/start_chose_return.tres" id="27_eqvos"]
+[ext_resource type="Resource" path="res://resources/narration/sprint_world_slow.tres" id="28_1kvba"]
+[ext_resource type="Resource" path="res://resources/narration/sprint_own_moving.tres" id="29_vmugl"]
+[ext_resource type="Resource" path="res://resources/narration/sprint_narrator_did_you.tres" id="30_hc3c5"]
+[ext_resource type="Resource" path="res://resources/narration/dirt_world_crumble.tres" id="31_rr8gn"]
+[ext_resource type="Resource" path="res://resources/narration/devour_narrator_1.tres" id="32_unecv"]
+[ext_resource type="Resource" path="res://resources/narration/devour_narrator_2.tres" id="33_5gygg"]
+[ext_resource type="Resource" path="res://resources/narration/devour_narrator_3.tres" id="34_1jtf3"]
+[ext_resource type="Resource" path="res://resources/narration/devour_narrator_4.tres" id="35_0l5jv"]
+[ext_resource type="Resource" path="res://resources/narration/devour_narrator_5.tres" id="36_ptepm"]
+[ext_resource type="Resource" path="res://resources/narration/death_enemy_world_bitten.tres" id="37_5eeyp"]
+[ext_resource type="Resource" path="res://resources/narration/death_enemy_caught.tres" id="38_qadul"]
+[ext_resource type="Resource" path="res://resources/narration/death_enemy_they_know.tres" id="39_almnc"]
+[ext_resource type="Resource" path="res://resources/narration/black_hole_world_collapse.tres" id="40_bo3cf"]
+[ext_resource type="Resource" path="res://resources/narration/many_cannon_own_weapon.tres" id="41_4oyto"]
+[ext_resource type="Resource" path="res://resources/narration/many_cannon_narrator_thousand.tres" id="42_3gyqh"]
+[ext_resource type="Resource" path="res://resources/narration/fountain_narrator_hidden.tres" id="43_n52mj"]
+[ext_resource type="Resource" path="res://resources/narration/fountain_world_lair.tres" id="44_7h81y"]
+[ext_resource type="Resource" path="res://resources/narration/teleport_world_unthread.tres" id="45_yrmjd"]
+[ext_resource type="Resource" path="res://resources/narration/teleport_own_was_here.tres" id="46_vrn08"]
+[ext_resource type="Resource" path="res://resources/narration/teleport_narrator_destroy.tres" id="47_bujk7"]
+[ext_resource type="Resource" path="res://resources/narration/teleport_narrator_magic.tres" id="48_ev8un"]
+[ext_resource type="Resource" path="res://resources/narration/arrive_world_stitched.tres" id="49_mebv7"]
+[ext_resource type="Resource" path="res://resources/narration/arrive_narrator_doors.tres" id="50_roo8m"]
+[ext_resource type="Resource" path="res://resources/narration/enemy_world_shatter.tres" id="51_3dfnb"]
+[ext_resource type="Resource" path="res://resources/narration/enemy_own_like_me.tres" id="52_13f2j"]
+[ext_resource type="Resource" path="res://resources/narration/enemy_narrator_name.tres" id="53_o0b2k"]
+[ext_resource type="Resource" path="res://resources/narration/cannon_world_thunder.tres" id="54_hki5q"]
+[ext_resource type="Resource" path="res://resources/narration/cannon_narrator_polite.tres" id="55_pkwik"]
+[ext_resource type="Resource" path="res://resources/narration/menu_new_narrator_closer.tres" id="56_hef7q"]
+[ext_resource type="Resource" path="res://resources/narration/research_world_sift.tres" id="57_fec4v"]
+[ext_resource type="Resource" path="res://resources/narration/research_narrator_grammar.tres" id="58_js8fq"]
+[ext_resource type="Resource" path="res://resources/narration/craft_own_hands.tres" id="59_ptb2d"]
+[ext_resource type="Resource" path="res://resources/narration/crafted_world_pressed.tres" id="60_ikw5r"]
+[ext_resource type="Resource" path="res://resources/narration/crafted_narrator_dirt.tres" id="61_6t14n"]
+[ext_resource type="Resource" path="res://resources/narration/craft_narrator_never_enough.tres" id="62_rpfsj"]
+[ext_resource type="Resource" path="res://resources/narration/blocked_world_narrow.tres" id="63_r47t6"]
+[ext_resource type="Resource" path="res://resources/narration/blocked_own_room.tres" id="64_e6dlj"]
+[ext_resource type="Resource" path="res://resources/narration/brain_narrator_think.tres" id="65_vc46x"]
+[ext_resource type="Resource" path="res://resources/narration/brain_world_hum.tres" id="66_rk82t"]
+[ext_resource type="Resource" path="res://resources/narration/brain_own_words.tres" id="67_dxnlf"]
+[ext_resource type="Resource" path="res://resources/narration/brain_narrator_dreaming.tres" id="68_khfrf"]
+[ext_resource type="Resource" path="res://resources/narration/brain_shift_world_tongue.tres" id="69_64uri"]
+[ext_resource type="Resource" path="res://resources/narration/diamond_own_thought.tres" id="70_mdm38"]
+[ext_resource type="Resource" path="res://resources/narration/diamond_narrator_pockets.tres" id="71_j61hf"]
+[ext_resource type="Resource" path="res://resources/narration/diamond_world_cold.tres" id="72_h2ip4"]
+[ext_resource type="Resource" path="res://resources/narration/claim_demonic_name.tres" id="73_xcy50"]
+[ext_resource type="Resource" path="res://resources/narration/claim_ai_one.tres" id="74_hd2e5"]
+[ext_resource type="Resource" path="res://resources/narration/claim_angelic_dark.tres" id="75_467u4"]
+[ext_resource type="Resource" path="res://resources/narration/claim_alien_weight.tres" id="76_7dno7"]
+[ext_resource type="Resource" path="res://resources/narration/broken_demonic.tres" id="77_c1yp1"]
+[ext_resource type="Resource" path="res://resources/narration/broken_ai.tres" id="78_wx2c8"]
+[ext_resource type="Resource" path="res://resources/narration/broken_angelic.tres" id="79_blk2r"]
+[ext_resource type="Resource" path="res://resources/narration/broken_alien.tres" id="80_cimo3"]
+[ext_resource type="Resource" path="res://resources/narration/recant_demonic.tres" id="81_otkda"]
+[ext_resource type="Resource" path="res://resources/narration/recant_ai.tres" id="82_p662d"]
+[ext_resource type="Resource" path="res://resources/narration/recant_angelic.tres" id="83_yt1ey"]
+[ext_resource type="Resource" path="res://resources/narration/recant_alien.tres" id="84_hp4hv"]
+[ext_resource type="Resource" path="res://resources/narration/item_carried_down.tres" id="85_v2nen"]
+[ext_resource type="Resource" path="res://resources/narration/time_hull_burn.tres" id="86_k6edf"]
+[ext_resource type="Script" path="res://scripts/narrator/narration_mood.gd" id="87_5yl81"]
+[ext_resource type="Script" path="res://scripts/narrator/narrator_config.gd" id="88_xd1kh"]
 
-[sub_resource type="Resource" id="Resource_v2nen"]
-script = ExtResource("85_yt1ey")
+[sub_resource type="Resource" id="Resource_xbtg1"]
+script = ExtResource("87_5yl81")
 id = &"hum"
 duration = 2.6
 overtone_level = 0.35
 attack = 0.8
 release = 1.2
 
-[sub_resource type="Resource" id="Resource_k6edf"]
-script = ExtResource("85_yt1ey")
+[sub_resource type="Resource" id="Resource_3ewks"]
+script = ExtResource("87_5yl81")
 id = &"chime"
 duration = 1.4
 freq_start = 660.0
@@ -107,8 +109,8 @@ attack = 0.02
 release = 1.2
 volume_db = -5.0
 
-[sub_resource type="Resource" id="Resource_5yl81"]
-script = ExtResource("85_yt1ey")
+[sub_resource type="Resource" id="Resource_tjbet"]
+script = ExtResource("87_5yl81")
 id = &"static"
 duration = 1.2
 freq_start = 140.0
@@ -120,8 +122,8 @@ release = 0.9
 crackle = 0.9
 volume_db = -6.0
 
-[sub_resource type="Resource" id="Resource_xd1kh"]
-script = ExtResource("85_yt1ey")
+[sub_resource type="Resource" id="Resource_bqs5w"]
+script = ExtResource("87_5yl81")
 id = &"low_drone"
 duration = 3.4
 freq_start = 55.0
@@ -132,8 +134,8 @@ attack = 1.0
 release = 1.6
 volume_db = 2.0
 
-[sub_resource type="Resource" id="Resource_xbtg1"]
-script = ExtResource("85_yt1ey")
+[sub_resource type="Resource" id="Resource_kffkf"]
+script = ExtResource("87_5yl81")
 id = &"pulse"
 duration = 2.2
 freq_start = 520.0
@@ -147,9 +149,9 @@ pulse_length = 0.22
 volume_db = -5.0
 
 [resource]
-script = ExtResource("86_hp4hv")
-beats = Array[ExtResource("1_26wqc")]([ExtResource("2_kgh5f"), ExtResource("3_la6fg"), ExtResource("4_rtg14"), ExtResource("5_8tpbo"), ExtResource("6_fkv4m"), ExtResource("7_0p0m1"), ExtResource("8_qp26w"), ExtResource("9_3tg14"), ExtResource("10_yy2cb"), ExtResource("11_t0mjm"), ExtResource("12_qopbl"), ExtResource("13_si8u5"), ExtResource("14_yswxn"), ExtResource("15_e5o8y"), ExtResource("16_j4ieh"), ExtResource("17_3t3su"), ExtResource("18_q0lkq"), ExtResource("19_tadwr"), ExtResource("20_231fh"), ExtResource("21_mnukg"), ExtResource("22_esqcd"), ExtResource("23_igq0j"), ExtResource("24_r88t8"), ExtResource("25_oiqj6"), ExtResource("26_dvq1x"), ExtResource("27_mnj27"), ExtResource("28_7e4gr"), ExtResource("29_eqvos"), ExtResource("30_1kvba"), ExtResource("31_vmugl"), ExtResource("32_hc3c5"), ExtResource("33_rr8gn"), ExtResource("34_unecv"), ExtResource("35_5gygg"), ExtResource("36_1jtf3"), ExtResource("37_0l5jv"), ExtResource("38_ptepm"), ExtResource("39_5eeyp"), ExtResource("40_qadul"), ExtResource("41_almnc"), ExtResource("42_bo3cf"), ExtResource("43_4oyto"), ExtResource("44_3gyqh"), ExtResource("45_n52mj"), ExtResource("46_7h81y"), ExtResource("47_yrmjd"), ExtResource("48_vrn08"), ExtResource("49_bujk7"), ExtResource("50_ev8un"), ExtResource("51_mebv7"), ExtResource("52_roo8m"), ExtResource("53_3dfnb"), ExtResource("54_13f2j"), ExtResource("55_o0b2k"), ExtResource("56_hki5q"), ExtResource("57_pkwik"), ExtResource("58_hef7q"), ExtResource("59_fec4v"), ExtResource("60_js8fq"), ExtResource("61_ptb2d"), ExtResource("62_ikw5r"), ExtResource("63_6t14n"), ExtResource("64_rpfsj"), ExtResource("65_r47t6"), ExtResource("66_e6dlj"), ExtResource("67_vc46x"), ExtResource("68_rk82t"), ExtResource("69_dxnlf"), ExtResource("70_khfrf"), ExtResource("71_64uri"), ExtResource("72_mdm38"), ExtResource("73_j61hf"), ExtResource("74_h2ip4"), ExtResource("75_xcy50"), ExtResource("76_hd2e5"), ExtResource("77_467u4"), ExtResource("78_7dno7"), ExtResource("79_c1yp1"), ExtResource("80_wx2c8"), ExtResource("81_blk2r"), ExtResource("82_cimo3"), ExtResource("83_otkda"), ExtResource("84_p662d")])
-moods = Array[ExtResource("85_yt1ey")]([SubResource("Resource_v2nen"), SubResource("Resource_k6edf"), SubResource("Resource_5yl81"), SubResource("Resource_xd1kh"), SubResource("Resource_xbtg1")])
+script = ExtResource("88_xd1kh")
+beats = Array[ExtResource("1_la6fg")]([ExtResource("2_rtg14"), ExtResource("3_8tpbo"), ExtResource("4_fkv4m"), ExtResource("5_0p0m1"), ExtResource("6_qp26w"), ExtResource("7_3tg14"), ExtResource("8_yy2cb"), ExtResource("9_t0mjm"), ExtResource("10_qopbl"), ExtResource("11_si8u5"), ExtResource("12_yswxn"), ExtResource("13_e5o8y"), ExtResource("14_j4ieh"), ExtResource("15_3t3su"), ExtResource("16_q0lkq"), ExtResource("17_tadwr"), ExtResource("18_231fh"), ExtResource("19_mnukg"), ExtResource("20_esqcd"), ExtResource("21_igq0j"), ExtResource("22_r88t8"), ExtResource("23_oiqj6"), ExtResource("24_dvq1x"), ExtResource("25_mnj27"), ExtResource("26_7e4gr"), ExtResource("27_eqvos"), ExtResource("28_1kvba"), ExtResource("29_vmugl"), ExtResource("30_hc3c5"), ExtResource("31_rr8gn"), ExtResource("32_unecv"), ExtResource("33_5gygg"), ExtResource("34_1jtf3"), ExtResource("35_0l5jv"), ExtResource("36_ptepm"), ExtResource("37_5eeyp"), ExtResource("38_qadul"), ExtResource("39_almnc"), ExtResource("40_bo3cf"), ExtResource("41_4oyto"), ExtResource("42_3gyqh"), ExtResource("43_n52mj"), ExtResource("44_7h81y"), ExtResource("45_yrmjd"), ExtResource("46_vrn08"), ExtResource("47_bujk7"), ExtResource("48_ev8un"), ExtResource("49_mebv7"), ExtResource("50_roo8m"), ExtResource("51_3dfnb"), ExtResource("52_13f2j"), ExtResource("53_o0b2k"), ExtResource("54_hki5q"), ExtResource("55_pkwik"), ExtResource("56_hef7q"), ExtResource("57_fec4v"), ExtResource("58_js8fq"), ExtResource("59_ptb2d"), ExtResource("60_ikw5r"), ExtResource("61_6t14n"), ExtResource("62_rpfsj"), ExtResource("63_r47t6"), ExtResource("64_e6dlj"), ExtResource("65_vc46x"), ExtResource("66_rk82t"), ExtResource("67_dxnlf"), ExtResource("68_khfrf"), ExtResource("69_64uri"), ExtResource("70_mdm38"), ExtResource("71_j61hf"), ExtResource("72_h2ip4"), ExtResource("73_xcy50"), ExtResource("74_hd2e5"), ExtResource("75_467u4"), ExtResource("76_7dno7"), ExtResource("77_c1yp1"), ExtResource("78_wx2c8"), ExtResource("79_blk2r"), ExtResource("80_cimo3"), ExtResource("81_otkda"), ExtResource("82_p662d"), ExtResource("83_yt1ey"), ExtResource("84_hp4hv"), ExtResource("85_v2nen"), ExtResource("86_k6edf")])
+moods = Array[ExtResource("87_5yl81")]([SubResource("Resource_xbtg1"), SubResource("Resource_3ewks"), SubResource("Resource_tjbet"), SubResource("Resource_bqs5w"), SubResource("Resource_kffkf")])
 repeat_chances = PackedFloat32Array(0.8, 0.6, 0.5, 0.35, 0.2, 0.12, 0.06, 0.03, 0.03, 0.03, 0.03, 0.03, 0.02, 0.02, 0.02, 0.02, 0.02)
 font_names = PackedStringArray("Consolas", "Cascadia Mono", "Courier New", "monospace")
 fallback_font_names = PackedStringArray("Yu Gothic", "MS Gothic", "Microsoft YaHei", "Segoe UI Symbol", "Segoe UI Emoji")

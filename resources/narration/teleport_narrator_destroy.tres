@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="NarrationBeat" format=3]
+
+[ext_resource type="Script" path="res://scripts/narrator/narration_beat.gd" id="1_mfxu5"]
+
+[resource]
+script = ExtResource("1_mfxu5")
+id = "teleport_narrator_destroy"
+text = "Does teleportation really destroy you, or is it just push you through WARP?"
+event = &"TELEPORT_DEPARTED"
+mood = &"low_drone"
+supports = PackedStringArray()
+contradicts = PackedStringArray()
+order = 45

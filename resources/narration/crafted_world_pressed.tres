@@ -10,5 +10,5 @@ event = &"CRAFTED"
 mood = &"static"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 56
+order = 58
 layer = 0

@@ -10,4 +10,4 @@ event = &"CRAFT_REFUSED"
 mood = &"low_drone"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 58
+order = 60

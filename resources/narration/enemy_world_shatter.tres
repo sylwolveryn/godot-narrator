@@ -10,5 +10,5 @@ event = &"ENEMY_DESTROYED"
 mood = &"static"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 47
+order = 49
 layer = 0

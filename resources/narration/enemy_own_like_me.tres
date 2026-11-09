@@ -9,5 +9,5 @@ text = "It looked like me, for a moment."
 event = &"ENEMY_DESTROYED"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 48
+order = 50
 layer = 1

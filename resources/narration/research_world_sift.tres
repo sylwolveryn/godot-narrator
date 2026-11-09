@@ -10,5 +10,5 @@ event = &"RESEARCH_DONE"
 mood = &"static"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 53
+order = 55
 layer = 0

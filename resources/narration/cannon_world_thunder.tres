@@ -10,5 +10,5 @@ event = &"CANNON_FIRED"
 mood = &"static"
 supports = PackedStringArray()
 contradicts = PackedStringArray()
-order = 50
+order = 52
 layer = 0
