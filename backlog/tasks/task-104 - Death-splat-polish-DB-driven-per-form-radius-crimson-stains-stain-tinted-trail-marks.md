@@ -3,7 +3,7 @@ id: TASK-104
 title: >-
   Death splat polish: DB-driven per-form radius, crimson stains, stain-tinted
   trail marks
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-09T11:10:00Z'
@@ -27,7 +27,7 @@ Follow-up to TASK-093 (death stains / "splat"). Playtesting found the splat work
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Splat radius range (min/max tiles) is read from the DB per form, with a default row; seeded values: default 2-4, brain 4-6, many 4-8; each death picks a radius in its form range
-- [ ] #2 Radius range is editable in god and picked up without code changes; DeathMarksConfig no longer holds the authoritative radius
+- [x] #2 Radius range is editable in god and picked up without code changes; DeathMarksConfig no longer holds the authoritative radius
 - [x] #3 Death stains render as a clearly visible crimson on floor and walls (verified on a captured screenshot)
 - [x] #4 While the player stands on a stained cell the ink trail turns crimson, and stays crimson for 3 s after leaving the last stained cell (duration a config/DB value, not a magic number)
 - [x] #5 While the trail is crimson it leaves crimson stain marks on the floor cells it passes
@@ -57,3 +57,11 @@ Marks lifetime: trail marks live with the death stains in DeathMarks (per map, w
 Side effect: a 2-4 splat is 13+ tiles, so with tiles_per_item = 10 the FIRST death now always throws a ⚛ item (before: 9 tiles, none on the first death; after that it was already ~1 per death). test_death_marks, test_respawn_invulnerability and test_entity_growth pin radius_override = 1.5 to keep their 9-tile expectations. Balance left unchanged pending a design call.
 Verification: tools/test_death_splat.gd PASS (x3), test_death_marks, test_remains, test_respawn_invulnerability, test_entity_growth, test_cannon, test_enemies, test_hazards, test_input_movement, test_intro_player, test_language_progress, test_menu, test_narrator, test_reveal, test_run_manager, test_save PASS. Visual: tools/capture_death_splat.gd Movie Maker frames show the crimson splat, crimson trail marks along M1 row 11 and dark purple marks after a black hole. FPS on the target iGPU not measured; marks only rewrite texels of the existing stain texture (no nodes).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Death splats are now sized per form from the new DB table death_splat (default 2-4, brain 4-6, many/grown 4-8 tiles; random radius per death; editable in god, reloaded on config_version bump), and render crimson with a cell wash so they read on sparse floors. Standing in a death stain tints the player's ink trail crimson (new drops only), a black hole tints it dark purple; the tint lingers trail_tint_linger = 3 s after leaving. A tinted trail leaves persistent marks (plus random spatter) that live with the death stains for the whole launch and do not count towards the ⚛ item tiles. Marks rewrite texels of the existing stain texture; no new nodes.
+Tests: new tools/test_death_splat.gd plus the death/run suites and god unit tests pass; Movie Maker capture (tools/capture_death_splat.gd) checked by eye.
+Risks / follow-ups: bigger splats mean the first death now always drops a ⚛ item (tiles_per_item = 10) - balance call open; FPS on the target iGPU not measured (AC 9 left unchecked).
+<!-- SECTION:FINAL_SUMMARY:END -->
