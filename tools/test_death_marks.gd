@@ -75,6 +75,10 @@ func _check_scene() -> void:
 	main.get_node("Invulnerability").set("respawn_seconds", 0.0)
 	# Task-104 picks a random radius from the DB range; this test checks the exact 3x3 spray of radius 1.5.
 	main.get_node("DeathMarks").set("radius_override", 1.5)
+	# The item checks below count in 10s (two 9-tile deaths pass one multiple); the shipped value is tuned for wide splats.
+	var marks_cfg: DeathMarksConfig = (main.get_node("DeathMarks").get("config") as DeathMarksConfig).duplicate()
+	marks_cfg.tiles_per_item = 10
+	main.get_node("DeathMarks").set("config", marks_cfg)
 	var loader: MapLoader = main.get_node("World/MapLoader")
 	loader.map_path = MAP_PATH
 	loader.use_cmdline_map = false

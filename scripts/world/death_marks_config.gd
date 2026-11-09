@@ -40,8 +40,10 @@ extends Resource
 @export var trail_void_ink: Color = Color(0.5, 0.1, 0.9)
 
 @export_group("Invulnerability item")
-## Every time the stained-tile count passes another multiple of this, the death that did it drops an item.
-@export_range(1, 1000, 1) var tiles_per_item: int = 10
+## Every time the stained-tile count passes another multiple of this, the death that did it drops an item (at most one per
+## death). Tuned to the task-104 splats: a default 2-4 radius sprays 13-49 cells (~30 on average), so about one item
+## per death and the first death drops one only with a wide splat.
+@export_range(1, 1000, 1) var tiles_per_item: int = 30
 ## The item is placed on a free walkable, harmless cell within this many steps of the death cell.
 @export_range(0, 10, 1) var item_scatter_radius: int = 3
 @export var item_glyph: String = "⚛"

@@ -159,7 +159,7 @@ func _main_scene(cfg: EntityGrowthConfig) -> void:
 	var run_cfg: RunConfig = (main.get_node("RunManager").get("config") as RunConfig).duplicate()
 	run_cfg.restart_delay = 0.6
 	main.get_node("RunManager").set("config", run_cfg)
-	# Task-104 splats are 13+ tiles, so the first death would throw a ⚛ item (invulnerable: no erosion); keep 9 tiles.
+	# Task-104 splats spray up to 49 tiles, so the first death could throw a ⚛ item (invulnerable: no erosion); keep 9 tiles.
 	main.get_node("DeathMarks").set("radius_override", 1.5)
 	root.add_child(main)
 	var view: Node = main.get_node("PlayerGlyphView")
