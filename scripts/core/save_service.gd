@@ -148,6 +148,34 @@ func consumed_count(kind: StringName) -> int:
 	return int(progress.consumed.get(String(kind), 0))
 
 
+## What the player has of a consumable to spend: consumed minus spent (task-088).
+func stock(kind: StringName) -> int:
+	return consumed_count(kind) - int(progress.spent.get(String(kind), 0))
+
+
+## Spends `amount` of a consumable when the stock allows it (saved at once). False when there is not enough.
+func spend(kind: StringName, amount: int) -> bool:
+	if amount < 0 or stock(kind) < amount:
+		return false
+	progress.spent[String(kind)] = int(progress.spent.get(String(kind), 0)) + amount
+	commit_progress()
+	return true
+
+
+## Records a recipe learned through research (task-088).
+func learn_craft(id: String) -> void:
+	if progress.known_crafts.has(id):
+		return
+	progress.known_crafts.append(id)
+	commit_progress()
+
+
+## Counts one crafted thing (task-088).
+func add_crafted(id: String) -> void:
+	progress.crafted[id] = int(progress.crafted.get(id, 0)) + 1
+	commit_progress()
+
+
 ## True once anything was consumed (the Items menu entry is offered from then on).
 func any_consumed() -> bool:
 	for kind in progress.consumed:

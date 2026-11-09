@@ -56,3 +56,8 @@ extends Resource
 @export var seen_menu_items: PackedStringArray = PackedStringArray()
 ## True once seen_menu_items was first filled (items already offered before tracking began count as seen).
 @export var menu_seen_initialized: bool = false
+## Crafting (task-088). Written ONLY by SaveService for Crafting. Consumable kind -> amount spent (stock = consumed -
+## spent), recipe ids learned through research (in learning order), recipe id -> times crafted.
+@export var spent: Dictionary = {}
+@export var known_crafts: PackedStringArray = PackedStringArray()
+@export var crafted: Dictionary = {}

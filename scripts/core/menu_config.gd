@@ -21,6 +21,16 @@ extends Resource
 @export var items_labels: Dictionary[StringName, String] = {&"dirt": "dirt", &"diamond": "diamonds"}
 @export var items_format: String = "%s %d"
 @export var items_back_label: String = "back"
+## Choosing this kind in the Items list opens the crafting page (task-088).
+@export var crafting_kind: StringName = &"dirt"
+
+@export_group("Crafting page")
+## Crafting page (task-088): one entry per known recipe as "<label> <craft cost>" (craft_format), then research as
+## "<research_label> <cost of the next recipe>" (research_format; just research_label when nothing is left to learn),
+## then the back entry.
+@export var craft_format: String = "%s %d"
+@export var research_label: String = "research"
+@export var research_format: String = "%s %d"
 
 @export_group("Input actions")
 ## InputMap action names (defined by tools/build_input_map.gd).

@@ -163,6 +163,26 @@ const SEED_MOVEMENT: &[(&str, f32, f32, f32, f32, f32, f32)] = &[
     ("grown", 5.3, 8.0, 10.0, 1.5, 2.0, 0.45),
 ];
 
+/// Crafting recipes (task-088): learned one by one through Research in the order of `research_order`; research and
+/// crafting spend the player's dirt. `label` is what the menu shows (lowercase reads best as glyphs).
+#[spacetimedb::table(accessor = craft_def, public)]
+pub struct CraftDef {
+    #[primary_key]
+    pub id: String,
+    pub label: String,
+    pub research_order: u32,
+    pub research_cost: u32,
+    pub craft_cost: u32,
+}
+
+const SEED_CRAFTS: &[(&str, &str, u32, u32, u32)] = &[
+    ("dust_lens", "dust lens", 1, 20, 10),
+    ("clay_sigil", "clay sigil", 2, 40, 15),
+    ("mud_bell", "mud bell", 3, 80, 25),
+    ("soil_heart", "soil heart", 4, 150, 50),
+    ("grave_seed", "grave seed", 5, 300, 100),
+];
+
 /// Base glyph ramp per surface (task-079): the characters the glyph-surface shader draws, from sparse to dense
 /// (the blank is implicit). Split into grapheme clusters by the game and spread over the atlas density columns.
 /// Surfaces: "wall", "floor", "spikes", "corruption", "item", "dirt".
@@ -475,6 +495,17 @@ fn seed(ctx: &ReducerContext) {
             if find_narration(ctx, event, language).is_none() {
                 insert_default_narration(ctx, event, language);
             }
+        }
+    }
+    for (id, label, order, research_cost, craft_cost) in SEED_CRAFTS {
+        if ctx.db.craft_def().id().find(id.to_string()).is_none() {
+            ctx.db.craft_def().insert(CraftDef {
+                id: id.to_string(),
+                label: label.to_string(),
+                research_order: *order,
+                research_cost: *research_cost,
+                craft_cost: *craft_cost,
+            });
         }
     }
     for (surface, chars) in SEED_RAMPS {

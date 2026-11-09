@@ -17,6 +17,8 @@ extends Node
 @export var run_manager: RunManager
 ## Read-only: decides whether "remember" is offered and what the ledger row shows (task-043).
 @export var ledger: OriginLedger
+## Read-only (task-088): the crafting page lists its recipes; confirming asks it through SignalBus.
+@export var crafting: Crafting
 ## Read-only: the Language list (task-065) shows its unlocked languages and their understanding. Without it the
 ## Language item is not offered.
 @export var language: LanguageProgress
@@ -39,6 +41,11 @@ var _language_ids: PackedStringArray = PackedStringArray()
 ## True while the Items list is shown (task-077); its entry count without the back entry.
 var _items_shown: bool = false
 var _items_count: int = 0
+## Kinds of the Items list entries, in order (task-088: the crafting kind opens the crafting page).
+var _items_kinds: Array[StringName] = []
+## True while the crafting page is shown (task-088); the recipe ids of its entries (research and back follow).
+var _craft_shown: bool = false
+var _craft_ids: Array[StringName] = []
 ## Whether unseen items are offered (task-077); null until the first check.
 var _new_pending: Variant = null
 ## Selection of the item list while a sub view is shown (restored on going back).
@@ -89,6 +96,8 @@ func _input(event: InputEvent) -> void:
 			back_to_list()
 		elif _language_shown:
 			confirm_language()
+		elif _craft_shown:
+			confirm_crafting()
 		elif _items_shown:
 			confirm_items()
 		else:
@@ -139,6 +148,7 @@ func open() -> bool:
 	_ledger_shown = false
 	_language_shown = false
 	_items_shown = false
+	_craft_shown = false
 	_selected = 0
 	SignalBus.menu_opened.emit(current_labels(), _selected)
 	if save_service != null:
@@ -153,6 +163,7 @@ func close() -> void:
 	_ledger_shown = false
 	_language_shown = false
 	_items_shown = false
+	_craft_shown = false
 	SignalBus.menu_closed.emit()
 
 
@@ -164,7 +175,7 @@ func move_selection(step: int) -> void:
 
 ## Confirms the selected item: a close item closes the menu, anything else is requested from the data layer.
 func confirm() -> void:
-	if not _open or _ledger_shown or _language_shown or _items_shown or _selected >= _offered.size():
+	if not _open or _ledger_shown or _language_shown or _items_shown or _craft_shown or _selected >= _offered.size():
 		return
 	var item: MenuItemDef = _offered[_selected]
 	if item.action == MenuItemDef.ACTION_ITEMS:
@@ -197,7 +208,16 @@ func show_ledger() -> void:
 
 ## Leaves the ledger row or the Language list and shows the item list again with its item selected.
 func back_to_list() -> void:
-	if not _open or not (_ledger_shown or _language_shown or _items_shown):
+	if not _open or not (_ledger_shown or _language_shown or _items_shown or _craft_shown):
+		return
+	if _craft_shown:
+		# The crafting page goes back to the Items list, on its crafting entry.
+		_craft_shown = false
+		_items_shown = true
+		var labels: PackedStringArray = items_labels()
+		_items_count = labels.size() - 1
+		_selected = maxi(0, _items_kinds.find(config.crafting_kind))
+		SignalBus.menu_opened.emit(labels, _selected)
 		return
 	if _language_shown or _items_shown:
 		_language_shown = false
@@ -266,21 +286,74 @@ func show_items() -> void:
 ## The Items list text: "<label> <count>" per consumed kind (MenuConfig.items_labels order), then the back entry.
 func items_labels() -> PackedStringArray:
 	var labels := PackedStringArray()
+	_items_kinds.clear()
 	if save_service != null:
 		for kind: StringName in config.items_labels:
-			var count: int = save_service.consumed_count(kind)
-			if count > 0:
-				labels.append(config.items_format % [config.items_labels[kind], count])
+			if save_service.consumed_count(kind) > 0:
+				labels.append(config.items_format % [config.items_labels[kind], save_service.stock(kind)])
+				_items_kinds.append(kind)
 	labels.append(config.items_back_label)
 	return labels
 
 
-## Confirms the selected Items entry: the back entry returns to the item list; a count entry does nothing.
+## Confirms the selected Items entry: the back entry returns to the item list; the crafting kind (dirt) opens the
+## crafting page (task-088); other count entries do nothing.
 func confirm_items() -> void:
 	if not _open or not _items_shown:
 		return
 	if _selected >= _items_count:
 		back_to_list()
+	elif _selected < _items_kinds.size() and _items_kinds[_selected] == config.crafting_kind and crafting != null:
+		show_crafting()
+
+
+## True while the crafting page is shown.
+func is_crafting_shown() -> bool:
+	return _craft_shown
+
+
+## Shows the crafting page (task-088): known recipes, research, back.
+func show_crafting() -> void:
+	if not _open or crafting == null:
+		return
+	_items_shown = false
+	_craft_shown = true
+	_selected = 0
+	SignalBus.menu_opened.emit(crafting_labels(), _selected)
+
+
+## The crafting page text: "<label> <craft cost>" per known recipe, research with the next cost, back.
+func crafting_labels() -> PackedStringArray:
+	var labels := PackedStringArray()
+	_craft_ids.clear()
+	if crafting != null:
+		for r: Dictionary in crafting.known():
+			labels.append(config.craft_format % [str(r.get("label", r["id"])), int(r.get("craft_cost", 0))])
+			_craft_ids.append(StringName(str(r["id"])))
+		var next: Dictionary = crafting.next_research()
+		labels.append(config.research_label if next.is_empty() else config.research_format % [config.research_label, int(next.get("research_cost", 0))])
+	labels.append(config.items_back_label)
+	return labels
+
+
+## Confirms the selected crafting entry: a recipe is crafted, research learns the next one (the page is redrawn with
+## the same entry selected, the menu stays open), back returns to the Items list.
+func confirm_crafting() -> void:
+	if not _open or not _craft_shown:
+		return
+	var was_research: bool = _selected == _craft_ids.size()
+	if _selected < _craft_ids.size():
+		SignalBus.craft_requested.emit(_craft_ids[_selected])
+	elif was_research:
+		SignalBus.research_requested.emit()
+	else:
+		back_to_list()
+		return
+	var labels: PackedStringArray = crafting_labels()
+	# A learned recipe adds a row above research: research stays selected.
+	if was_research:
+		_selected = _craft_ids.size()
+	SignalBus.menu_opened.emit(labels, mini(_selected, labels.size() - 1))
 
 
 ## True while the menu offers an item the player has not seen in an open menu yet (task-077).
@@ -381,6 +454,8 @@ func _on_item_pointed(index: int, activate: bool) -> void:
 	if activate:
 		if _language_shown:
 			confirm_language()
+		elif _craft_shown:
+			confirm_crafting()
 		elif _items_shown:
 			confirm_items()
 		else:
@@ -393,6 +468,8 @@ func _page_size() -> int:
 		return _language_ids.size() + 1
 	if _items_shown:
 		return _items_count + 1
+	if _craft_shown:
+		return _craft_ids.size() + (2 if crafting != null else 1)
 	return _offered.size()
 
 

@@ -483,6 +483,14 @@ func _build() -> void:
 	whisper.set("language", language)
 	_add(root, whisper)
 
+	# Crafting from dirt (task-088): recipes from the DB, spends through SaveService; the menu asks through SignalBus.
+	var crafting: Node = load("res://scripts/core/crafting.gd").new()
+	crafting.name = "Crafting"
+	crafting.set("save_service", save)
+	crafting.set("database", database)
+	_add(root, crafting)
+	menu.set("crafting", crafting)
+
 	var packed := PackedScene.new()
 	var pack_err := packed.pack(root)
 	root.free()

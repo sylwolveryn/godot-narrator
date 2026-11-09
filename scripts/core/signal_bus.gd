@@ -157,3 +157,7 @@ signal consumed(kind: StringName)
 ## Emitted by MenuController when the menu gets or loses items the player has not seen yet (`pending`). The player pulse
 ## (GlyphWorldView) follows it.
 signal menu_new_items_changed(pending: bool)
+## Crafting (task-088). Emitted by MenuController when Research is confirmed in the crafting page; Crafting answers.
+signal research_requested
+## Emitted by MenuController when a known recipe is confirmed in the crafting page; Crafting answers.
+signal craft_requested(id: StringName)

@@ -19,4 +19,4 @@ extends Resource
 ## Bundled copy of the lookup tables, used until (or instead of) the server answers.
 @export var seed_path: String = "res://data/db/seed.json"
 ## Tables read on start and on every reload.
-@export var tables: PackedStringArray = PackedStringArray(["event_def", "language_def", "narration", "glyph_anim", "movement_profile", "avatar_fx", "player_language", "map_settings", "enemy_def", "glyph_ramp", "config_version"])
+@export var tables: PackedStringArray = PackedStringArray(["event_def", "language_def", "narration", "glyph_anim", "movement_profile", "avatar_fx", "player_language", "map_settings", "enemy_def", "glyph_ramp", "craft_def", "config_version"])
