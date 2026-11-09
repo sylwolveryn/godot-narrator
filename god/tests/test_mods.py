@@ -34,14 +34,15 @@ class Mods(unittest.TestCase):
             save = Path(d) / "progress.tres"
             save.write_text("x")
             ctl = core.GameController(Path(d), "godot", save, list_procs=lambda: [],
-                                      spawn=lambda *a: calls.append("spawn"))
+                                      spawn=lambda *a: calls.append("spawn"),
+                                      prepare=lambda *a: calls.append("prepare"))
 
             def tool(godot, root, args):
                 calls.append(("tool", save.exists(), tuple(args)))
                 return True, "PASS dev_new_game"
 
             ctl.new_game_with_mods(["--dirt=1"], run_tool=tool)
-            self.assertEqual(calls, [("tool", False, ("--dirt=1",)), "spawn"])
+            self.assertEqual(calls, ["prepare", ("tool", False, ("--dirt=1",)), "prepare", "spawn"])
 
             def bad(godot, root, args):
                 return False, "FAIL dev_new_game: x"

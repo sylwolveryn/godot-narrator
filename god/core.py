@@ -339,9 +339,62 @@ def run_import(godot: str, root: Path, run: Callable = subprocess.run) -> tuple:
         return False, "Godot import failed (exit code %d)." % r.returncode
     if after:
         return False, "Generated %d .import file(s); still missing: %s" % (made, ", ".join(after[:5]) + (" ..." if len(after) > 5 else ""))
+    mark_imported(root)
     if not before:
         return True, "No .import files were missing (changed assets re-imported)."
     return True, "Generated %d .import file(s)." % made
+
+
+# Written by god after every successful import. Starting the game never refreshes Godot's own script class cache
+# (.godot/global_script_class_cache.cfg; only the editor or `--import` does), so after a `git pull` that adds
+# `class_name` scripts, a game started from god fails to compile the scripts that use them: the world stays black.
+IMPORT_STAMP = ".godot/god_import_stamp"
+
+
+def mark_imported(root: Path) -> None:
+    stamp = root / IMPORT_STAMP
+    try:
+        stamp.parent.mkdir(parents=True, exist_ok=True)
+        stamp.write_text(str(time.time()), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def needs_import(root: Path) -> bool:
+    """True when the project changed since god's last import: no stamp yet, a .gd script or an importable asset newer
+    than the stamp, or an importable file without its .import file. Same folder rules as missing_imports."""
+    stamp = root / IMPORT_STAMP
+    if not stamp.is_file():
+        return True
+    since = stamp.stat().st_mtime
+    for folder, dirs, files in os.walk(root):
+        if (Path(folder) / ".gdignore").exists():
+            dirs[:] = []
+            continue
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        names = set(files)
+        for f in files:
+            ext = Path(f).suffix.lower()
+            if ext != ".gd" and ext not in IMPORTABLE_EXTENSIONS:
+                continue
+            if ext in IMPORTABLE_EXTENSIONS and f + ".import" not in names:
+                return True
+            try:
+                if (Path(folder) / f).stat().st_mtime > since:
+                    return True
+            except OSError:
+                continue
+    return False
+
+
+def ensure_imported(godot: str, root: Path, run: Callable = subprocess.run) -> None:
+    """Runs the headless import first when the project changed since the last one (see IMPORT_STAMP).
+    Raises RuntimeError when the import fails, so a broken game is not started."""
+    if not needs_import(root):
+        return
+    ok, msg = run_import(godot, root, run)
+    if not ok:
+        raise RuntimeError(msg)
 
 
 # --------------------------------------------------------------------------- game control
@@ -356,8 +409,11 @@ class GameController:
                  spawn: Callable[[str, Path], None] = spawn_game,
                  sleep: Callable[[float], None] = time.sleep,
                  clock: Callable[[], float] = time.monotonic,
-                 close_timeout: float = CLOSE_TIMEOUT):
+                 close_timeout: float = CLOSE_TIMEOUT,
+                 prepare: Optional[Callable[[str, Path], None]] = None):
         self.root, self.godot, self.save = root, godot, save
+        # Runs before every start: the import when the project changed since the last one (ensure_imported).
+        self._prepare = prepare if prepare is not None else ensure_imported
         self._list, self._terminate, self._kill, self._spawn = list_procs, terminate, kill, spawn
         self._sleep, self._clock, self.close_timeout = sleep, clock, close_timeout
         self.warned = False
@@ -390,6 +446,7 @@ class GameController:
     def start(self) -> None:
         if not self.godot:
             raise RuntimeError("Godot not found: put `godot` on PATH or set GODOT_BIN")
+        self._prepare(self.godot, self.root)
         if self.map_name:
             self._spawn(self.godot, self.root, self.map_name)
         else:
@@ -415,6 +472,7 @@ class GameController:
             self.save.unlink()
         except FileNotFoundError:
             pass
+        self._prepare(self.godot, self.root)  # the tool compiles the game's scripts too
         ok, line = run_tool(self.godot, self.root, tool_args)
         if not ok:
             raise RuntimeError("new game tool failed: %s" % line)

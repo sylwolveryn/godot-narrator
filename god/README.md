@@ -36,6 +36,10 @@ Godot is found via the `GODOT_BIN` environment variable, else `godot` on PATH. T
   (images, wav/mp3/ogg, fonts, models...) gets its `.import` file and changed ones are re-imported. The message line says
   how many were generated, or which are still missing. Narration `.webm` / `.m4a` files never get one: Godot has no
   importer for them and the game reads them itself. Folders with a `.gdignore` are skipped, as Godot does.
+  Every game start (New game, with mods, Continue) runs this import first when needed: when a `.gd` script or an
+  importable asset is newer than god's last import (`.godot/god_import_stamp`) or an `.import` file is missing. Without
+  it, a `git pull` that adds `class_name` scripts leaves Godot's class cache stale (only the editor or `--import`
+  refreshes it), those scripts fail to parse, and the game shows a black world under the intro and FPS overlay.
 
 - **Map** (task-060): lists `data/maps/*.txt`. Start new game / Continue game start the game on the chosen map as
   `<godot> --path <repo> --max-fps 30 -- --map=<name>` (the game's `MapLoader` reads the user argument and falls back to

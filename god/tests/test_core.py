@@ -133,7 +133,7 @@ class Fake:
     def __init__(self, procs=(), stubborn=False):
         self.procs = list(procs)
         self.stubborn = stubborn
-        self.terminated, self.killed, self.spawned = [], [], []
+        self.terminated, self.killed, self.spawned, self.prepared = [], [], [], []
         self.now = 0.0
 
     def list(self):
@@ -150,6 +150,9 @@ class Fake:
 
     def spawn(self, godot, root, map_name=None):
         self.spawned.append((godot, root) if map_name is None else (godot, root, map_name))
+
+    def prepare(self, godot, root):
+        self.prepared.append((godot, root))
 
     def sleep(self, s):
         self.now += s
@@ -213,7 +216,7 @@ class MapChooser(unittest.TestCase):
         f = Fake()
         with tempfile.TemporaryDirectory() as d:
             c = GameController(ROOT, "godot", Path(d) / "progress.tres", f.list, f.terminate, f.kill, f.spawn,
-                               f.sleep, f.clock, 1.0)
+                               f.sleep, f.clock, 1.0, prepare=f.prepare)
             c.new_game()
             c.map_name = "m2_arena"
             c.new_game()
@@ -228,8 +231,26 @@ class Controller(unittest.TestCase):
         if save_exists:
             save.write_text(SAMPLE, encoding="utf-8")
         f = Fake(procs, stubborn)
-        c = GameController(ROOT, "godot", save, f.list, f.terminate, f.kill, f.spawn, f.sleep, f.clock, 1.0)
+        c = GameController(ROOT, "godot", save, f.list, f.terminate, f.kill, f.spawn, f.sleep, f.clock, 1.0,
+                           prepare=f.prepare)
         return c, f, save
+
+    def test_start_prepares_before_spawning(self):
+        c, f, _ = self.make()
+        c.new_game()
+        self.assertEqual(f.prepared, [("godot", ROOT)])
+        self.assertEqual(len(f.spawned), 1)
+
+    def test_failed_prepare_starts_nothing(self):
+        c, f, _ = self.make()
+
+        def boom(_godot, _root):
+            raise RuntimeError("import failed")
+
+        c._prepare = boom
+        with self.assertRaises(RuntimeError):
+            c.new_game()
+        self.assertEqual(f.spawned, [])
 
     def test_new_game_deletes_and_starts(self):
         c, f, save = self.make([GAME])
@@ -664,6 +685,71 @@ class AssetImport(unittest.TestCase):
             ok, msg = core.run_import("godot", root, run=boom)
             self.assertFalse(ok)
             self.assertIn("nope", msg)
+
+    def _clean_tree(self, root: Path) -> None:
+        (root / "scripts").mkdir()
+        (root / "scripts" / "a.gd").write_text("extends Node")
+        (root / "art").mkdir()
+        (root / "art" / "b.png").write_bytes(b"x")
+        (root / "art" / "b.png.import").write_text("[remap]")
+
+    def _age(self, path: Path, seconds: float) -> None:
+        import os
+        import time
+        t = time.time() - seconds
+        os.utime(path, (t, t))
+
+    def test_needs_import_without_stamp(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._clean_tree(root)
+            self.assertTrue(core.needs_import(root))
+            for p in (root / "scripts" / "a.gd", root / "art" / "b.png"):
+                self._age(p, 100)
+            core.mark_imported(root)
+            self.assertFalse(core.needs_import(root))
+
+    def test_needs_import_after_script_change(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._clean_tree(root)
+            for p in (root / "scripts" / "a.gd", root / "art" / "b.png"):
+                self._age(p, 100)
+            core.mark_imported(root)
+            self._age(root / core.IMPORT_STAMP, 50)
+            self.assertFalse(core.needs_import(root))
+            (root / "scripts" / "new_class.gd").write_text("class_name NewClass")  # e.g. from a git pull
+            self.assertTrue(core.needs_import(root))
+
+    def test_needs_import_on_missing_import_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._clean_tree(root)
+            core.mark_imported(root)
+            (root / "art" / "c.png").write_bytes(b"x")
+            self._age(root / "art" / "c.png", 100)
+            self.assertTrue(core.needs_import(root))
+
+    def test_ensure_imported_runs_only_when_needed_and_raises_on_failure(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self._clean_tree(root)
+            calls = []
+
+            def ok_run(args, **_kw):
+                calls.append(args)
+                return subprocess.CompletedProcess(args, 0, "", "")
+
+            core.ensure_imported("godot", root, run=ok_run)
+            self.assertEqual(len(calls), 1)
+            self.assertTrue((root / core.IMPORT_STAMP).is_file())
+            for p in (root / "scripts" / "a.gd", root / "art" / "b.png"):
+                self._age(p, 100)
+            core.ensure_imported("godot", root, run=ok_run)
+            self.assertEqual(len(calls), 1)
+            (root / "scripts" / "a.gd").write_text("extends Node2D")
+            with self.assertRaises(RuntimeError):
+                core.ensure_imported("godot", root, run=lambda a, **k: subprocess.CompletedProcess(a, 1, "", ""))
 
 
 if __name__ == "__main__":
