@@ -112,6 +112,10 @@
 		{
 			"id": "DIAMOND_FOUND",
 			"description": "The player picks up a diamond"
+		},
+		{
+			"id": "MANY_FIRED_CANNON",
+			"description": "The many form fires a cannon"
 		}
 	],
 	"language_def": [
@@ -2168,6 +2172,78 @@
 			"triggered": 0,
 			"text_path": "narration/event/DIAMOND_FOUND_JP_KANA.json",
 			"sound_path": "narration/event/DIAMOND_FOUND_JP_KANA.mp3"
+		},
+		{
+			"id": 254,
+			"event": "MANY_FIRED_CANNON",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/MANY_FIRED_CANNON_JP_KANA.json",
+			"sound_path": "narration/event/MANY_FIRED_CANNON_JP_KANA.mp3"
+		},
+		{
+			"id": 255,
+			"event": "MANY_FIRED_CANNON",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/MANY_FIRED_CANNON_JP_HAN.json",
+			"sound_path": "narration/event/MANY_FIRED_CANNON_JP_HAN.mp3"
+		},
+		{
+			"id": 256,
+			"event": "MANY_FIRED_CANNON",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/MANY_FIRED_CANNON_RU_RU.json",
+			"sound_path": "narration/event/MANY_FIRED_CANNON_RU_RU.mp3"
+		},
+		{
+			"id": 257,
+			"event": "MANY_FIRED_CANNON",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/MANY_FIRED_CANNON_DE_DE.json",
+			"sound_path": "narration/event/MANY_FIRED_CANNON_DE_DE.mp3"
+		},
+		{
+			"id": 258,
+			"event": "MANY_FIRED_CANNON",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/MANY_FIRED_CANNON_DREAM.json",
+			"sound_path": "narration/event/MANY_FIRED_CANNON_DREAM.mp3"
+		},
+		{
+			"id": 259,
+			"event": "MANY_FIRED_CANNON",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/MANY_FIRED_CANNON_MATRIX.json",
+			"sound_path": "narration/event/MANY_FIRED_CANNON_MATRIX.mp3"
+		},
+		{
+			"id": 260,
+			"event": "MANY_FIRED_CANNON",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/MANY_FIRED_CANNON_ALIEN.json",
+			"sound_path": "narration/event/MANY_FIRED_CANNON_ALIEN.mp3"
+		},
+		{
+			"id": 261,
+			"event": "MANY_FIRED_CANNON",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/MANY_FIRED_CANNON_HU_HU.json",
+			"sound_path": "narration/event/MANY_FIRED_CANNON_HU_HU.mp3"
+		},
+		{
+			"id": 262,
+			"event": "MANY_FIRED_CANNON",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/MANY_FIRED_CANNON_EN_GB.json",
+			"sound_path": "narration/event/MANY_FIRED_CANNON_EN_GB.mp3"
 		}
 	],
 	"glyph_anim": [
@@ -2182,12 +2258,12 @@
 			"char_speed": 1.5,
 			"color_speed": 0.15
 		},
-	{
+		{
 			"surface": "floor",
 			"enabled": true,
 			"chars": "o0O°()",
 			"palette": "#5a5a7a,#ffbd70,#ff8c5a,#b48cff",
-			"near_intensity": 0.20,
+			"near_intensity": 0.2,
 			"far_intensity": 0.09,
 			"radius": 6.0,
 			"char_speed": 2.5,
@@ -2202,7 +2278,7 @@
 			"far_intensity": 0.1,
 			"radius": 5.0,
 			"char_speed": 3.0,
-			"color_speed": 0.4
+			"color_speed": 0.9
 		},
 		{
 			"surface": "corruption",
@@ -2287,39 +2363,48 @@
 	"player_language": [
 		{
 			"language": "EN_GB",
-			"understanding": 0.0
+			"understanding": 0.0,
+			"max": -1.0
 		},
 		{
 			"language": "HU_HU",
-			"understanding": 0.0
+			"understanding": 0.0,
+			"max": -1.0
 		},
 		{
 			"language": "ALIEN",
-			"understanding": 0.0
+			"understanding": 0.0,
+			"max": -1.0
 		},
 		{
 			"language": "MATRIX",
-			"understanding": 0.0
+			"understanding": 0.0,
+			"max": -1.0
 		},
 		{
 			"language": "DREAM",
-			"understanding": 0.0
+			"understanding": 0.0,
+			"max": -1.0
 		},
 		{
 			"language": "DE_DE",
-			"understanding": 0.0
+			"understanding": 0.0,
+			"max": -1.0
 		},
 		{
 			"language": "RU_RU",
-			"understanding": 0.0
+			"understanding": 0.0,
+			"max": -1.0
 		},
 		{
 			"language": "JP_HAN",
-			"understanding": 0.0
+			"understanding": 0.0,
+			"max": -1.0
 		},
 		{
 			"language": "JP_KANA",
-			"understanding": 0.0
+			"understanding": 0.0,
+			"max": -1.0
 		}
 	],
 	"map_settings": [
@@ -2375,7 +2460,7 @@
 	"glyph_ramp": [
 		{
 			"surface": "wall",
-			"chars": ".:+xX#M"
+			"chars": ".:+/%@ß$¤*"
 		},
 		{
 			"surface": "floor",

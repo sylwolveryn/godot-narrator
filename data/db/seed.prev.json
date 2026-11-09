@@ -1,0 +1,2401 @@
+{
+	"_comment": "Bundled copy of the SpacetimeDB lookup tables (database/spacetimedb/src/lib.rs seeds the same rows). Used when the DB is offline.",
+	"event_def": [
+		{
+			"id": "RUN_STARTED",
+			"description": "A run begins"
+		},
+		{
+			"id": "FIRST_MOVE",
+			"description": "First move of a run"
+		},
+		{
+			"id": "IDLE_FOR_SHORT",
+			"description": "Standing still for a short while"
+		},
+		{
+			"id": "IDLE_FOR_MID",
+			"description": "Standing still for a while"
+		},
+		{
+			"id": "IDLE_FOR_LONG",
+			"description": "Standing still for a long time"
+		},
+		{
+			"id": "WALL_REVEALED",
+			"description": "First wall seen in a run"
+		},
+		{
+			"id": "ITEM_REVEALED",
+			"description": "First item seen in a run"
+		},
+		{
+			"id": "SPIKES_REVEALED",
+			"description": "First spikes seen in a run"
+		},
+		{
+			"id": "CORRUPTION_ENTERED",
+			"description": "First step into corruption in a run"
+		},
+		{
+			"id": "EROSION_HIGH",
+			"description": "Erosion close to lethal"
+		},
+		{
+			"id": "HIT_WALL",
+			"description": "Bumped into a wall"
+		},
+		{
+			"id": "HIT_UNKNOWN",
+			"description": "Bumped into something that is not a wall"
+		},
+		{
+			"id": "HIT_SPIKES",
+			"description": "Touched spikes"
+		},
+		{
+			"id": "DEATH",
+			"description": "Died (no specific cause)"
+		},
+		{
+			"id": "DEATH_BY_SPIKES",
+			"description": "Died on spikes"
+		},
+		{
+			"id": "DEATH_BY_CORRUPTION",
+			"description": "Died of corruption"
+		},
+		{
+			"id": "TRANSFORMED_TO_ONE",
+			"description": "Chose the single form"
+		},
+		{
+			"id": "TRANSFORMED_TO_MANY",
+			"description": "Chose the grown form"
+		},
+		{
+			"id": "TRANSFORMED",
+			"description": "Any chosen entity form switch; fallback for TRANSFORMED_TO_ONE/MANY"
+		},
+		{
+			"id": "ORIGIN_STRUCK",
+			"description": "A nature was ruled out"
+		},
+		{
+			"id": "ORIGIN_RECANTED",
+			"description": "A ruled-out nature came back"
+		},
+		{
+			"id": "TIME",
+			"description": "Timed beat during a run"
+		},
+		{
+			"id": "SPRINT_UNLOCKED",
+			"description": "First move of a run once sprint is available"
+		},
+		{
+			"id": "WALL_EATEN",
+			"description": "The player eats a dirt wall"
+		},
+		{
+			"id": "WALLS_DEVOURED",
+			"description": "The eaten dirt walls reach the next random milestone"
+		},
+		{
+			"id": "DEATH_BY_ENEMY",
+			"description": "The player dies touching an enemy"
+		},
+		{
+			"id": "BLACK_HOLE_FORMED",
+			"description": "A destroyed hunter collapses into a black hole"
+		},
+		{
+			"id": "DIAMOND_FOUND",
+			"description": "The player picks up a diamond"
+		}
+	],
+	"language_def": [
+		{
+			"id": "EN_GB",
+			"name": "English (GB)"
+		},
+		{
+			"id": "HU_HU",
+			"name": "Hungarian"
+		},
+		{
+			"id": "ALIEN",
+			"name": "Alien"
+		},
+		{
+			"id": "MATRIX",
+			"name": "Matrix"
+		},
+		{
+			"id": "DREAM",
+			"name": "Dream"
+		},
+		{
+			"id": "DE_DE",
+			"name": "German"
+		},
+		{
+			"id": "RU_RU",
+			"name": "Russian"
+		},
+		{
+			"id": "JP_HAN",
+			"name": "Japanese (Kanji)"
+		},
+		{
+			"id": "JP_KANA",
+			"name": "Japanese (Kana)"
+		}
+	],
+	"narration": [
+		{
+			"id": 1,
+			"event": "RUN_STARTED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/RUN_STARTED_EN_GB.json",
+			"sound_path": "narration/event/RUN_STARTED_EN_GB.mp3"
+		},
+		{
+			"id": 2,
+			"event": "RUN_STARTED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/RUN_STARTED_HU_HU.json",
+			"sound_path": "narration/event/RUN_STARTED_HU_HU.mp3"
+		},
+		{
+			"id": 3,
+			"event": "RUN_STARTED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/RUN_STARTED_ALIEN.json",
+			"sound_path": "narration/event/RUN_STARTED_ALIEN.mp3"
+		},
+		{
+			"id": 4,
+			"event": "RUN_STARTED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/RUN_STARTED_MATRIX.json",
+			"sound_path": "narration/event/RUN_STARTED_MATRIX.mp3"
+		},
+		{
+			"id": 5,
+			"event": "RUN_STARTED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/RUN_STARTED_DREAM.json",
+			"sound_path": "narration/event/RUN_STARTED_DREAM.mp3"
+		},
+		{
+			"id": 6,
+			"event": "RUN_STARTED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/RUN_STARTED_DE_DE.json",
+			"sound_path": "narration/event/RUN_STARTED_DE_DE.mp3"
+		},
+		{
+			"id": 7,
+			"event": "RUN_STARTED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/RUN_STARTED_RU_RU.json",
+			"sound_path": "narration/event/RUN_STARTED_RU_RU.mp3"
+		},
+		{
+			"id": 8,
+			"event": "RUN_STARTED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/RUN_STARTED_JP_HAN.json",
+			"sound_path": "narration/event/RUN_STARTED_JP_HAN.mp3"
+		},
+		{
+			"id": 9,
+			"event": "RUN_STARTED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/RUN_STARTED_JP_KANA.json",
+			"sound_path": "narration/event/RUN_STARTED_JP_KANA.mp3"
+		},
+		{
+			"id": 10,
+			"event": "FIRST_MOVE",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/FIRST_MOVE_EN_GB.json",
+			"sound_path": "narration/event/FIRST_MOVE_EN_GB.mp3"
+		},
+		{
+			"id": 11,
+			"event": "FIRST_MOVE",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/FIRST_MOVE_HU_HU.json",
+			"sound_path": "narration/event/FIRST_MOVE_HU_HU.mp3"
+		},
+		{
+			"id": 12,
+			"event": "FIRST_MOVE",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/FIRST_MOVE_ALIEN.json",
+			"sound_path": "narration/event/FIRST_MOVE_ALIEN.mp3"
+		},
+		{
+			"id": 13,
+			"event": "FIRST_MOVE",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/FIRST_MOVE_MATRIX.json",
+			"sound_path": "narration/event/FIRST_MOVE_MATRIX.mp3"
+		},
+		{
+			"id": 14,
+			"event": "FIRST_MOVE",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/FIRST_MOVE_DREAM.json",
+			"sound_path": "narration/event/FIRST_MOVE_DREAM.mp3"
+		},
+		{
+			"id": 15,
+			"event": "FIRST_MOVE",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/FIRST_MOVE_DE_DE.json",
+			"sound_path": "narration/event/FIRST_MOVE_DE_DE.mp3"
+		},
+		{
+			"id": 16,
+			"event": "FIRST_MOVE",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/FIRST_MOVE_RU_RU.json",
+			"sound_path": "narration/event/FIRST_MOVE_RU_RU.mp3"
+		},
+		{
+			"id": 17,
+			"event": "FIRST_MOVE",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/FIRST_MOVE_JP_HAN.json",
+			"sound_path": "narration/event/FIRST_MOVE_JP_HAN.mp3"
+		},
+		{
+			"id": 18,
+			"event": "FIRST_MOVE",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/FIRST_MOVE_JP_KANA.json",
+			"sound_path": "narration/event/FIRST_MOVE_JP_KANA.mp3"
+		},
+		{
+			"id": 19,
+			"event": "IDLE_FOR_SHORT",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_SHORT_EN_GB.json",
+			"sound_path": "narration/event/IDLE_FOR_SHORT_EN_GB.mp3"
+		},
+		{
+			"id": 20,
+			"event": "IDLE_FOR_SHORT",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_SHORT_HU_HU.json",
+			"sound_path": "narration/event/IDLE_FOR_SHORT_HU_HU.mp3"
+		},
+		{
+			"id": 21,
+			"event": "IDLE_FOR_SHORT",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_SHORT_ALIEN.json",
+			"sound_path": "narration/event/IDLE_FOR_SHORT_ALIEN.mp3"
+		},
+		{
+			"id": 22,
+			"event": "IDLE_FOR_SHORT",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_SHORT_MATRIX.json",
+			"sound_path": "narration/event/IDLE_FOR_SHORT_MATRIX.mp3"
+		},
+		{
+			"id": 23,
+			"event": "IDLE_FOR_SHORT",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_SHORT_DREAM.json",
+			"sound_path": "narration/event/IDLE_FOR_SHORT_DREAM.mp3"
+		},
+		{
+			"id": 24,
+			"event": "IDLE_FOR_SHORT",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_SHORT_DE_DE.json",
+			"sound_path": "narration/event/IDLE_FOR_SHORT_DE_DE.mp3"
+		},
+		{
+			"id": 25,
+			"event": "IDLE_FOR_SHORT",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_SHORT_RU_RU.json",
+			"sound_path": "narration/event/IDLE_FOR_SHORT_RU_RU.mp3"
+		},
+		{
+			"id": 26,
+			"event": "IDLE_FOR_SHORT",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_SHORT_JP_HAN.json",
+			"sound_path": "narration/event/IDLE_FOR_SHORT_JP_HAN.mp3"
+		},
+		{
+			"id": 27,
+			"event": "IDLE_FOR_SHORT",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_SHORT_JP_KANA.json",
+			"sound_path": "narration/event/IDLE_FOR_SHORT_JP_KANA.mp3"
+		},
+		{
+			"id": 28,
+			"event": "IDLE_FOR_MID",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_MID_EN_GB.json",
+			"sound_path": "narration/event/IDLE_FOR_MID_EN_GB.mp3"
+		},
+		{
+			"id": 29,
+			"event": "IDLE_FOR_MID",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_MID_HU_HU.json",
+			"sound_path": "narration/event/IDLE_FOR_MID_HU_HU.mp3"
+		},
+		{
+			"id": 30,
+			"event": "IDLE_FOR_MID",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_MID_ALIEN.json",
+			"sound_path": "narration/event/IDLE_FOR_MID_ALIEN.mp3"
+		},
+		{
+			"id": 31,
+			"event": "IDLE_FOR_MID",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_MID_MATRIX.json",
+			"sound_path": "narration/event/IDLE_FOR_MID_MATRIX.mp3"
+		},
+		{
+			"id": 32,
+			"event": "IDLE_FOR_MID",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_MID_DREAM.json",
+			"sound_path": "narration/event/IDLE_FOR_MID_DREAM.mp3"
+		},
+		{
+			"id": 33,
+			"event": "IDLE_FOR_MID",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_MID_DE_DE.json",
+			"sound_path": "narration/event/IDLE_FOR_MID_DE_DE.mp3"
+		},
+		{
+			"id": 34,
+			"event": "IDLE_FOR_MID",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_MID_RU_RU.json",
+			"sound_path": "narration/event/IDLE_FOR_MID_RU_RU.mp3"
+		},
+		{
+			"id": 35,
+			"event": "IDLE_FOR_MID",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_MID_JP_HAN.json",
+			"sound_path": "narration/event/IDLE_FOR_MID_JP_HAN.mp3"
+		},
+		{
+			"id": 36,
+			"event": "IDLE_FOR_MID",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_MID_JP_KANA.json",
+			"sound_path": "narration/event/IDLE_FOR_MID_JP_KANA.mp3"
+		},
+		{
+			"id": 37,
+			"event": "IDLE_FOR_LONG",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_LONG_EN_GB.json",
+			"sound_path": "narration/event/IDLE_FOR_LONG_EN_GB.mp3"
+		},
+		{
+			"id": 38,
+			"event": "IDLE_FOR_LONG",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_LONG_HU_HU.json",
+			"sound_path": "narration/event/IDLE_FOR_LONG_HU_HU.mp3"
+		},
+		{
+			"id": 39,
+			"event": "IDLE_FOR_LONG",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_LONG_ALIEN.json",
+			"sound_path": "narration/event/IDLE_FOR_LONG_ALIEN.mp3"
+		},
+		{
+			"id": 40,
+			"event": "IDLE_FOR_LONG",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_LONG_MATRIX.json",
+			"sound_path": "narration/event/IDLE_FOR_LONG_MATRIX.mp3"
+		},
+		{
+			"id": 41,
+			"event": "IDLE_FOR_LONG",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_LONG_DREAM.json",
+			"sound_path": "narration/event/IDLE_FOR_LONG_DREAM.mp3"
+		},
+		{
+			"id": 42,
+			"event": "IDLE_FOR_LONG",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_LONG_DE_DE.json",
+			"sound_path": "narration/event/IDLE_FOR_LONG_DE_DE.mp3"
+		},
+		{
+			"id": 43,
+			"event": "IDLE_FOR_LONG",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_LONG_RU_RU.json",
+			"sound_path": "narration/event/IDLE_FOR_LONG_RU_RU.mp3"
+		},
+		{
+			"id": 44,
+			"event": "IDLE_FOR_LONG",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_LONG_JP_HAN.json",
+			"sound_path": "narration/event/IDLE_FOR_LONG_JP_HAN.mp3"
+		},
+		{
+			"id": 45,
+			"event": "IDLE_FOR_LONG",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/IDLE_FOR_LONG_JP_KANA.json",
+			"sound_path": "narration/event/IDLE_FOR_LONG_JP_KANA.mp3"
+		},
+		{
+			"id": 46,
+			"event": "WALL_REVEALED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_REVEALED_EN_GB.json",
+			"sound_path": "narration/event/WALL_REVEALED_EN_GB.mp3"
+		},
+		{
+			"id": 47,
+			"event": "WALL_REVEALED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_REVEALED_HU_HU.json",
+			"sound_path": "narration/event/WALL_REVEALED_HU_HU.mp3"
+		},
+		{
+			"id": 48,
+			"event": "WALL_REVEALED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_REVEALED_ALIEN.json",
+			"sound_path": "narration/event/WALL_REVEALED_ALIEN.mp3"
+		},
+		{
+			"id": 49,
+			"event": "WALL_REVEALED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_REVEALED_MATRIX.json",
+			"sound_path": "narration/event/WALL_REVEALED_MATRIX.mp3"
+		},
+		{
+			"id": 50,
+			"event": "WALL_REVEALED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_REVEALED_DREAM.json",
+			"sound_path": "narration/event/WALL_REVEALED_DREAM.mp3"
+		},
+		{
+			"id": 51,
+			"event": "WALL_REVEALED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_REVEALED_DE_DE.json",
+			"sound_path": "narration/event/WALL_REVEALED_DE_DE.mp3"
+		},
+		{
+			"id": 52,
+			"event": "WALL_REVEALED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_REVEALED_RU_RU.json",
+			"sound_path": "narration/event/WALL_REVEALED_RU_RU.mp3"
+		},
+		{
+			"id": 53,
+			"event": "WALL_REVEALED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_REVEALED_JP_HAN.json",
+			"sound_path": "narration/event/WALL_REVEALED_JP_HAN.mp3"
+		},
+		{
+			"id": 54,
+			"event": "WALL_REVEALED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_REVEALED_JP_KANA.json",
+			"sound_path": "narration/event/WALL_REVEALED_JP_KANA.mp3"
+		},
+		{
+			"id": 55,
+			"event": "ITEM_REVEALED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/ITEM_REVEALED_EN_GB.json",
+			"sound_path": "narration/event/ITEM_REVEALED_EN_GB.mp3"
+		},
+		{
+			"id": 56,
+			"event": "ITEM_REVEALED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/ITEM_REVEALED_HU_HU.json",
+			"sound_path": "narration/event/ITEM_REVEALED_HU_HU.mp3"
+		},
+		{
+			"id": 57,
+			"event": "ITEM_REVEALED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/ITEM_REVEALED_ALIEN.json",
+			"sound_path": "narration/event/ITEM_REVEALED_ALIEN.mp3"
+		},
+		{
+			"id": 58,
+			"event": "ITEM_REVEALED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/ITEM_REVEALED_MATRIX.json",
+			"sound_path": "narration/event/ITEM_REVEALED_MATRIX.mp3"
+		},
+		{
+			"id": 59,
+			"event": "ITEM_REVEALED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/ITEM_REVEALED_DREAM.json",
+			"sound_path": "narration/event/ITEM_REVEALED_DREAM.mp3"
+		},
+		{
+			"id": 60,
+			"event": "ITEM_REVEALED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/ITEM_REVEALED_DE_DE.json",
+			"sound_path": "narration/event/ITEM_REVEALED_DE_DE.mp3"
+		},
+		{
+			"id": 61,
+			"event": "ITEM_REVEALED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/ITEM_REVEALED_RU_RU.json",
+			"sound_path": "narration/event/ITEM_REVEALED_RU_RU.mp3"
+		},
+		{
+			"id": 62,
+			"event": "ITEM_REVEALED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/ITEM_REVEALED_JP_HAN.json",
+			"sound_path": "narration/event/ITEM_REVEALED_JP_HAN.mp3"
+		},
+		{
+			"id": 63,
+			"event": "ITEM_REVEALED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/ITEM_REVEALED_JP_KANA.json",
+			"sound_path": "narration/event/ITEM_REVEALED_JP_KANA.mp3"
+		},
+		{
+			"id": 64,
+			"event": "SPIKES_REVEALED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/SPIKES_REVEALED_EN_GB.json",
+			"sound_path": "narration/event/SPIKES_REVEALED_EN_GB.mp3"
+		},
+		{
+			"id": 65,
+			"event": "SPIKES_REVEALED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/SPIKES_REVEALED_HU_HU.json",
+			"sound_path": "narration/event/SPIKES_REVEALED_HU_HU.mp3"
+		},
+		{
+			"id": 66,
+			"event": "SPIKES_REVEALED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/SPIKES_REVEALED_ALIEN.json",
+			"sound_path": "narration/event/SPIKES_REVEALED_ALIEN.mp3"
+		},
+		{
+			"id": 67,
+			"event": "SPIKES_REVEALED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/SPIKES_REVEALED_MATRIX.json",
+			"sound_path": "narration/event/SPIKES_REVEALED_MATRIX.mp3"
+		},
+		{
+			"id": 68,
+			"event": "SPIKES_REVEALED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/SPIKES_REVEALED_DREAM.json",
+			"sound_path": "narration/event/SPIKES_REVEALED_DREAM.mp3"
+		},
+		{
+			"id": 69,
+			"event": "SPIKES_REVEALED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/SPIKES_REVEALED_DE_DE.json",
+			"sound_path": "narration/event/SPIKES_REVEALED_DE_DE.mp3"
+		},
+		{
+			"id": 70,
+			"event": "SPIKES_REVEALED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/SPIKES_REVEALED_RU_RU.json",
+			"sound_path": "narration/event/SPIKES_REVEALED_RU_RU.mp3"
+		},
+		{
+			"id": 71,
+			"event": "SPIKES_REVEALED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/SPIKES_REVEALED_JP_HAN.json",
+			"sound_path": "narration/event/SPIKES_REVEALED_JP_HAN.mp3"
+		},
+		{
+			"id": 72,
+			"event": "SPIKES_REVEALED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/SPIKES_REVEALED_JP_KANA.json",
+			"sound_path": "narration/event/SPIKES_REVEALED_JP_KANA.mp3"
+		},
+		{
+			"id": 73,
+			"event": "CORRUPTION_ENTERED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/CORRUPTION_ENTERED_EN_GB.json",
+			"sound_path": "narration/event/CORRUPTION_ENTERED_EN_GB.mp3"
+		},
+		{
+			"id": 74,
+			"event": "CORRUPTION_ENTERED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/CORRUPTION_ENTERED_HU_HU.json",
+			"sound_path": "narration/event/CORRUPTION_ENTERED_HU_HU.mp3"
+		},
+		{
+			"id": 75,
+			"event": "CORRUPTION_ENTERED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/CORRUPTION_ENTERED_ALIEN.json",
+			"sound_path": "narration/event/CORRUPTION_ENTERED_ALIEN.mp3"
+		},
+		{
+			"id": 76,
+			"event": "CORRUPTION_ENTERED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/CORRUPTION_ENTERED_MATRIX.json",
+			"sound_path": "narration/event/CORRUPTION_ENTERED_MATRIX.mp3"
+		},
+		{
+			"id": 77,
+			"event": "CORRUPTION_ENTERED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/CORRUPTION_ENTERED_DREAM.json",
+			"sound_path": "narration/event/CORRUPTION_ENTERED_DREAM.mp3"
+		},
+		{
+			"id": 78,
+			"event": "CORRUPTION_ENTERED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/CORRUPTION_ENTERED_DE_DE.json",
+			"sound_path": "narration/event/CORRUPTION_ENTERED_DE_DE.mp3"
+		},
+		{
+			"id": 79,
+			"event": "CORRUPTION_ENTERED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/CORRUPTION_ENTERED_RU_RU.json",
+			"sound_path": "narration/event/CORRUPTION_ENTERED_RU_RU.mp3"
+		},
+		{
+			"id": 80,
+			"event": "CORRUPTION_ENTERED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/CORRUPTION_ENTERED_JP_HAN.json",
+			"sound_path": "narration/event/CORRUPTION_ENTERED_JP_HAN.mp3"
+		},
+		{
+			"id": 81,
+			"event": "CORRUPTION_ENTERED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/CORRUPTION_ENTERED_JP_KANA.json",
+			"sound_path": "narration/event/CORRUPTION_ENTERED_JP_KANA.mp3"
+		},
+		{
+			"id": 82,
+			"event": "EROSION_HIGH",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/EROSION_HIGH_EN_GB.json",
+			"sound_path": "narration/event/EROSION_HIGH_EN_GB.mp3"
+		},
+		{
+			"id": 83,
+			"event": "EROSION_HIGH",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/EROSION_HIGH_HU_HU.json",
+			"sound_path": "narration/event/EROSION_HIGH_HU_HU.mp3"
+		},
+		{
+			"id": 84,
+			"event": "EROSION_HIGH",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/EROSION_HIGH_ALIEN.json",
+			"sound_path": "narration/event/EROSION_HIGH_ALIEN.mp3"
+		},
+		{
+			"id": 85,
+			"event": "EROSION_HIGH",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/EROSION_HIGH_MATRIX.json",
+			"sound_path": "narration/event/EROSION_HIGH_MATRIX.mp3"
+		},
+		{
+			"id": 86,
+			"event": "EROSION_HIGH",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/EROSION_HIGH_DREAM.json",
+			"sound_path": "narration/event/EROSION_HIGH_DREAM.mp3"
+		},
+		{
+			"id": 87,
+			"event": "EROSION_HIGH",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/EROSION_HIGH_DE_DE.json",
+			"sound_path": "narration/event/EROSION_HIGH_DE_DE.mp3"
+		},
+		{
+			"id": 88,
+			"event": "EROSION_HIGH",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/EROSION_HIGH_RU_RU.json",
+			"sound_path": "narration/event/EROSION_HIGH_RU_RU.mp3"
+		},
+		{
+			"id": 89,
+			"event": "EROSION_HIGH",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/EROSION_HIGH_JP_HAN.json",
+			"sound_path": "narration/event/EROSION_HIGH_JP_HAN.mp3"
+		},
+		{
+			"id": 90,
+			"event": "EROSION_HIGH",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/EROSION_HIGH_JP_KANA.json",
+			"sound_path": "narration/event/EROSION_HIGH_JP_KANA.mp3"
+		},
+		{
+			"id": 91,
+			"event": "HIT_WALL",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_WALL_EN_GB.json",
+			"sound_path": "narration/event/HIT_WALL_EN_GB.mp3"
+		},
+		{
+			"id": 92,
+			"event": "HIT_WALL",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_WALL_HU_HU.json",
+			"sound_path": "narration/event/HIT_WALL_HU_HU.mp3"
+		},
+		{
+			"id": 93,
+			"event": "HIT_WALL",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_WALL_ALIEN.json",
+			"sound_path": "narration/event/HIT_WALL_ALIEN.mp3"
+		},
+		{
+			"id": 94,
+			"event": "HIT_WALL",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_WALL_MATRIX.json",
+			"sound_path": "narration/event/HIT_WALL_MATRIX.mp3"
+		},
+		{
+			"id": 95,
+			"event": "HIT_WALL",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_WALL_DREAM.json",
+			"sound_path": "narration/event/HIT_WALL_DREAM.mp3"
+		},
+		{
+			"id": 96,
+			"event": "HIT_WALL",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_WALL_DE_DE.json",
+			"sound_path": "narration/event/HIT_WALL_DE_DE.mp3"
+		},
+		{
+			"id": 97,
+			"event": "HIT_WALL",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_WALL_RU_RU.json",
+			"sound_path": "narration/event/HIT_WALL_RU_RU.mp3"
+		},
+		{
+			"id": 98,
+			"event": "HIT_WALL",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_WALL_JP_HAN.json",
+			"sound_path": "narration/event/HIT_WALL_JP_HAN.mp3"
+		},
+		{
+			"id": 99,
+			"event": "HIT_WALL",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_WALL_JP_KANA.json",
+			"sound_path": "narration/event/HIT_WALL_JP_KANA.mp3"
+		},
+		{
+			"id": 100,
+			"event": "HIT_UNKNOWN",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_UNKNOWN_EN_GB.json",
+			"sound_path": "narration/event/HIT_UNKNOWN_EN_GB.mp3"
+		},
+		{
+			"id": 101,
+			"event": "HIT_UNKNOWN",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_UNKNOWN_HU_HU.json",
+			"sound_path": "narration/event/HIT_UNKNOWN_HU_HU.mp3"
+		},
+		{
+			"id": 102,
+			"event": "HIT_UNKNOWN",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_UNKNOWN_ALIEN.json",
+			"sound_path": "narration/event/HIT_UNKNOWN_ALIEN.mp3"
+		},
+		{
+			"id": 103,
+			"event": "HIT_UNKNOWN",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_UNKNOWN_MATRIX.json",
+			"sound_path": "narration/event/HIT_UNKNOWN_MATRIX.mp3"
+		},
+		{
+			"id": 104,
+			"event": "HIT_UNKNOWN",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_UNKNOWN_DREAM.json",
+			"sound_path": "narration/event/HIT_UNKNOWN_DREAM.mp3"
+		},
+		{
+			"id": 105,
+			"event": "HIT_UNKNOWN",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_UNKNOWN_DE_DE.json",
+			"sound_path": "narration/event/HIT_UNKNOWN_DE_DE.mp3"
+		},
+		{
+			"id": 106,
+			"event": "HIT_UNKNOWN",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_UNKNOWN_RU_RU.json",
+			"sound_path": "narration/event/HIT_UNKNOWN_RU_RU.mp3"
+		},
+		{
+			"id": 107,
+			"event": "HIT_UNKNOWN",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_UNKNOWN_JP_HAN.json",
+			"sound_path": "narration/event/HIT_UNKNOWN_JP_HAN.mp3"
+		},
+		{
+			"id": 108,
+			"event": "HIT_UNKNOWN",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_UNKNOWN_JP_KANA.json",
+			"sound_path": "narration/event/HIT_UNKNOWN_JP_KANA.mp3"
+		},
+		{
+			"id": 109,
+			"event": "HIT_SPIKES",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_SPIKES_EN_GB.json",
+			"sound_path": "narration/event/HIT_SPIKES_EN_GB.mp3"
+		},
+		{
+			"id": 110,
+			"event": "HIT_SPIKES",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_SPIKES_HU_HU.json",
+			"sound_path": "narration/event/HIT_SPIKES_HU_HU.mp3"
+		},
+		{
+			"id": 111,
+			"event": "HIT_SPIKES",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_SPIKES_ALIEN.json",
+			"sound_path": "narration/event/HIT_SPIKES_ALIEN.mp3"
+		},
+		{
+			"id": 112,
+			"event": "HIT_SPIKES",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_SPIKES_MATRIX.json",
+			"sound_path": "narration/event/HIT_SPIKES_MATRIX.mp3"
+		},
+		{
+			"id": 113,
+			"event": "HIT_SPIKES",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_SPIKES_DREAM.json",
+			"sound_path": "narration/event/HIT_SPIKES_DREAM.mp3"
+		},
+		{
+			"id": 114,
+			"event": "HIT_SPIKES",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_SPIKES_DE_DE.json",
+			"sound_path": "narration/event/HIT_SPIKES_DE_DE.mp3"
+		},
+		{
+			"id": 115,
+			"event": "HIT_SPIKES",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_SPIKES_RU_RU.json",
+			"sound_path": "narration/event/HIT_SPIKES_RU_RU.mp3"
+		},
+		{
+			"id": 116,
+			"event": "HIT_SPIKES",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_SPIKES_JP_HAN.json",
+			"sound_path": "narration/event/HIT_SPIKES_JP_HAN.mp3"
+		},
+		{
+			"id": 117,
+			"event": "HIT_SPIKES",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/HIT_SPIKES_JP_KANA.json",
+			"sound_path": "narration/event/HIT_SPIKES_JP_KANA.mp3"
+		},
+		{
+			"id": 118,
+			"event": "DEATH",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_EN_GB.json",
+			"sound_path": "narration/event/DEATH_EN_GB.mp3"
+		},
+		{
+			"id": 119,
+			"event": "DEATH",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_HU_HU.json",
+			"sound_path": "narration/event/DEATH_HU_HU.mp3"
+		},
+		{
+			"id": 120,
+			"event": "DEATH",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_ALIEN.json",
+			"sound_path": "narration/event/DEATH_ALIEN.mp3"
+		},
+		{
+			"id": 121,
+			"event": "DEATH",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_MATRIX.json",
+			"sound_path": "narration/event/DEATH_MATRIX.mp3"
+		},
+		{
+			"id": 122,
+			"event": "DEATH",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_DREAM.json",
+			"sound_path": "narration/event/DEATH_DREAM.mp3"
+		},
+		{
+			"id": 123,
+			"event": "DEATH",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_DE_DE.json",
+			"sound_path": "narration/event/DEATH_DE_DE.mp3"
+		},
+		{
+			"id": 124,
+			"event": "DEATH",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_RU_RU.json",
+			"sound_path": "narration/event/DEATH_RU_RU.mp3"
+		},
+		{
+			"id": 125,
+			"event": "DEATH",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_JP_HAN.json",
+			"sound_path": "narration/event/DEATH_JP_HAN.mp3"
+		},
+		{
+			"id": 126,
+			"event": "DEATH",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_JP_KANA.json",
+			"sound_path": "narration/event/DEATH_JP_KANA.mp3"
+		},
+		{
+			"id": 127,
+			"event": "DEATH_BY_SPIKES",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_SPIKES_EN_GB.json",
+			"sound_path": "narration/event/DEATH_BY_SPIKES_EN_GB.mp3"
+		},
+		{
+			"id": 128,
+			"event": "DEATH_BY_SPIKES",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_SPIKES_HU_HU.json",
+			"sound_path": "narration/event/DEATH_BY_SPIKES_HU_HU.mp3"
+		},
+		{
+			"id": 129,
+			"event": "DEATH_BY_SPIKES",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_SPIKES_ALIEN.json",
+			"sound_path": "narration/event/DEATH_BY_SPIKES_ALIEN.mp3"
+		},
+		{
+			"id": 130,
+			"event": "DEATH_BY_SPIKES",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_SPIKES_MATRIX.json",
+			"sound_path": "narration/event/DEATH_BY_SPIKES_MATRIX.mp3"
+		},
+		{
+			"id": 131,
+			"event": "DEATH_BY_SPIKES",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_SPIKES_DREAM.json",
+			"sound_path": "narration/event/DEATH_BY_SPIKES_DREAM.mp3"
+		},
+		{
+			"id": 132,
+			"event": "DEATH_BY_SPIKES",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_SPIKES_DE_DE.json",
+			"sound_path": "narration/event/DEATH_BY_SPIKES_DE_DE.mp3"
+		},
+		{
+			"id": 133,
+			"event": "DEATH_BY_SPIKES",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_SPIKES_RU_RU.json",
+			"sound_path": "narration/event/DEATH_BY_SPIKES_RU_RU.mp3"
+		},
+		{
+			"id": 134,
+			"event": "DEATH_BY_SPIKES",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_SPIKES_JP_HAN.json",
+			"sound_path": "narration/event/DEATH_BY_SPIKES_JP_HAN.mp3"
+		},
+		{
+			"id": 135,
+			"event": "DEATH_BY_SPIKES",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_SPIKES_JP_KANA.json",
+			"sound_path": "narration/event/DEATH_BY_SPIKES_JP_KANA.mp3"
+		},
+		{
+			"id": 136,
+			"event": "DEATH_BY_CORRUPTION",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_CORRUPTION_EN_GB.json",
+			"sound_path": "narration/event/DEATH_BY_CORRUPTION_EN_GB.mp3"
+		},
+		{
+			"id": 137,
+			"event": "DEATH_BY_CORRUPTION",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_CORRUPTION_HU_HU.json",
+			"sound_path": "narration/event/DEATH_BY_CORRUPTION_HU_HU.mp3"
+		},
+		{
+			"id": 138,
+			"event": "DEATH_BY_CORRUPTION",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_CORRUPTION_ALIEN.json",
+			"sound_path": "narration/event/DEATH_BY_CORRUPTION_ALIEN.mp3"
+		},
+		{
+			"id": 139,
+			"event": "DEATH_BY_CORRUPTION",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_CORRUPTION_MATRIX.json",
+			"sound_path": "narration/event/DEATH_BY_CORRUPTION_MATRIX.mp3"
+		},
+		{
+			"id": 140,
+			"event": "DEATH_BY_CORRUPTION",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_CORRUPTION_DREAM.json",
+			"sound_path": "narration/event/DEATH_BY_CORRUPTION_DREAM.mp3"
+		},
+		{
+			"id": 141,
+			"event": "DEATH_BY_CORRUPTION",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_CORRUPTION_DE_DE.json",
+			"sound_path": "narration/event/DEATH_BY_CORRUPTION_DE_DE.mp3"
+		},
+		{
+			"id": 142,
+			"event": "DEATH_BY_CORRUPTION",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_CORRUPTION_RU_RU.json",
+			"sound_path": "narration/event/DEATH_BY_CORRUPTION_RU_RU.mp3"
+		},
+		{
+			"id": 143,
+			"event": "DEATH_BY_CORRUPTION",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_CORRUPTION_JP_HAN.json",
+			"sound_path": "narration/event/DEATH_BY_CORRUPTION_JP_HAN.mp3"
+		},
+		{
+			"id": 144,
+			"event": "DEATH_BY_CORRUPTION",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_CORRUPTION_JP_KANA.json",
+			"sound_path": "narration/event/DEATH_BY_CORRUPTION_JP_KANA.mp3"
+		},
+		{
+			"id": 145,
+			"event": "TRANSFORMED_TO_ONE",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_ONE_EN_GB.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_ONE_EN_GB.mp3"
+		},
+		{
+			"id": 146,
+			"event": "TRANSFORMED_TO_ONE",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_ONE_HU_HU.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_ONE_HU_HU.mp3"
+		},
+		{
+			"id": 147,
+			"event": "TRANSFORMED_TO_ONE",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_ONE_ALIEN.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_ONE_ALIEN.mp3"
+		},
+		{
+			"id": 148,
+			"event": "TRANSFORMED_TO_ONE",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_ONE_MATRIX.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_ONE_MATRIX.mp3"
+		},
+		{
+			"id": 149,
+			"event": "TRANSFORMED_TO_ONE",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_ONE_DREAM.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_ONE_DREAM.mp3"
+		},
+		{
+			"id": 150,
+			"event": "TRANSFORMED_TO_ONE",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_ONE_DE_DE.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_ONE_DE_DE.mp3"
+		},
+		{
+			"id": 151,
+			"event": "TRANSFORMED_TO_ONE",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_ONE_RU_RU.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_ONE_RU_RU.mp3"
+		},
+		{
+			"id": 152,
+			"event": "TRANSFORMED_TO_ONE",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_ONE_JP_HAN.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_ONE_JP_HAN.mp3"
+		},
+		{
+			"id": 153,
+			"event": "TRANSFORMED_TO_ONE",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_ONE_JP_KANA.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_ONE_JP_KANA.mp3"
+		},
+		{
+			"id": 154,
+			"event": "TRANSFORMED_TO_MANY",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_MANY_EN_GB.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_MANY_EN_GB.mp3"
+		},
+		{
+			"id": 155,
+			"event": "TRANSFORMED_TO_MANY",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_MANY_HU_HU.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_MANY_HU_HU.mp3"
+		},
+		{
+			"id": 156,
+			"event": "TRANSFORMED_TO_MANY",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_MANY_ALIEN.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_MANY_ALIEN.mp3"
+		},
+		{
+			"id": 157,
+			"event": "TRANSFORMED_TO_MANY",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_MANY_MATRIX.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_MANY_MATRIX.mp3"
+		},
+		{
+			"id": 158,
+			"event": "TRANSFORMED_TO_MANY",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_MANY_DREAM.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_MANY_DREAM.mp3"
+		},
+		{
+			"id": 159,
+			"event": "TRANSFORMED_TO_MANY",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_MANY_DE_DE.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_MANY_DE_DE.mp3"
+		},
+		{
+			"id": 160,
+			"event": "TRANSFORMED_TO_MANY",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_MANY_RU_RU.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_MANY_RU_RU.mp3"
+		},
+		{
+			"id": 161,
+			"event": "TRANSFORMED_TO_MANY",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_MANY_JP_HAN.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_MANY_JP_HAN.mp3"
+		},
+		{
+			"id": 162,
+			"event": "TRANSFORMED_TO_MANY",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_TO_MANY_JP_KANA.json",
+			"sound_path": "narration/event/TRANSFORMED_TO_MANY_JP_KANA.mp3"
+		},
+		{
+			"id": 163,
+			"event": "TRANSFORMED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_EN_GB.json",
+			"sound_path": "narration/event/TRANSFORMED_EN_GB.mp3"
+		},
+		{
+			"id": 164,
+			"event": "TRANSFORMED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_HU_HU.json",
+			"sound_path": "narration/event/TRANSFORMED_HU_HU.mp3"
+		},
+		{
+			"id": 165,
+			"event": "TRANSFORMED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_ALIEN.json",
+			"sound_path": "narration/event/TRANSFORMED_ALIEN.mp3"
+		},
+		{
+			"id": 166,
+			"event": "TRANSFORMED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_MATRIX.json",
+			"sound_path": "narration/event/TRANSFORMED_MATRIX.mp3"
+		},
+		{
+			"id": 167,
+			"event": "TRANSFORMED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_DREAM.json",
+			"sound_path": "narration/event/TRANSFORMED_DREAM.mp3"
+		},
+		{
+			"id": 168,
+			"event": "TRANSFORMED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_DE_DE.json",
+			"sound_path": "narration/event/TRANSFORMED_DE_DE.mp3"
+		},
+		{
+			"id": 169,
+			"event": "TRANSFORMED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_RU_RU.json",
+			"sound_path": "narration/event/TRANSFORMED_RU_RU.mp3"
+		},
+		{
+			"id": 170,
+			"event": "TRANSFORMED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_JP_HAN.json",
+			"sound_path": "narration/event/TRANSFORMED_JP_HAN.mp3"
+		},
+		{
+			"id": 171,
+			"event": "TRANSFORMED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/TRANSFORMED_JP_KANA.json",
+			"sound_path": "narration/event/TRANSFORMED_JP_KANA.mp3"
+		},
+		{
+			"id": 172,
+			"event": "ORIGIN_STRUCK",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_STRUCK_EN_GB.json",
+			"sound_path": "narration/event/ORIGIN_STRUCK_EN_GB.mp3"
+		},
+		{
+			"id": 173,
+			"event": "ORIGIN_STRUCK",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_STRUCK_HU_HU.json",
+			"sound_path": "narration/event/ORIGIN_STRUCK_HU_HU.mp3"
+		},
+		{
+			"id": 174,
+			"event": "ORIGIN_STRUCK",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_STRUCK_ALIEN.json",
+			"sound_path": "narration/event/ORIGIN_STRUCK_ALIEN.mp3"
+		},
+		{
+			"id": 175,
+			"event": "ORIGIN_STRUCK",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_STRUCK_MATRIX.json",
+			"sound_path": "narration/event/ORIGIN_STRUCK_MATRIX.mp3"
+		},
+		{
+			"id": 176,
+			"event": "ORIGIN_STRUCK",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_STRUCK_DREAM.json",
+			"sound_path": "narration/event/ORIGIN_STRUCK_DREAM.mp3"
+		},
+		{
+			"id": 177,
+			"event": "ORIGIN_STRUCK",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_STRUCK_DE_DE.json",
+			"sound_path": "narration/event/ORIGIN_STRUCK_DE_DE.mp3"
+		},
+		{
+			"id": 178,
+			"event": "ORIGIN_STRUCK",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_STRUCK_RU_RU.json",
+			"sound_path": "narration/event/ORIGIN_STRUCK_RU_RU.mp3"
+		},
+		{
+			"id": 179,
+			"event": "ORIGIN_STRUCK",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_STRUCK_JP_HAN.json",
+			"sound_path": "narration/event/ORIGIN_STRUCK_JP_HAN.mp3"
+		},
+		{
+			"id": 180,
+			"event": "ORIGIN_STRUCK",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_STRUCK_JP_KANA.json",
+			"sound_path": "narration/event/ORIGIN_STRUCK_JP_KANA.mp3"
+		},
+		{
+			"id": 181,
+			"event": "ORIGIN_RECANTED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_RECANTED_EN_GB.json",
+			"sound_path": "narration/event/ORIGIN_RECANTED_EN_GB.mp3"
+		},
+		{
+			"id": 182,
+			"event": "ORIGIN_RECANTED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_RECANTED_HU_HU.json",
+			"sound_path": "narration/event/ORIGIN_RECANTED_HU_HU.mp3"
+		},
+		{
+			"id": 183,
+			"event": "ORIGIN_RECANTED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_RECANTED_ALIEN.json",
+			"sound_path": "narration/event/ORIGIN_RECANTED_ALIEN.mp3"
+		},
+		{
+			"id": 184,
+			"event": "ORIGIN_RECANTED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_RECANTED_MATRIX.json",
+			"sound_path": "narration/event/ORIGIN_RECANTED_MATRIX.mp3"
+		},
+		{
+			"id": 185,
+			"event": "ORIGIN_RECANTED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_RECANTED_DREAM.json",
+			"sound_path": "narration/event/ORIGIN_RECANTED_DREAM.mp3"
+		},
+		{
+			"id": 186,
+			"event": "ORIGIN_RECANTED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_RECANTED_DE_DE.json",
+			"sound_path": "narration/event/ORIGIN_RECANTED_DE_DE.mp3"
+		},
+		{
+			"id": 187,
+			"event": "ORIGIN_RECANTED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_RECANTED_RU_RU.json",
+			"sound_path": "narration/event/ORIGIN_RECANTED_RU_RU.mp3"
+		},
+		{
+			"id": 188,
+			"event": "ORIGIN_RECANTED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_RECANTED_JP_HAN.json",
+			"sound_path": "narration/event/ORIGIN_RECANTED_JP_HAN.mp3"
+		},
+		{
+			"id": 189,
+			"event": "ORIGIN_RECANTED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/ORIGIN_RECANTED_JP_KANA.json",
+			"sound_path": "narration/event/ORIGIN_RECANTED_JP_KANA.mp3"
+		},
+		{
+			"id": 190,
+			"event": "TIME",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/TIME_EN_GB.json",
+			"sound_path": "narration/event/TIME_EN_GB.mp3"
+		},
+		{
+			"id": 191,
+			"event": "TIME",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/TIME_HU_HU.json",
+			"sound_path": "narration/event/TIME_HU_HU.mp3"
+		},
+		{
+			"id": 192,
+			"event": "TIME",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/TIME_ALIEN.json",
+			"sound_path": "narration/event/TIME_ALIEN.mp3"
+		},
+		{
+			"id": 193,
+			"event": "TIME",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/TIME_MATRIX.json",
+			"sound_path": "narration/event/TIME_MATRIX.mp3"
+		},
+		{
+			"id": 194,
+			"event": "TIME",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/TIME_DREAM.json",
+			"sound_path": "narration/event/TIME_DREAM.mp3"
+		},
+		{
+			"id": 195,
+			"event": "TIME",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/TIME_DE_DE.json",
+			"sound_path": "narration/event/TIME_DE_DE.mp3"
+		},
+		{
+			"id": 196,
+			"event": "TIME",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/TIME_RU_RU.json",
+			"sound_path": "narration/event/TIME_RU_RU.mp3"
+		},
+		{
+			"id": 197,
+			"event": "TIME",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/TIME_JP_HAN.json",
+			"sound_path": "narration/event/TIME_JP_HAN.mp3"
+		},
+		{
+			"id": 198,
+			"event": "TIME",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/TIME_JP_KANA.json",
+			"sound_path": "narration/event/TIME_JP_KANA.mp3"
+		},
+		{
+			"id": 199,
+			"event": "SPRINT_UNLOCKED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_EN_GB.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_EN_GB.mp3"
+		},
+		{
+			"id": 200,
+			"event": "SPRINT_UNLOCKED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_HU_HU.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_HU_HU.mp3"
+		},
+		{
+			"id": 201,
+			"event": "SPRINT_UNLOCKED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_ALIEN.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_ALIEN.mp3"
+		},
+		{
+			"id": 202,
+			"event": "SPRINT_UNLOCKED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_MATRIX.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_MATRIX.mp3"
+		},
+		{
+			"id": 203,
+			"event": "SPRINT_UNLOCKED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_DREAM.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_DREAM.mp3"
+		},
+		{
+			"id": 204,
+			"event": "SPRINT_UNLOCKED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_DE_DE.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_DE_DE.mp3"
+		},
+		{
+			"id": 205,
+			"event": "SPRINT_UNLOCKED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_RU_RU.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_RU_RU.mp3"
+		},
+		{
+			"id": 206,
+			"event": "SPRINT_UNLOCKED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_JP_HAN.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_JP_HAN.mp3"
+		},
+		{
+			"id": 207,
+			"event": "SPRINT_UNLOCKED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/SPRINT_UNLOCKED_JP_KANA.json",
+			"sound_path": "narration/event/SPRINT_UNLOCKED_JP_KANA.mp3"
+		},
+		{
+			"id": 208,
+			"event": "WALL_EATEN",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_EN_GB.json",
+			"sound_path": "narration/event/WALL_EATEN_EN_GB.mp3"
+		},
+		{
+			"id": 209,
+			"event": "WALL_EATEN",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_HU_HU.json",
+			"sound_path": "narration/event/WALL_EATEN_HU_HU.mp3"
+		},
+		{
+			"id": 210,
+			"event": "WALL_EATEN",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_ALIEN.json",
+			"sound_path": "narration/event/WALL_EATEN_ALIEN.mp3"
+		},
+		{
+			"id": 211,
+			"event": "WALL_EATEN",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_MATRIX.json",
+			"sound_path": "narration/event/WALL_EATEN_MATRIX.mp3"
+		},
+		{
+			"id": 212,
+			"event": "WALL_EATEN",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_DREAM.json",
+			"sound_path": "narration/event/WALL_EATEN_DREAM.mp3"
+		},
+		{
+			"id": 213,
+			"event": "WALL_EATEN",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_DE_DE.json",
+			"sound_path": "narration/event/WALL_EATEN_DE_DE.mp3"
+		},
+		{
+			"id": 214,
+			"event": "WALL_EATEN",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_RU_RU.json",
+			"sound_path": "narration/event/WALL_EATEN_RU_RU.mp3"
+		},
+		{
+			"id": 215,
+			"event": "WALL_EATEN",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_JP_HAN.json",
+			"sound_path": "narration/event/WALL_EATEN_JP_HAN.mp3"
+		},
+		{
+			"id": 216,
+			"event": "WALL_EATEN",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/WALL_EATEN_JP_KANA.json",
+			"sound_path": "narration/event/WALL_EATEN_JP_KANA.mp3"
+		},
+		{
+			"id": 217,
+			"event": "WALLS_DEVOURED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_EN_GB.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_EN_GB.mp3"
+		},
+		{
+			"id": 218,
+			"event": "WALLS_DEVOURED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_HU_HU.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_HU_HU.mp3"
+		},
+		{
+			"id": 219,
+			"event": "WALLS_DEVOURED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_ALIEN.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_ALIEN.mp3"
+		},
+		{
+			"id": 220,
+			"event": "WALLS_DEVOURED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_MATRIX.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_MATRIX.mp3"
+		},
+		{
+			"id": 221,
+			"event": "WALLS_DEVOURED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_DREAM.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_DREAM.mp3"
+		},
+		{
+			"id": 222,
+			"event": "WALLS_DEVOURED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_DE_DE.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_DE_DE.mp3"
+		},
+		{
+			"id": 223,
+			"event": "WALLS_DEVOURED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_RU_RU.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_RU_RU.mp3"
+		},
+		{
+			"id": 224,
+			"event": "WALLS_DEVOURED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_JP_HAN.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_JP_HAN.mp3"
+		},
+		{
+			"id": 225,
+			"event": "WALLS_DEVOURED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/WALLS_DEVOURED_JP_KANA.json",
+			"sound_path": "narration/event/WALLS_DEVOURED_JP_KANA.mp3"
+		},
+		{
+			"id": 226,
+			"event": "DEATH_BY_ENEMY",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_EN_GB.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_EN_GB.mp3"
+		},
+		{
+			"id": 227,
+			"event": "DEATH_BY_ENEMY",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_HU_HU.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_HU_HU.mp3"
+		},
+		{
+			"id": 228,
+			"event": "DEATH_BY_ENEMY",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_ALIEN.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_ALIEN.mp3"
+		},
+		{
+			"id": 229,
+			"event": "DEATH_BY_ENEMY",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_MATRIX.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_MATRIX.mp3"
+		},
+		{
+			"id": 230,
+			"event": "DEATH_BY_ENEMY",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_DREAM.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_DREAM.mp3"
+		},
+		{
+			"id": 231,
+			"event": "DEATH_BY_ENEMY",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_DE_DE.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_DE_DE.mp3"
+		},
+		{
+			"id": 232,
+			"event": "DEATH_BY_ENEMY",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_RU_RU.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_RU_RU.mp3"
+		},
+		{
+			"id": 233,
+			"event": "DEATH_BY_ENEMY",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_JP_HAN.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_JP_HAN.mp3"
+		},
+		{
+			"id": 234,
+			"event": "DEATH_BY_ENEMY",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/DEATH_BY_ENEMY_JP_KANA.json",
+			"sound_path": "narration/event/DEATH_BY_ENEMY_JP_KANA.mp3"
+		},
+		{
+			"id": 235,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_EN_GB.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_EN_GB.mp3"
+		},
+		{
+			"id": 236,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_HU_HU.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_HU_HU.mp3"
+		},
+		{
+			"id": 237,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_ALIEN.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_ALIEN.mp3"
+		},
+		{
+			"id": 238,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_MATRIX.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_MATRIX.mp3"
+		},
+		{
+			"id": 239,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_DREAM.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_DREAM.mp3"
+		},
+		{
+			"id": 240,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_DE_DE.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_DE_DE.mp3"
+		},
+		{
+			"id": 241,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_RU_RU.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_RU_RU.mp3"
+		},
+		{
+			"id": 242,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_JP_HAN.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_JP_HAN.mp3"
+		},
+		{
+			"id": 243,
+			"event": "BLACK_HOLE_FORMED",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/BLACK_HOLE_FORMED_JP_KANA.json",
+			"sound_path": "narration/event/BLACK_HOLE_FORMED_JP_KANA.mp3"
+		},
+		{
+			"id": 244,
+			"event": "DIAMOND_FOUND",
+			"language": "EN_GB",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_EN_GB.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_EN_GB.mp3"
+		},
+		{
+			"id": 245,
+			"event": "DIAMOND_FOUND",
+			"language": "HU_HU",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_HU_HU.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_HU_HU.mp3"
+		},
+		{
+			"id": 246,
+			"event": "DIAMOND_FOUND",
+			"language": "ALIEN",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_ALIEN.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_ALIEN.mp3"
+		},
+		{
+			"id": 247,
+			"event": "DIAMOND_FOUND",
+			"language": "MATRIX",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_MATRIX.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_MATRIX.mp3"
+		},
+		{
+			"id": 248,
+			"event": "DIAMOND_FOUND",
+			"language": "DREAM",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_DREAM.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_DREAM.mp3"
+		},
+		{
+			"id": 249,
+			"event": "DIAMOND_FOUND",
+			"language": "DE_DE",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_DE_DE.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_DE_DE.mp3"
+		},
+		{
+			"id": 250,
+			"event": "DIAMOND_FOUND",
+			"language": "RU_RU",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_RU_RU.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_RU_RU.mp3"
+		},
+		{
+			"id": 251,
+			"event": "DIAMOND_FOUND",
+			"language": "JP_HAN",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_JP_HAN.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_JP_HAN.mp3"
+		},
+		{
+			"id": 252,
+			"event": "DIAMOND_FOUND",
+			"language": "JP_KANA",
+			"triggered": 0,
+			"text_path": "narration/event/DIAMOND_FOUND_JP_KANA.json",
+			"sound_path": "narration/event/DIAMOND_FOUND_JP_KANA.mp3"
+		}
+	],
+	"glyph_anim": [
+		{
+			"surface": "wall",
+			"enabled": true,
+			"chars": ".:+xX",
+			"palette": "#4a5f8a,#9fc2ff",
+			"near_intensity": 0.12,
+			"far_intensity": 0.0,
+			"radius": 4.0,
+			"char_speed": 1.5,
+			"color_speed": 0.15
+		},
+	{
+			"surface": "floor",
+			"enabled": true,
+			"chars": "o0O°()",
+			"palette": "#5a5a7a,#ffbd70,#ff8c5a,#b48cff",
+			"near_intensity": 0.20,
+			"far_intensity": 0.09,
+			"radius": 6.0,
+			"char_speed": 2.5,
+			"color_speed": 0.25
+		},
+		{
+			"surface": "spikes",
+			"enabled": true,
+			"chars": "💀⚰️🪦˖ . ݁་༘.,:;+'^!AV",
+			"palette": "#ff6a3a,#ffb07a",
+			"near_intensity": 0.8,
+			"far_intensity": 0.1,
+			"radius": 5.0,
+			"char_speed": 3.0,
+			"color_speed": 0.4
+		},
+		{
+			"surface": "corruption",
+			"enabled": true,
+			"chars": "`~?%&$",
+			"palette": "#8c47ff,#ff47bf,#47e0ff",
+			"near_intensity": 0.6,
+			"far_intensity": 0.25,
+			"radius": 6.0,
+			"char_speed": 4.0,
+			"color_speed": 0.5
+		},
+		{
+			"surface": "item",
+			"enabled": false,
+			"chars": "1l0I|",
+			"palette": "#bff7ff,#40a6ff",
+			"near_intensity": 0.2,
+			"far_intensity": 0.0,
+			"radius": 3.0,
+			"char_speed": 1.0,
+			"color_speed": 0.2
+		}
+	],
+	"config_version": [
+		{
+			"id": 1,
+			"version": 0
+		}
+	],
+	"movement_profile": [
+		{
+			"profile": "default",
+			"max_speed": 4.5,
+			"acceleration": 14.0,
+			"deceleration": 16.0,
+			"sprint_speed_mult": 1.5,
+			"sprint_accel_mult": 2.0,
+			"sprint_decel_mult": 0.45
+		},
+		{
+			"profile": "single",
+			"max_speed": 4.8,
+			"acceleration": 22.0,
+			"deceleration": 24.0,
+			"sprint_speed_mult": 1.5,
+			"sprint_accel_mult": 2.0,
+			"sprint_decel_mult": 0.45
+		},
+		{
+			"profile": "grown",
+			"max_speed": 5.3,
+			"acceleration": 8.0,
+			"deceleration": 10.0,
+			"sprint_speed_mult": 1.5,
+			"sprint_accel_mult": 2.0,
+			"sprint_decel_mult": 0.45
+		}
+	],
+	"avatar_fx": [
+		{
+			"profile": "default",
+			"crystal_palette": "#9ff0ff,#8fa8ff,#d99cff,#ffe7b0",
+			"crystal_speed": 0.08,
+			"crystal_strength": 0.55,
+			"crystal_facets": 5.0,
+			"crystal_sparkle": 0.04,
+			"trail_enabled": true,
+			"trail_chars": ".,:;'`",
+			"trail_color": "#8a6bff",
+			"trail_rim": "#efe6ff",
+			"trail_lifetime": 0.8,
+			"trail_spacing": 0.22,
+			"trail_size": 0.24,
+			"trail_spread": 0.6,
+			"trail_jitter": 0.12,
+			"lean_amount": 0.18,
+			"stretch_amount": 0.12,
+			"feel_smoothing": 0.12
+		}
+	],
+	"player_language": [
+		{
+			"language": "EN_GB",
+			"understanding": 0.0
+		},
+		{
+			"language": "HU_HU",
+			"understanding": 0.0
+		},
+		{
+			"language": "ALIEN",
+			"understanding": 0.0
+		},
+		{
+			"language": "MATRIX",
+			"understanding": 0.0
+		},
+		{
+			"language": "DREAM",
+			"understanding": 0.0
+		},
+		{
+			"language": "DE_DE",
+			"understanding": 0.0
+		},
+		{
+			"language": "RU_RU",
+			"understanding": 0.0
+		},
+		{
+			"language": "JP_HAN",
+			"understanding": 0.0
+		},
+		{
+			"language": "JP_KANA",
+			"understanding": 0.0
+		}
+	],
+	"map_settings": [
+		{
+			"map_id": "m3_dirt",
+			"reveal_all": true,
+			"fog_enabled": false,
+			"darkness_enabled": false,
+			"reveal_radius": -1.0,
+			"line_of_sight": true,
+			"player_light_radius": -1.0,
+			"ambient_level": -1.0
+		}
+	],
+	"enemy_def": [
+		{
+			"kind": "crawler",
+			"speed": 2.2,
+			"lethal": true,
+			"repath_seconds": 0.6,
+			"search_radius": 16,
+			"turn_chance": 0.35,
+			"run_min": 3,
+			"run_max": 9,
+			"diamonds": 3,
+			"black_hole": false
+		},
+		{
+			"kind": "hunter",
+			"speed": 2.6,
+			"lethal": true,
+			"repath_seconds": 0.6,
+			"search_radius": 16,
+			"turn_chance": 0.35,
+			"run_min": 3,
+			"run_max": 9,
+			"diamonds": 0,
+			"black_hole": true
+		},
+		{
+			"kind": "wanderer",
+			"speed": 1.8,
+			"lethal": true,
+			"repath_seconds": 0.6,
+			"search_radius": 16,
+			"turn_chance": 0.35,
+			"run_min": 3,
+			"run_max": 9,
+			"diamonds": 2,
+			"black_hole": false
+		}
+	],
+	"glyph_ramp": [
+		{
+			"surface": "wall",
+			"chars": ".:+xX#M"
+		},
+		{
+			"surface": "floor",
+			"chars": ".,:;+o0"
+		},
+		{
+			"surface": "spikes",
+			"chars": "'^!AVW#"
+		},
+		{
+			"surface": "corruption",
+			"chars": "`~?%&$#"
+		},
+		{
+			"surface": "item",
+			"chars": "1l0I|8B"
+		},
+		{
+			"surface": "dirt",
+			"chars": ".,:;o%&"
+		}
+	]
+}

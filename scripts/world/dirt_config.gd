@@ -47,7 +47,7 @@ extends Resource
 @export_group("Sound")
 ## Override file: <override folder>/<path>, else <game folder>/<path>, else res://<path>; none = the synthesized crunch.
 @export var crunch_file: String = "sfx/dirt_crunch.mp3"
-@export var crunch_volume_db: float = -9.0
+@export var crunch_volume_db: float = -35.0
 ## Random pitch per eat: 1 +- this.
 @export_range(0.0, 0.5) var crunch_pitch_jitter: float = 0.12
 ## Crunches closer together than this (seconds) are skipped.
