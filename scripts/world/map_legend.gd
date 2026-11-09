@@ -47,6 +47,9 @@ const DIRT: StringName = &"dirt"
 }
 ## Black hole (task-076): placed in a map with this character (the cell is floor; MapData.black_holes records it).
 @export var black_hole_char: String = "O"
+## Invulnerability item ⚛ (task-095): placed in a map with this character (the cell is floor;
+## MapData.invulnerability_items records it). Picked up like the item a death throws (DeathMarks).
+@export var invulnerability_char: String = "I"
 ## Cell type used for characters not in `entries` (a warning is logged).
 @export var unknown_type: StringName = FLOOR
 

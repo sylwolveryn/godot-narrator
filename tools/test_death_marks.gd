@@ -71,6 +71,8 @@ func _check_scene() -> void:
 	run_cfg.restart_delay = 0.2
 	run_cfg.intro_on_restart = false
 	main.get_node("RunManager").set("config", run_cfg)
+	# Respawn invulnerability (task-095) is covered by test_respawn_invulnerability; off here so only the item grants it.
+	main.get_node("Invulnerability").set("respawn_seconds", 0.0)
 	var loader: MapLoader = main.get_node("World/MapLoader")
 	loader.map_path = MAP_PATH
 	loader.use_cmdline_map = false

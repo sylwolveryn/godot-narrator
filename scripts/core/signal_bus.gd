@@ -180,5 +180,7 @@ signal death_stains_reset(map_id: StringName)
 signal invulnerability_item_dropped(cell: Vector2i, from_position: Vector3)
 ## Emitted by DeathMarks when the player picked the item in `cell` up (Invulnerability.grant follows).
 signal invulnerability_item_taken(cell: Vector2i)
+## Emitted by DeathMarks when the world reset put the map file's invulnerability items (legend `I`) back on `cells`.
+signal invulnerability_items_placed(cells: Array[Vector2i])
 ## Emitted by Invulnerability when the time was granted (`active` true, `remaining` seconds) and when it ran out.
 signal invulnerability_changed(active: bool, remaining: float)

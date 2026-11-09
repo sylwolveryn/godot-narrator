@@ -16,6 +16,8 @@ var enemies: Array[Vector2i] = []
 var enemy_types: Array[StringName] = []
 ## Black holes placed in the map file (task-076), row-major. The cells hold floor.
 var black_holes: Array[Vector2i] = []
+## Invulnerability items placed in the map file (task-095), row-major. The cells hold floor.
+var invulnerability_items: Array[Vector2i] = []
 ## Merged multi-cell props (task-058), row-major by top-left cell. Their cells hold the prop type in `types`.
 var large_objects: Array[LargeObjectPlacement] = []
 ## Working teleports (task-068), row-major by top-left cell; their cells (ring and centre) hold floor in `types`.

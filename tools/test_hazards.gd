@@ -69,6 +69,8 @@ func _run() -> void:
 	var run_cfg: RunConfig = (main.get_node("RunManager").get("config") as RunConfig).duplicate()
 	run_cfg.restart_delay = RESTART_DELAY
 	main.get_node("RunManager").set("config", run_cfg)
+	# Task-095: the respawn shield would make the second hazard harmless; this test is about the hazards.
+	main.get_node("Invulnerability").set("respawn_seconds", 0.0)
 	root.add_child(main)
 	var runs: Node = main.get_node("RunManager")
 	var player: CharacterBody3D = main.get_node("Player")

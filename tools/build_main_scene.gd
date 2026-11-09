@@ -485,6 +485,7 @@ func _build() -> void:
 	marks_view.set("player", player)
 	marks_view.set("invulnerability", invulnerable)
 	marks_view.set("surface_material", load(GLYPH_MATERIAL))
+	marks_view.set("map_reveal", reveal)
 	_add(root, marks_view)
 
 	var hazards: Node = load("res://scripts/world/hazard_monitor.gd").new()

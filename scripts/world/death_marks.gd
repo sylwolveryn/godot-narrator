@@ -7,6 +7,7 @@ extends Node
 ##    of tiles_per_item, it throws one invulnerability item (⚛) onto a free, harmless walkable cell near the death cell
 ##    (BFS within item_scatter_radius); SignalBus.invulnerability_item_dropped.
 ##  - The player standing on an item's cell during a run picks it up: Invulnerability.grant(invulnerable_seconds).
+##  - Maps place items too (legend `I`, task-095): put back on every SignalBus.world_reset, picked up the same way.
 ## Stains and items are kept per map for the whole game launch (deaths, runs and map switches keep them; a restart of
 ## the game clears them). DeathMarksView draws them read-only.
 
@@ -43,6 +44,21 @@ func _ready() -> void:
 			mark_death(player.global_position))
 	if map_loader != null:
 		map_loader.map_built.connect(func(_m: MapData) -> void: SignalBus.death_stains_reset.emit(_map_id()))
+	SignalBus.world_reset.connect(place_map_items)
+
+
+## Puts the map file's invulnerability items (legend `I`, task-095) back: the world reset (first run of a launch) shows
+## the map's picture again. Thrown items stay; a map item picked up later stays gone across deaths (the world is kept).
+func place_map_items() -> void:
+	if map_loader == null:
+		return
+	var placed: Array[Vector2i] = []
+	for cell: Vector2i in map_loader.data.invulnerability_items:
+		if not items().has(cell):
+			items()[cell] = true
+			placed.append(cell)
+	if not placed.is_empty():
+		SignalBus.invulnerability_items_placed.emit(placed)
 
 
 ## Stain strength 0..1 of a cell of the current map.

@@ -5,7 +5,7 @@ extends Node3D
 ##    `stain_map`; the shader sprays the stained cells' glyphs purple to red (shaders/glyph_surface.gdshader). The
 ##    texture is rebuilt on a death and on a map build only.
 ##  - Invulnerability items: a bobbing, glowing ⚛ over each item cell; a fresh item is thrown out of the death spot on
-##    an arc.
+##    an arc. Items placed by the map (legend `I`) appear once their cell is revealed.
 ##  - Shield: while the player is invulnerable, two rings of small light-blue glyphs (DeathMarksConfig.ring_text) turn
 ##    around the player on tilted, precessing planes (an energy shield in 3D, no collision); glyphs on the far side
 ##    are dimmer and smaller, and the shield flickers in its last seconds.
@@ -18,6 +18,9 @@ extends Node3D
 @export var invulnerability: Invulnerability
 ## The glyph-surface material of the world (its stain uniforms).
 @export var surface_material: ShaderMaterial
+## Optional (task-095): an item is drawn only once its cell has been revealed (seen or remembered), so a map's `I`
+## does not show through the fog. Null draws every item.
+@export var map_reveal: MapReveal
 
 var _glyphs: GlyphBillboards
 var _clock: float = 0.0
@@ -27,6 +30,8 @@ var _image: Image
 var _texture: ImageTexture
 ## Shield glyphs drawn in the last frame (tests).
 var shield_drawn: int = 0
+## Item glyphs drawn in the last frame (tests).
+var items_drawn: int = 0
 
 
 func _ready() -> void:
@@ -47,6 +52,7 @@ func _ready() -> void:
 		_throws[cell] = [from_position, _clock]
 		_wake())
 	SignalBus.invulnerability_item_taken.connect(func(cell: Vector2i) -> void: _throws.erase(cell))
+	SignalBus.invulnerability_items_placed.connect(func(_cells: Array[Vector2i]) -> void: _wake())
 	SignalBus.invulnerability_changed.connect(func(_a: bool, _r: float) -> void: _wake())
 	refresh_stains()
 	_wake()
@@ -108,9 +114,13 @@ func _process(delta: float) -> void:
 	var items: Dictionary = marks.items() if marks != null else {}
 	var shielded: bool = _shielded()
 	_glyphs.begin()
+	items_drawn = 0
 	if map_loader != null:
 		for cell: Vector2i in items:
+			if map_reveal != null and map_reveal.state_of(cell) == MapReveal.CellState.HIDDEN:
+				continue
 			_draw_item(cell)
+			items_drawn += 1
 	shield_drawn = 0
 	if shielded:
 		_draw_shield()

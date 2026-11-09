@@ -17,25 +17,26 @@
 
 ### Map mapping
 
-| char | type | DB table(s) | ultra short description | important notes |
-|---|---|---|---|---|
-| ` ` (space) | void | none | outside map | blocks light and sight |
-| `.` | floor | glyph_anim (`floor`) | walkable | shimmering glyphs near player |
-| `#` | wall | glyph_anim (`wall`) | solid | blocks movement, light, sight |
-| `@` | spawn | - | player start | floor; one per map |
-| `*` | item | glyph_anim (`item`, anim off by default) | glowing pillar | halo + static light; blocks sight (item itself seen); event ITEM_REVEALED |
-| `^` | spikes | glyph_anim (`spikes`) | kill on touch | events HIT_SPIKES, DEATH_BY_SPIKES |
-| `%` | corruption | glyph_anim (`corruption`) | erodes player inside | events CORRUPTION_ENTERED, EROSION_HIGH, DEATH_BY_CORRUPTION; kills at threshold |
-| `o` | pushable object | - | small block | only grown form pushes; one cell per push; cell under it is floor |
-| `T` | teleport ring | none (not in DB) | 3x3 ring of T around a channel char = working pad | walkable floor; centre char (0-9 a-z A-Z) is the channel, even `o`; any other T group = broken (dim cracks, no trip); see Teleports |
-| `D` | dirt wall | none | eatable wall | blocks move, sight, light like `#`; walk into it = eaten (crumble, dust, crunch) -> floor; back each run; events WALL_EATEN, WALLS_DEVOURED |
-| `G` | gargoyle fountain | none (not in DB) | ASCII gargoyle over animated water basin | blocks movement, sight, light; destructible (cannon ball removes whole object); def: `resources/config/large_objects/gargoyle_fountain.tres` |
-| `C` | cannon | none (not in DB) | ASCII cannon, barrel turns | merged like G (1x1, 2x2); blocks movement only; indestructible; interact = fire; see Cannon |
-| `L` | crawler, left wall | enemy_def (`crawler`) | amber bug `Ж` with legs | keeps wall on its left; touch = death; see Enemies |
-| `R` | crawler, right wall | enemy_def (`crawler`) | same bug | keeps wall on its right |
-| `H` | hunter (seeker) | enemy_def (`hunter`) | red `Ω` with eyes | paths to player inside 16 cells |
-| `W` | wanderer (random) | enemy_def (`wanderer`) | green `&`, orbiting dots | random runs |
-| `O` | black hole | none | dark core, swirling glyph rings | floor; harmless to player; kills enemies that enter; see Remains |
+| char        | type                 | DB table(s)                              | ultra short description                           | important notes                                                                                                                                                                                         |
+| ----------- | -------------------- | ---------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ` ` (space) | void                 | none                                     | outside map                                       | blocks light and sight                                                                                                                                                                                  |
+| `.`         | floor                | glyph_anim (`floor`)                     | walkable                                          | shimmering glyphs near player                                                                                                                                                                           |
+| `#`         | wall                 | glyph_anim (`wall`)                      | solid                                             | blocks movement, light, sight                                                                                                                                                                           |
+| `@`         | spawn                | -                                        | player start                                      | floor; one per map                                                                                                                                                                                      |
+| `*`         | item                 | glyph_anim (`item`, anim off by default) | glowing pillar                                    | halo + static light; blocks sight (item itself seen); event ITEM_REVEALED                                                                                                                               |
+| `^`         | spikes               | glyph_anim (`spikes`)                    | kill on touch                                     | events HIT_SPIKES, DEATH_BY_SPIKES                                                                                                                                                                      |
+| `%`         | corruption           | glyph_anim (`corruption`)                | erodes player inside                              | events CORRUPTION_ENTERED, EROSION_HIGH, DEATH_BY_CORRUPTION; kills at threshold                                                                                                                        |
+| `o`         | pushable object      | -                                        | small block                                       | only grown form pushes; one cell per push; cell under it is floor                                                                                                                                       |
+| `T`         | teleport ring        | none (not in DB)                         | 3x3 ring of T around a channel char = working pad | walkable floor; centre char (0-9 a-z A-Z) is the channel, even `o`; any other T group = broken (dim cracks, no trip); see Teleports                                                                     |
+| `D`         | dirt wall            | none                                     | eatable wall                                      | blocks move, sight, light like `#`; walk into it = eaten (crumble, dust, crunch) -> floor; back each run; events WALL_EATEN, WALLS_DEVOURED                                                             |
+| `G`         | gargoyle fountain    | none (not in DB)                         | ASCII gargoyle over animated water basin          | blocks movement, sight, light; destructible (cannon ball removes whole object); def: `resources/config/large_objects/gargoyle_fountain.tres`                                                            |
+| `C`         | cannon               | none (not in DB)                         | ASCII cannon, barrel turns                        | merged like G (1x1, 2x2); blocks movement only; indestructible; interact = fire; see Cannon                                                                                                             |
+| `L`         | crawler, left wall   | enemy_def (`crawler`)                    | amber bug `Ж` with legs                           | keeps wall on its left; touch = death; see Enemies                                                                                                                                                      |
+| `R`         | crawler, right wall  | enemy_def (`crawler`)                    | same bug                                          | keeps wall on its right                                                                                                                                                                                 |
+| `H`         | hunter (seeker)      | enemy_def (`hunter`)                     | red `Ω` with eyes                                 | paths to player inside 16 cells                                                                                                                                                                         |
+| `W`         | wanderer (random)    | enemy_def (`wanderer`)                   | green `&`, orbiting dots                          | random runs                                                                                                                                                                                             |
+| `O`         | black hole           | none                                     | dark core, swirling glyph rings                   | floor; harmless to player; kills enemies that enter; see Remains                                                                                                                                        |
+| `I`         | invulnerability item | none                                     | bobbing, glowing `⚛`                              | floor; walk over = invulnerable (DeathMarksConfig.invulnerable_seconds, 600 s); hidden until its cell is revealed; picked = gone across deaths, back on world reset (game restart); see Invulnerability |
 
 - `-` = no DB row listed.
 
@@ -125,6 +126,11 @@ TTT     anything else made of T = broken
 - Per run: run start = diamonds gone, holes = map's `O` again.
 - Events: BLACK_HOLE_FORMED ("Collapse, fold, nothing"), DIAMOND_FOUND ("Cold, bright, yours"); world lines, once ever.
 - Signals: diamonds_spawned, diamond_collected(cell, total), black_hole_formed, remains_reset.
+
+### Invulnerability (`⚛`, shield)
+- Sources: map `I`; a death passing another 10 stained tiles throws one (DeathMarks); every run after a death starts with 5 s (`Invulnerability.respawn_seconds`, exported on the node; 0 = off). First run of a launch: none.
+- While active: spikes / corruption harmless, touching enemy dies (cause `invulnerable`), rotating light-blue glyph shield around the player. Time adds up, runs only while playing.
+- Code: Invulnerability (only writer of the time), DeathMarks (items: map + death drops), DeathMarksView (item + shield look). Numbers: `resources/config/death_marks_config.tres`.
 
 ## Controls
 
@@ -258,4 +264,4 @@ Run: `python god/god.py`
   - `godot --headless --max-fps 30 --path . -s tools/test_x.gd`
   - god: `python -m unittest discover -s god/tests`
 - Tasks: backlog CLI (latest TASK-100).
-- Legend chars used: space . # @ * ^ % o G T D C L R H W O (+ teleport channels inside T rings).
+- Legend chars used: space . # @ * ^ % o G T D C L R H W O I (+ teleport channels inside T rings).

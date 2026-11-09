@@ -120,6 +120,13 @@ func parse_text(text: String) -> MapData:
 					first_floor = Vector2i(x, y)
 				map.set_type(Vector2i(x, y), MapLegend.FLOOR)
 				continue
+			# Invulnerability item (task-095) lies on floor; DeathMarks owns it like the death-drop one.
+			if ch == legend.invulnerability_char:
+				map.invulnerability_items.append(Vector2i(x, y))
+				if first_floor.x < 0:
+					first_floor = Vector2i(x, y)
+				map.set_type(Vector2i(x, y), MapLegend.FLOOR)
+				continue
 			var type: StringName = legend.type_for(ch)
 			if type == &"":
 				if not unknown_seen.has(ch):
