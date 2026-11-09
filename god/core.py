@@ -57,8 +57,9 @@ def dev_flags_path(save: Path) -> Path:
 
 
 def read_dev_flags(path: Path) -> dict:
-    """{'perf': bool, 'reveal_map': int} from the Godot ConfigFile flag file. Missing / unreadable: off and 0."""
-    flags = {"perf": False, "reveal_map": 0}
+    """{'perf': bool, 'narration': bool, 'reveal_map': int} from the Godot ConfigFile flag file.
+    Missing / unreadable: off and 0."""
+    flags = {"perf": False, "narration": False, "reveal_map": 0}
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
@@ -73,8 +74,8 @@ def read_dev_flags(path: Path) -> dict:
         if not sep:
             continue
         key, value = key.strip(), value.strip()
-        if section == "overlay" and key == "perf":
-            flags["perf"] = value.lower() == "true"
+        if section == "overlay" and key in ("perf", "narration"):
+            flags[key] = value.lower() == "true"
         elif section == "commands" and key == "reveal_map":
             try:
                 flags["reveal_map"] = int(value)
@@ -83,11 +84,12 @@ def read_dev_flags(path: Path) -> dict:
     return flags
 
 
-def write_dev_flags(path: Path, perf: bool, reveal_map: int) -> None:
+def write_dev_flags(path: Path, perf: bool, reveal_map: int, narration: bool = False) -> None:
     """Write the flag file atomically; a running game (DevBridge) picks it up within a second."""
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
-    text = "[overlay]\n\nperf=%s\n\n[commands]\n\nreveal_map=%d\n" % ("true" if perf else "false", reveal_map)
+    text = "[overlay]\n\nperf=%s\nnarration=%s\n\n[commands]\n\nreveal_map=%d\n" % (
+        "true" if perf else "false", "true" if narration else "false", reveal_map)
     tmp.write_text(text, encoding="utf-8")
     os.replace(tmp, path)
 
@@ -97,15 +99,26 @@ def read_perf_overlay(path: Path) -> bool:
 
 
 def write_perf_overlay(path: Path, on: bool) -> None:
-    """Switch the FPS overlay, keeping the reveal request counter."""
-    write_dev_flags(path, on, read_dev_flags(path)["reveal_map"])
+    """Switch the FPS overlay, keeping the other flags."""
+    flags = read_dev_flags(path)
+    write_dev_flags(path, on, flags["reveal_map"], flags["narration"])
+
+
+def read_narration_overlay(path: Path) -> bool:
+    return read_dev_flags(path)["narration"]
+
+
+def write_narration_overlay(path: Path, on: bool) -> None:
+    """Switch the narration queue debug overlay (task-020.07), keeping the other flags."""
+    flags = read_dev_flags(path)
+    write_dev_flags(path, flags["perf"], flags["reveal_map"], on)
 
 
 def request_live_reveal(path: Path) -> int:
     """Ask a running game to reveal its current map: bumps the reveal_map counter. Returns the new value."""
     flags = read_dev_flags(path)
     value = flags["reveal_map"] + 1
-    write_dev_flags(path, flags["perf"], value)
+    write_dev_flags(path, flags["perf"], value, flags["narration"])
     return value
 
 

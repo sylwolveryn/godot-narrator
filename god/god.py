@@ -63,8 +63,9 @@ class GodApp:
         self.btn_cont = ttk.Button(row, text="Continue game", command=self._continue)
         self.btn_reveal = ttk.Button(row, text="Reveal map", command=self._reveal)
         self.btn_fps = ttk.Button(row, text="FPS: off", command=self._toggle_fps)
+        self.btn_queue = ttk.Button(row, text="Queue: off", command=self._toggle_queue)
         self.btn_import = ttk.Button(row, text="Import assets", command=self._import_assets)
-        for b in (self.btn_new, self.btn_mods, self.btn_cont, self.btn_reveal, self.btn_fps, self.btn_import):
+        for b in (self.btn_new, self.btn_mods, self.btn_cont, self.btn_reveal, self.btn_fps, self.btn_queue, self.btn_import):
             b.pack(side="left", padx=(0, 6))
         self._build_map_pick(row)
         spikes = ttk.Frame(self.win)
@@ -341,6 +342,7 @@ class GodApp:
         self.btn_mods.config(state="disabled" if self.busy else "normal")
         self.btn_import.config(state="disabled" if self.busy or not self.ctl.godot else "normal")
         self.btn_fps.config(text="FPS: on" if core.read_perf_overlay(self.fps_flags) else "FPS: off")
+        self.btn_queue.config(text="Queue: on" if core.read_narration_overlay(self.fps_flags) else "Queue: off")
         self.message.config(text=st.hint or self.notice)
         self._render_seed()
 
@@ -439,6 +441,16 @@ class GodApp:
         try:
             core.write_perf_overlay(self.fps_flags, on)
             self.notice = "FPS overlay %s." % ("on" if on else "off")
+        except OSError as e:
+            self.notice = "Error: %s" % e
+        self._render()
+
+    def _toggle_queue(self) -> None:
+        """Narration queue debug overlay (text + audio queues, waiting periods) on or off; applies live."""
+        on = not core.read_narration_overlay(self.fps_flags)
+        try:
+            core.write_narration_overlay(self.fps_flags, on)
+            self.notice = "Narration queue overlay %s." % ("on" if on else "off")
         except OSError as e:
             self.notice = "Error: %s" % e
         self._render()

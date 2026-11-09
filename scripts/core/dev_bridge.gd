@@ -4,6 +4,8 @@ extends Node
 ##   [overlay] perf=true|false   FPS / frametime / CPU / GPU graphs from the vendored Debug Menu addon
 ##                               (addons/debug_menu, Calinou, MIT). The addon scene is only instanced the first time
 ##                               it is switched on, so a game that never shows it pays nothing. Once shown, F3 cycles it.
+##   [overlay] narration=true|false   narration queue / text / audio debug overlay on the left (NarrationDebugOverlay,
+##                               task-020.07); instanced the first time it is switched on.
 ##   [commands] reveal_map=<n>   a request counter: each new value asks the current map to reveal itself
 ##                               (SignalBus.dev_reveal_map_requested; MapReveal answers). The value present when the game
 ##                               starts is only remembered, so an old request never fires again.
@@ -11,6 +13,7 @@ extends Node
 
 const OVERLAY_SECTION := "overlay"
 const PERF_KEY := "perf"
+const NARRATION_KEY := "narration"
 const COMMANDS_SECTION := "commands"
 const REVEAL_KEY := "reveal_map"
 const MENU_SCENE := "res://addons/debug_menu/debug_menu.tscn"
@@ -22,6 +25,7 @@ const MenuScript := preload("res://addons/debug_menu/debug_menu.gd")
 @export var poll_seconds := 0.5
 
 var _menu: CanvasLayer
+var _narration: NarrationDebugOverlay
 var _last_text := ""
 var _polled_once := false
 var _reveal_request := 0
@@ -49,6 +53,7 @@ func _poll() -> void:
 	if not text.is_empty() and cfg.parse(text) != OK:
 		return
 	_apply_overlay(bool(cfg.get_value(OVERLAY_SECTION, PERF_KEY, false)))
+	_apply_narration(bool(cfg.get_value(OVERLAY_SECTION, NARRATION_KEY, false)))
 	var request := int(cfg.get_value(COMMANDS_SECTION, REVEAL_KEY, 0))
 	if request != _reveal_request:
 		_reveal_request = request
@@ -65,3 +70,13 @@ func _apply_overlay(on: bool) -> void:
 	var style: int = MenuScript.Style.VISIBLE_DETAILED if on else MenuScript.Style.HIDDEN
 	if _menu.style != style:
 		_menu.style = style
+
+
+func _apply_narration(on: bool) -> void:
+	if not on and _narration == null:
+		return
+	if _narration == null:
+		_narration = NarrationDebugOverlay.new()
+		_narration.name = "NarrationDebugOverlay"
+		add_child(_narration)
+	_narration.set_active(on)

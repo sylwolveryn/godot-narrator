@@ -66,7 +66,7 @@ class PerfOverlayFlag(unittest.TestCase):
             p = Path(d) / "sub" / "dev_flags.cfg"
             core.write_perf_overlay(p, True)
             self.assertTrue(core.read_perf_overlay(p))
-            self.assertEqual(p.read_text(), "[overlay]\n\nperf=true\n\n[commands]\n\nreveal_map=0\n")
+            self.assertEqual(p.read_text(), "[overlay]\n\nperf=true\nnarration=false\n\n[commands]\n\nreveal_map=0\n")
             core.write_perf_overlay(p, False)
             self.assertFalse(core.read_perf_overlay(p))
 
@@ -84,9 +84,21 @@ class DevFlags(unittest.TestCase):
             core.write_perf_overlay(p, True)
             self.assertEqual(core.request_live_reveal(p), 1)
             self.assertEqual(core.request_live_reveal(p), 2)
-            self.assertEqual(core.read_dev_flags(p), {"perf": True, "reveal_map": 2})
+            self.assertEqual(core.read_dev_flags(p), {"perf": True, "narration": False, "reveal_map": 2})
             core.write_perf_overlay(p, False)
-            self.assertEqual(core.read_dev_flags(p), {"perf": False, "reveal_map": 2})
+            self.assertEqual(core.read_dev_flags(p), {"perf": False, "narration": False, "reveal_map": 2})
+
+    def test_narration_overlay_keeps_other_flags(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "dev_flags.cfg"
+            self.assertFalse(core.read_narration_overlay(p))
+            core.write_perf_overlay(p, True)
+            core.request_live_reveal(p)
+            core.write_narration_overlay(p, True)
+            self.assertEqual(core.read_dev_flags(p), {"perf": True, "narration": True, "reveal_map": 1})
+            core.write_perf_overlay(p, False)
+            core.request_live_reveal(p)
+            self.assertEqual(core.read_dev_flags(p), {"perf": False, "narration": True, "reveal_map": 2})
 
     def test_bad_counter_is_zero(self):
         with tempfile.TemporaryDirectory() as d:

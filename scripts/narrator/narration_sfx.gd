@@ -15,11 +15,15 @@ var _streams: Dictionary[StringName, AudioStreamWAV] = {}
 var _volumes: Dictionary[StringName, float] = {}
 var _rng := RandomNumberGenerator.new()
 
+## Group the debug overlay finds the sfx player by.
+const GROUP := &"narration_sfx"
+
 
 func _ready() -> void:
 	if config == null:
 		config = NarratorConfig.new()
 	_rng.seed = 1
+	add_to_group(GROUP)
 	_player = AudioStreamPlayer.new()
 	_player.name = "Player"
 	_player.bus = config.sfx_bus
@@ -104,3 +108,13 @@ func _on_beat_started(beat: NarrationBeat) -> void:
 		_voice.stream = narrator.current_voice
 		_voice.volume_db = voice_volume_db
 		_voice.play()
+
+
+## The mood player (read-only, debug overlay).
+func mood_player() -> AudioStreamPlayer:
+	return _player
+
+
+## The voice player (read-only, debug overlay).
+func voice_player() -> AudioStreamPlayer:
+	return _voice

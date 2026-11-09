@@ -31,6 +31,13 @@ extends Node
 signal beat_started(beat: NarrationBeat)
 ## The current beat should dissolve. `fast` = preempted by a death beat.
 signal beat_dissolving(fast: bool)
+## Debug trace of every queue decision (task-020.07) for the narration debug overlay. Decisions are rare (a few per
+## beat), so the text is always built.
+## kind: trigger, drop, queue, start, wait, preempt, run.
+signal debug_note(kind: StringName, text: String)
+
+## Group the debug overlay finds the narrator by.
+const GROUP := &"narrator"
 
 enum State { FREE, SHOWING, DISSOLVING, GAP, PREEMPTING }
 
@@ -65,6 +72,8 @@ var death_count: int = 0
 
 var _clock: float = 0.0
 var _timer: float = 0.0
+## Full length of the current state's timer (for the debug overlay's progress bars).
+var _phase_len: float = 0.0
 var _queued_at: float = 0.0
 var _queued_priority: int = -1
 ## Beats that must still play: TTL-exempt beats displaced from the queue and never-heard lines (task-087). They move
@@ -94,6 +103,7 @@ func _ready() -> void:
 	if config == null:
 		config = NarratorConfig.new()
 	rng.randomize()
+	add_to_group(GROUP)
 	SignalBus.run_started.connect(_on_run_started)
 	SignalBus.run_ended.connect(_on_run_ended)
 	SignalBus.narration_event.connect(trigger_event)
@@ -122,21 +132,28 @@ func advance(delta: float) -> void:
 	_tick_state(delta)
 	if queued != null and _clock - _queued_at > config.queue_ttl_seconds and not config.ttl_exempt_events.has(queued.event):
 		if is_guaranteed(queued):
+			_note(&"wait", "TTL %.1fs over: %s -> waiting (never heard)" % [config.queue_ttl_seconds, queued.id])
 			_wait(queued)
+		else:
+			_note(&"drop", "TTL %.1fs over: %s dropped" % [config.queue_ttl_seconds, queued.id])
 		queued = null
 	# The next layer of the event on screen follows as soon as the previous line has dissolved.
 	if not _chain.is_empty() and (state == State.FREE or state == State.GAP):
+		_note(&"start", "chain: next layer follows")
 		_start(_chain.pop_front(), true)
 	# Reactive beats start as soon as nothing is showing; the silence gap does not hold them back.
 	if not _reactive.is_empty() and (state == State.FREE or state == State.GAP):
+		_note(&"start", "reactive FIFO: starts without waiting for the gap")
 		_start(_reactive.pop_front())
 	_resolve_candidates()
 	if state == State.FREE and queued != null:
 		var next: NarrationBeat = queued
 		queued = null
+		_note(&"start", "queue -> slot free")
 		_start(next)
 	if queued == null and not _waiting.is_empty() and _run_active:
 		queued = _waiting.pop_front()
+		_note(&"queue", "waiting -> queue: %s" % queued.id)
 		_queued_priority = priority_of(queued.event)
 		_queued_at = _clock
 
@@ -297,19 +314,25 @@ func priority_of(event: StringName) -> int:
 func _offer(event: StringName, param: StringName = &"") -> void:
 	var is_death: bool = priority_of(event) >= config.preempt_priority
 	var reactive: bool = config.reactive_events.has(event)
+	var label: String = String(event) + ("(%s)" % param if param != &"" else "")
 	if not _run_active and not is_death and not reactive:
+		_note(&"drop", "%s ignored: no run" % label)
 		return
 	if library != null:
 		library.note_triggered(event)
 	var beat: NarrationBeat = pick_for_event(event, param)
 	if beat == null:
+		_note(&"drop", "%s: no eligible line (heard, pending or gated)" % label)
 		return
 	# A heard line plays again only when the repeat roll passes (task-087).
 	if is_repeatable(beat) and rng.randf() >= config.repeat_chance(hearings(beat.id)):
+		_note(&"drop", "%s: %s repeat roll failed (%d heard)" % [label, beat.id, hearings(beat.id)])
 		return
 	if reactive:
+		_note(&"trigger", "%s -> %s (reactive FIFO)" % [label, beat.id])
 		_reactive.append(beat)
 	else:
+		_note(&"trigger", "%s -> %s (prio %d)" % [label, beat.id, priority_of(event)])
 		_candidates.append([beat, priority_of(event)])
 
 
@@ -320,6 +343,7 @@ func _check_time_beats() -> void:
 		if not is_eligible(beat, run_count, death_count) or _is_pending(beat):
 			continue
 		_time_fired[beat.id] = true
+		_note(&"trigger", "TIME %.0fs -> %s" % [beat.delay, beat.id])
 		_candidates.append([beat, priority_of(NarrationEvents.TIME)])
 
 
@@ -346,21 +370,33 @@ func _resolve_candidates() -> void:
 	# Never-heard lines that lost this frame still play later.
 	for candidate: Array in _candidates_lost(best):
 		if is_guaranteed(candidate[0]):
+			_note(&"wait", "lost this frame: %s -> waiting" % candidate[0].id)
 			_wait(candidate[0])
+		else:
+			_note(&"drop", "lost this frame: %s" % candidate[0].id)
 	_candidates.clear()
 	if priority >= config.preempt_priority:
+		_note(&"preempt", "%s preempts (prio %d)" % [beat.id, priority])
 		_preempt(beat)
 	elif state == State.FREE and queued == null:
+		_note(&"start", "slot free: %s" % beat.id)
 		_start(beat)
 	elif queued == null or priority > _queued_priority:
 		if queued != null and (config.ttl_exempt_events.has(queued.event) or is_guaranteed(queued)):
+			_note(&"wait", "%s displaced -> waiting" % queued.id)
 			_wait(queued)
+		elif queued != null:
+			_note(&"drop", "%s replaced by higher prio" % queued.id)
+		_note(&"queue", "%s queued (%s)" % [beat.id, State.keys()[state]])
 		queued = beat
 		_queued_priority = priority
 		_queued_at = _clock
 	elif is_guaranteed(beat):
 		# It did not beat the line already queued; a never-heard line still waits for its turn (task-087).
+		_note(&"wait", "%s: queue taken -> waiting" % beat.id)
 		_wait(beat)
+	else:
+		_note(&"drop", "%s: queue taken by prio %d" % [beat.id, _queued_priority])
 
 
 func _preempt(beat: NarrationBeat) -> void:
@@ -373,7 +409,7 @@ func _preempt(beat: NarrationBeat) -> void:
 			_next_after_preempt = beat
 		_:
 			state = State.PREEMPTING
-			_timer = config.preempt_dissolve_seconds
+			_set_timer(config.preempt_dissolve_seconds)
 			_next_after_preempt = beat
 			beat_dissolving.emit(true)
 
@@ -382,7 +418,7 @@ func _preempt(beat: NarrationBeat) -> void:
 func _start(beat: NarrationBeat, chained: bool = false) -> void:
 	current = beat
 	state = State.SHOWING
-	_timer = config.morph_in_seconds + config.beat_hold_seconds
+	_set_timer(config.morph_in_seconds + config.beat_hold_seconds)
 	current_doubt = doubt_fraction(beat)
 	current_text = library.line_for(beat) if library != null else beat.text
 	if _has_understanding:
@@ -462,11 +498,11 @@ func _tick_state(delta: float) -> void:
 	match state:
 		State.SHOWING:
 			state = State.DISSOLVING
-			_timer = config.morph_out_seconds
+			_set_timer(config.morph_out_seconds)
 			beat_dissolving.emit(false)
 		State.DISSOLVING:
 			state = State.GAP
-			_timer = config.beat_gap_seconds
+			_set_timer(config.beat_gap_seconds)
 		State.GAP:
 			state = State.FREE
 		State.PREEMPTING:
@@ -493,11 +529,13 @@ func _on_run_started(run_index: int) -> void:
 	_time_fired.clear()
 	_candidates.clear()
 	queued = null
+	_note(&"run", "run %d started" % run_count)
 	_offer(NarrationEvents.RUN_STARTED)
 
 
 func _on_run_ended(cause: StringName) -> void:
 	_run_active = false
+	_note(&"run", "run ended: %s" % cause)
 	if queued != null and is_guaranteed(queued):
 		_wait(queued)
 	queued = null
@@ -556,3 +594,46 @@ func _on_erosion_changed(amount: float, _tint: Color) -> void:
 		return
 	_erosion_high_fired = true
 	trigger_event(NarrationEvents.EROSION_HIGH)
+
+
+func _set_timer(seconds: float) -> void:
+	_timer = seconds
+	_phase_len = seconds
+
+
+func _note(kind: StringName, text: String) -> void:
+	debug_note.emit(kind, text)
+
+
+# ---- read-only views for the narration debug overlay (task-020.07)
+
+## Seconds left in the current state's timer (0 when FREE).
+func phase_left() -> float:
+	return maxf(_timer, 0.0) if state != State.FREE else 0.0
+
+
+## Full length of the current state's timer.
+func phase_length() -> float:
+	return _phase_len
+
+
+## Seconds the queued beat has waited (0 when nothing is queued).
+func queued_age() -> float:
+	return _clock - _queued_at if queued != null else 0.0
+
+
+func queued_priority() -> int:
+	return _queued_priority
+
+
+func reactive_beats() -> Array[NarrationBeat]:
+	return _reactive
+
+
+func is_run_active() -> bool:
+	return _run_active
+
+
+## Seconds of stillness (idle triggers count this).
+func still_time() -> float:
+	return _still_time
