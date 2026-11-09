@@ -183,14 +183,12 @@ func _check_scene() -> void:
 	_check(dug_more, "the body digs on through the next cells")
 	_check(loader.world_to_cell(player.global_position).x >= target.x, "the body moved into the eaten cell (at %s)" % loader.world_to_cell(player.global_position))
 	_check(not _events.has(NarrationEvents.HIT_WALL), "still no HIT_WALL while digging")
-	# The world line plays once ever (it waits for the beat on screen; one more eat offers it again).
-	for i in 150:
+	# The world line is never lost (task-087): it waits behind the lines before it and then plays; later eats repeat it
+	# only on the repeat roll.
+	for i in 1200:
 		narrator.advance(0.1)
-	dirt.destroy(target + Vector2i(3, 0))
-	await process_frame
-	narrator.advance(0.1)
 	_check(narrator.is_heard("dirt_world_crumble"), "world line 'Crumble, dust, destroyed' heard")
-	_check(narrator.pick_for_event(NarrationEvents.WALL_EATEN) == null, "the world line plays once")
+	_check(narrator.hearings("dirt_world_crumble") >= 1, "the world line counts its hearings for the repeat ladder")
 	_check(world_view.visibility() != null, "world view still fine")
 
 	# Destroying a non-dirt cell is refused.

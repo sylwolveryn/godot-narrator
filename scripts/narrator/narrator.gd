@@ -358,6 +358,9 @@ func _resolve_candidates() -> void:
 		queued = beat
 		_queued_priority = priority
 		_queued_at = _clock
+	elif is_guaranteed(beat):
+		# It did not beat the line already queued; a never-heard line still waits for its turn (task-087).
+		_wait(beat)
 
 
 func _preempt(beat: NarrationBeat) -> void:

@@ -330,7 +330,8 @@ func _test_display_cap_and_queue() -> void:
 	_check((n.get("queued") as NarrationBeat).id == "corrupt_knows", "higher class should replace the queued beat")
 	# Task-087: a never-heard line is not dropped by the TTL; it (and the displaced wall_edges) wait their turn.
 	_wait(n, config.queue_ttl_seconds + 0.5)
-	_check(n.get("queued") == null or (n.get("queued") as NarrationBeat).id in ["corrupt_knows", "wall_edges"], "the TTL moves a first-time line to the waiting list")
+	var q: NarrationBeat = n.get("queued")
+	_check(q == null or n.call("is_guaranteed", q), "the TTL keeps first-time lines (queued or waiting), got %s" % [q.id if q != null else "-"])
 	_wait(n, 40.0)
 	_check(_started.has("corrupt_knows") and _started.has("wall_edges"), "first-time lines all play in the end, got %s" % [_started])
 	_check((rig["svc"].get("progress") as PersistentProgress).heard_beats.has("corrupt_knows"), "and are recorded as heard")
@@ -562,7 +563,8 @@ func _test_run_start_after_death() -> void:
 	_wait(n, STEP)
 	_check((n.get("queued") as NarrationBeat).id == "corrupt_knows", "higher class replaces the queued start beat")
 	_wait(n, 40.0)
-	_check(_started == PackedStringArray(["wake_first", "corrupt_knows", "start_came_back"]), "displaced start beat should re-queue, got %s" % [_started])
+	# Task-087: never-heard lines that fire meanwhile (idle_still) wait as well and play after them.
+	_check(_started.slice(0, 3) == PackedStringArray(["wake_first", "corrupt_knows", "start_came_back"]), "displaced start beat should re-queue, got %s" % [_started])
 	_teardown(rig)
 
 
