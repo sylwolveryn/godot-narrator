@@ -3,9 +3,11 @@ id: TASK-104
 title: >-
   Death splat polish: DB-driven per-form radius, crimson stains, stain-tinted
   trail marks
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-09T11:10:00Z'
+updated_date: '2026-11-09T12:53:00Z'
 labels:
   - gameplay
   - rendering
