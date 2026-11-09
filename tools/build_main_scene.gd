@@ -224,6 +224,7 @@ func _build() -> void:
 	menu_view.set("world", load(CFG + "world_config.tres"))
 	menu_view.set("origin_config", load(CFG + "origin_config.tres"))
 	menu_view.set("surface_material", load(GLYPH_MATERIAL))
+	menu_view.set("camera_rig", rig)
 	_add(root, menu_view)
 
 	# The glyph storm (task-030): glyphs of the surroundings swirl around the player; one MultiMesh, no per-instance data.

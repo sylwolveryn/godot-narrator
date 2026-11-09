@@ -9,6 +9,11 @@ extends Node3D
 ## world material), so the gaps read as "taken from the surroundings".
 ## It only presents: it never writes data. The pointer (hover / click on an item) is reported upward on
 ## SignalBus.menu_item_pointed; MenuController decides what it means.
+## Zoom (task-086): every offset and glyph is scaled by the camera rig's current zoom (shader uniform menu_scale, and the
+## centre's height above the player), followed live while the menu is shown, so it keeps its size on screen.
+## Long lists (task-086): at most MenuConfig.max_visible_rows rows are laid out; the window follows the selection
+## (moving past it rebuilds the window in place, no flight) and hint glyphs mark the rows above / below. Item indices
+## sent and received stay indices of the whole list.
 
 const MENU_SHADER: String = "res://shaders/glyph_menu.gdshader"
 const QUAD_EXTENT: float = 2.0
@@ -50,6 +55,8 @@ enum State { HIDDEN, OPEN, CLOSING }
 @export var origin_config: OriginConfig
 ## The glyph-surface material of the world: its `lift_zone` uniform dims the surroundings while the glyphs are away.
 @export var surface_material: ShaderMaterial
+## Optional (task-086): its current zoom scales the menu. Without it the menu keeps its world size.
+@export var camera_rig: CameraRig
 
 var state: State = State.HIDDEN
 
@@ -79,6 +86,17 @@ var _cells_floor: PackedVector2Array = PackedVector2Array()
 var _cells_wall: PackedVector2Array = PackedVector2Array()
 ## Ledger row: hypothesis id -> the instance kind written for its sigil (empty while the list is shown).
 var _sigil_instance: Dictionary = {}
+## The whole list of the page shown, and the first row of the visible window (task-086).
+var _labels: PackedStringArray = PackedStringArray()
+var _first: int = 0
+## Menu scale applied (the camera zoom), and the camera's up vector when the menu was laid out.
+var _scale: float = 1.0
+var _cam_up: Vector3 = Vector3.UP
+## Half height of the laid out page (frame) and the rows that fit on screen when the page opened (task-086).
+var _half_h: float = 0.0
+var _fit_rows: int = 1
+## Shrink of a long list so more rows fit (1 = full size), times the zoom = the menu scale.
+var _fit_scale: float = 1.0
 
 
 func _ready() -> void:
@@ -121,6 +139,10 @@ func _process(delta: float) -> void:
 		active = true
 	if _step_lift(delta):
 		active = true
+	# Follow the camera zoom while the menu is on screen.
+	if state != State.HIDDEN:
+		_apply_scale(false)
+		active = true
 	set_process(active)
 
 
@@ -132,13 +154,13 @@ func _input(event: InputEvent) -> void:
 		if index != _hover:
 			_hover = index
 			if index >= 0:
-				SignalBus.menu_item_pointed.emit(index, false)
+				SignalBus.menu_item_pointed.emit(index + _first, false)
 	elif event is InputEventMouseButton:
 		var click := event as InputEventMouseButton
 		if click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
 			var index: int = _item_at(click.position)
 			if index >= 0:
-				SignalBus.menu_item_pointed.emit(index, true)
+				SignalBus.menu_item_pointed.emit(index + _first, true)
 				get_viewport().set_input_as_handled()
 
 
@@ -177,18 +199,43 @@ func sigil_kind(id: StringName) -> float:
 ## Screen position of the centre of item `index` (for tools and the pointer test).
 func item_screen_position(index: int) -> Vector2:
 	var cam: Camera3D = get_viewport().get_camera_3d()
-	if cam == null or index < 0 or index >= _item_centre.size():
+	var row: int = index - _first
+	if cam == null or row < 0 or row >= _item_centre.size():
 		return Vector2.ZERO
-	var px: Vector2 = _screen_scale(cam)
+	var px: Vector2 = _screen_scale(cam) * _scale
 	var origin: Vector2 = cam.unproject_position(_centre)
-	return origin + Vector2(_item_centre[index].x * px.x, -_item_centre[index].y * px.y)
+	return origin + Vector2(_item_centre[row].x * px.x, -_item_centre[row].y * px.y)
+
+
+## First row of the visible window and the menu scale (tests).
+func window_first() -> int:
+	return _first
+
+
+func menu_scale() -> float:
+	return _scale
+
+
+## The first row of a window of `size` rows over `count` rows that shows `selected`, moved as little as possible
+## from `first`.
+static func window_for(selected: int, first: int, count: int, size: int) -> int:
+	if count <= size:
+		return 0
+	if selected < first:
+		first = selected
+	elif selected >= first + size:
+		first = selected - size + 1
+	return clampi(first, 0, count - size)
 
 
 func _on_menu_opened(labels: PackedStringArray, selected: int) -> void:
 	if player == null or labels.is_empty():
 		return
+	_labels = labels
+	_fit(labels.size())
+	_first = window_for(selected, 0, labels.size(), _visible_rows())
 	_selected = selected
-	_build_menu(labels)
+	_build_menu(_window_labels())
 	_start_opening()
 
 
@@ -207,8 +254,8 @@ func _start_opening() -> void:
 	_select_t = SETTLED
 	_material.set_shader_parameter(&"open_t", 0.0)
 	_material.set_shader_parameter(&"close_t", -1.0)
-	_material.set_shader_parameter(&"selected", float(_selected))
-	_material.set_shader_parameter(&"prev_selected", float(_selected))
+	_material.set_shader_parameter(&"selected", float(_selected - _first))
+	_material.set_shader_parameter(&"prev_selected", float(_selected - _first))
 	_material.set_shader_parameter(&"select_t", SETTLED)
 	_material.set_shader_parameter(&"anchor", _anchor)
 	_material.set_shader_parameter(&"menu_centre", _centre)
@@ -229,9 +276,19 @@ func _on_menu_closed() -> void:
 func _on_selection_changed(index: int) -> void:
 	if state != State.OPEN:
 		return
-	_material.set_shader_parameter(&"prev_selected", float(_selected))
+	var first: int = window_for(index, _first, _labels.size(), _visible_rows())
+	if first != _first:
+		# The selection left the window: lay out the new window in place (no flight).
+		_first = first
+		_selected = index
+		_build_menu(_window_labels())
+		_start_opening()
+		_open_t = SETTLED
+		_material.set_shader_parameter(&"open_t", SETTLED)
+		return
+	_material.set_shader_parameter(&"prev_selected", float(_selected - _first))
 	_selected = index
-	_material.set_shader_parameter(&"selected", float(index))
+	_material.set_shader_parameter(&"selected", float(index - _first))
 	_select_t = 0.0
 	_material.set_shader_parameter(&"select_t", 0.0)
 	set_process(true)
@@ -255,7 +312,7 @@ func _item_at(screen: Vector2) -> int:
 	var cam: Camera3D = get_viewport().get_camera_3d()
 	if cam == null:
 		return -1
-	var px: Vector2 = _screen_scale(cam)
+	var px: Vector2 = _screen_scale(cam) * _scale
 	var origin: Vector2 = cam.unproject_position(_centre)
 	var local := Vector2((screen.x - origin.x) / px.x, -(screen.y - origin.y) / px.y)
 	for i in _item_centre.size():
@@ -297,7 +354,8 @@ func _write_slots(slots: Array[Dictionary]) -> void:
 		right = cam.global_transform.basis.x
 		up = cam.global_transform.basis.y
 	_anchor = player.global_position
-	_centre = _anchor + Vector3.UP * player_config.glyph_height + up * config.centre_up
+	_cam_up = up
+	_apply_scale(true)
 	_lift_centre = Vector2(_anchor.x, _anchor.z)
 	_sigil_instance.clear()
 	var count: int = slots.size()
@@ -349,6 +407,63 @@ func _write_slots(slots: Array[Dictionary]) -> void:
 	_open_total = total
 
 
+## Rows the window may show.
+func _visible_rows() -> int:
+	return clampi(_fit_rows, 1, maxi(config.max_visible_rows, 1))
+
+
+## Decides how a `count`-row list shows: all rows at full size when they fit between the player and the top of the
+## screen; otherwise shrunk (not below MenuConfig.min_fit_scale) so as many fit as possible, and the rest scrolls.
+## Independent of the zoom (the menu is scaled by it).
+func _fit(count: int) -> void:
+	_fit_scale = 1.0
+	_fit_rows = config.max_visible_rows
+	var room: float = _room_above()
+	if room <= 0.0:
+		return
+	var frame: float = config.bottom_gap + 2.0 * (config.padding.y + PANEL_MARGIN)
+	var rows: int = mini(count, maxi(config.max_visible_rows, 1))
+	var needed: float = frame + (rows - 1) * config.row_height
+	if needed > room:
+		_fit_scale = maxf(room / needed, config.min_fit_scale)
+	_fit_rows = maxi(floori((room / _fit_scale - frame) / config.row_height) + 1, 1)
+
+
+## Room between the player glyph and the top margin of the screen, in menu units at full size; 0 when unknown.
+func _room_above() -> float:
+	var cam: Camera3D = get_viewport().get_camera_3d()
+	if cam == null or player == null:
+		return 0.0
+	var head: Vector3 = player.global_position + Vector3.UP * player_config.glyph_height
+	var head_px: Vector2 = cam.unproject_position(head)
+	var unit_px: float = absf(head_px.y - cam.unproject_position(head + cam.global_transform.basis.y).y)
+	var zoom: float = camera_rig.current_zoom() if camera_rig != null else 1.0
+	return (head_px.y - get_viewport().get_visible_rect().size.y * config.top_margin) / maxf(unit_px * zoom, 0.001)
+
+
+## The labels of the visible window.
+func _window_labels() -> PackedStringArray:
+	return _labels.slice(_first, _first + _visible_rows())
+
+
+## Scale = the camera rig's current zoom; moves the menu centre so it stays as far above the player on screen.
+## `force` applies it even when the zoom did not change.
+func _apply_scale(force: bool) -> void:
+	var s: float = (camera_rig.current_zoom() if camera_rig != null else 1.0) * _fit_scale
+	if not force and is_equal_approx(s, _scale):
+		return
+	_scale = s
+	_centre = _anchor + Vector3.UP * player_config.glyph_height + _cam_up * _centre_up() * s
+	_material.set_shader_parameter(&"menu_scale", s)
+	_material.set_shader_parameter(&"menu_centre", _centre)
+
+
+## Height of the menu centre above the player glyph (menu units): the configured height, or higher so a tall page keeps
+## its lower edge bottom_gap above the player.
+func _centre_up() -> float:
+	return maxf(config.centre_up, config.bottom_gap + _half_h + PANEL_MARGIN)
+
+
 ## All instances of the menu as dictionaries (pos on the camera plane relative to the centre, glyph, size, colour,
 ## item index, kind, order, half extents for the panel).
 func _layout(labels: PackedStringArray) -> Array[Dictionary]:
@@ -380,6 +495,14 @@ func _layout(labels: PackedStringArray) -> Array[Dictionary]:
 		var reach: float = label.length() * config.advance * 0.5 + config.marker_gap
 		out.append(_glyph_slot(Vector2(-reach, y), config.marker_left, config.glyph_size, config.selected_color, float(r), KIND_MARKER, order))
 		out.append(_glyph_slot(Vector2(reach, y), config.marker_right, config.glyph_size, config.selected_color, float(r), KIND_MARKER, order))
+	# Hints for rows outside the window (task-086), in the padding above / below the rows.
+	if _labels.size() > _visible_rows():
+		var hint_y: float = (rows - 1) * 0.5 * config.row_height + config.padding.y * 0.5
+		if _first > 0:
+			out.append(_glyph_slot(Vector2(0.0, hint_y), config.more_above_glyph, config.glyph_size, config.frame_color, NO_ITEM, KIND_FLOOR, order))
+		if _first + rows < _labels.size():
+			out.append(_glyph_slot(Vector2(0.0, -hint_y), config.more_below_glyph, config.glyph_size, config.frame_color, NO_ITEM, KIND_FLOOR, order))
+	_half_h = half_h
 	_add_frame(out, half_w, half_h)
 	return out
 
@@ -409,6 +532,8 @@ func _layout_ledger(entries: Array) -> Array[Dictionary]:
 	var n: int = entries.size()
 	var half_w: float = maxf(n - 1, 0) * 0.5 * config.sigil_spacing + config.padding.x
 	var half_h: float = config.sigil_size * 0.5 + config.padding.y
+	_half_h = 0.0
+	_fit_scale = 1.0
 	_item_centre.resize(0)
 	_item_half = Vector2.ZERO
 	var panel_half := Vector2(half_w, half_h) + Vector2.ONE * PANEL_MARGIN
@@ -514,6 +639,7 @@ func _build_atlas() -> void:
 				for ch in h.sigil:
 					_add_slot(glyphs, ch)
 	for text in [config.frame_corner, config.frame_horizontal, config.frame_vertical, config.marker_left, config.marker_right,
+			config.more_above_glyph, config.more_below_glyph, config.items_back_label,
 			config.floor_source_glyphs, config.wall_source_glyphs, " ", config.language_back_label, config.extra_glyphs]:
 		for ch in text:
 			_add_slot(glyphs, ch)

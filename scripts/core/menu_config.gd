@@ -36,6 +36,12 @@ extends Resource
 @export_range(100, 900) var font_weight: int = 700
 ## Height of the menu centre above the player glyph, on the screen (world units).
 @export var centre_up: float = 3.7
+## Task-086: a taller menu rises so its lower edge (the frame) stays at least this far above the player glyph, and the
+## top of the screen keeps this share of the viewport height free; rows that do not fit are windowed.
+@export var bottom_gap: float = 1.45
+@export_range(0.0, 0.3) var top_margin: float = 0.04
+## A list too long for the screen first shrinks (down to this share of its size), then the rest scrolls.
+@export_range(0.3, 1.0) var min_fit_scale: float = 0.8
 ## Horizontal advance of one letter and height of its tile (world units).
 @export var advance: float = 0.5
 @export var glyph_size: float = 0.82
@@ -55,6 +61,11 @@ extends Resource
 ## Glyphs that point at the selected item (left, right).
 @export var marker_left: String = ">"
 @export var marker_right: String = "<"
+## Long lists (task-086): at most this many rows are shown (fewer when they do not fit on screen); the window follows the selection (which wraps around in
+## MenuController) and hint glyphs mark rows above / below the window.
+@export var max_visible_rows: int = 7
+@export var more_above_glyph: String = "^"
+@export var more_below_glyph: String = "v"
 ## Fraction of a quad the glyph covers; the rest holds the dark backing outline.
 @export_range(0.2, 1.0) var glyph_fill: float = 0.8
 @export_range(0.0, 0.2) var outline_width: float = 0.08

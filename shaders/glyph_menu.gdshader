@@ -33,6 +33,7 @@ uniform float outline_width = 0.08;
 
 uniform vec3 anchor = vec3(0.0);          // world position the borrowed glyphs are measured from (the player's feet)
 uniform vec3 menu_centre = vec3(0.0);     // world position of the menu centre
+uniform float menu_scale = 1.0;           // task-086: the camera zoom, so the menu keeps its size on screen
 uniform float open_t = 1000.0;            // seconds since the menu opened (frozen when it closes)
 uniform float close_t = -1.0;             // seconds since the menu closed (< 0 = open)
 uniform float return_dur = 0.65;
@@ -117,7 +118,7 @@ void vertex() {
 
 	vec4 vs = VIEW_MATRIX * vec4(anchor + start_w, 1.0);
 	vec4 ve = VIEW_MATRIX * vec4(menu_centre, 1.0);
-	ve.xy += end_p;
+	ve.xy += end_p * menu_scale;
 	float a = seed * TWO_PI;
 	vec4 vp = mix(vs, ve, e);
 	vp.xy += vec2(cos(a) * 0.4, 1.0) * arc * hump;
@@ -203,7 +204,7 @@ void vertex() {
 			float sn = sin(ang);
 			corner = vec2(cs * qv.x * fx - sn * qv.y, sn * qv.x * fx + cs * qv.y) * s;
 		}
-		vp.xy += corner;
+		vp.xy += corner * menu_scale;
 		POSITION = PROJECTION_MATRIX * vp;
 		q = qv;
 	}
